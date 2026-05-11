@@ -13,6 +13,7 @@ import { Route as StoresRouteImport } from './routes/stores'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as MerchantRegisterRouteImport } from './routes/merchant.register'
 import { Route as MerchantLoginRouteImport } from './routes/merchant.login'
+import { Route as MerchantDashboardRouteImport } from './routes/merchant.dashboard'
 
 const StoresRoute = StoresRouteImport.update({
   id: '/stores',
@@ -34,16 +35,23 @@ const MerchantLoginRoute = MerchantLoginRouteImport.update({
   path: '/merchant/login',
   getParentRoute: () => rootRouteImport,
 } as any)
+const MerchantDashboardRoute = MerchantDashboardRouteImport.update({
+  id: '/merchant/dashboard',
+  path: '/merchant/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/stores': typeof StoresRoute
+  '/merchant/dashboard': typeof MerchantDashboardRoute
   '/merchant/login': typeof MerchantLoginRoute
   '/merchant/register': typeof MerchantRegisterRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/stores': typeof StoresRoute
+  '/merchant/dashboard': typeof MerchantDashboardRoute
   '/merchant/login': typeof MerchantLoginRoute
   '/merchant/register': typeof MerchantRegisterRoute
 }
@@ -51,20 +59,38 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/stores': typeof StoresRoute
+  '/merchant/dashboard': typeof MerchantDashboardRoute
   '/merchant/login': typeof MerchantLoginRoute
   '/merchant/register': typeof MerchantRegisterRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/stores' | '/merchant/login' | '/merchant/register'
+  fullPaths:
+    | '/'
+    | '/stores'
+    | '/merchant/dashboard'
+    | '/merchant/login'
+    | '/merchant/register'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/stores' | '/merchant/login' | '/merchant/register'
-  id: '__root__' | '/' | '/stores' | '/merchant/login' | '/merchant/register'
+  to:
+    | '/'
+    | '/stores'
+    | '/merchant/dashboard'
+    | '/merchant/login'
+    | '/merchant/register'
+  id:
+    | '__root__'
+    | '/'
+    | '/stores'
+    | '/merchant/dashboard'
+    | '/merchant/login'
+    | '/merchant/register'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   StoresRoute: typeof StoresRoute
+  MerchantDashboardRoute: typeof MerchantDashboardRoute
   MerchantLoginRoute: typeof MerchantLoginRoute
   MerchantRegisterRoute: typeof MerchantRegisterRoute
 }
@@ -99,15 +125,33 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MerchantLoginRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/merchant/dashboard': {
+      id: '/merchant/dashboard'
+      path: '/merchant/dashboard'
+      fullPath: '/merchant/dashboard'
+      preLoaderRoute: typeof MerchantDashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   StoresRoute: StoresRoute,
+  MerchantDashboardRoute: MerchantDashboardRoute,
   MerchantLoginRoute: MerchantLoginRoute,
   MerchantRegisterRoute: MerchantRegisterRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
