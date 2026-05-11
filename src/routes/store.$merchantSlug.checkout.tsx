@@ -298,10 +298,17 @@ function CheckoutPage() {
               ))}
             </div>
 
-            <div className="mb-3 flex gap-2">
-              <Input placeholder="Купон код" value={couponCode} onChange={(e) => setCouponCode(e.target.value)} />
-              <Button variant="secondary" onClick={applyCoupon}>Идэвхжүүлэх</Button>
-            </div>
+            {coupon ? (
+              <div className="mb-3 flex items-center justify-between rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-2 text-sm">
+                <span className="font-medium text-emerald-700 dark:text-emerald-400">{coupon.code} (-{fmtMnt(coupon.discount)})</span>
+                <Button variant="ghost" size="sm" onClick={() => { setCoupon(null); setCouponCode(""); }}>Цуцлах</Button>
+              </div>
+            ) : (
+              <div className="mb-3 flex gap-2">
+                <Input placeholder="Купон код" value={couponCode} onChange={(e) => setCouponCode(e.target.value)} />
+                <Button variant="secondary" onClick={applyCoupon}>Идэвхжүүлэх</Button>
+              </div>
+            )}
 
             <div className="space-y-2 text-sm">
               <div className="flex justify-between"><span className="text-muted-foreground">Дэд дүн</span><span>{fmtMnt(subtotal)}</span></div>
