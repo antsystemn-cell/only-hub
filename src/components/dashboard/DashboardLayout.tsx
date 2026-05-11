@@ -9,14 +9,15 @@ import {
 import { useState } from "react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
-const TABS = [
+type Tab = { to: string; label: string; icon: typeof BarChart3; end?: boolean };
+const TABS: Tab[] = [
   { to: "/merchant/dashboard", label: "Статистик", icon: BarChart3, end: true },
   { to: "/merchant/dashboard/products", label: "Бараа", icon: Package },
   { to: "/merchant/dashboard/orders", label: "Захиалга", icon: ShoppingCart },
   { to: "/merchant/dashboard/users", label: "Хэрэглэгч", icon: Users },
   { to: "/merchant/dashboard/chatbot", label: "AI Чатбот", icon: Bot },
   { to: "/merchant/dashboard/settings", label: "Тохиргоо", icon: Settings },
-] as const;
+];
 
 export function DashboardLayout({ children }: { children: ReactNode }) {
   const { signOut, user } = useAuth();
