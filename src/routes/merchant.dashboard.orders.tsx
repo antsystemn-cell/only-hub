@@ -123,7 +123,9 @@ function OrdersPage() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-3xl font-bold">Захиалга</h1>
-          <p className="text-sm text-muted-foreground">Нийт {orders.length}</p>
+          <p className="text-sm text-muted-foreground">
+            Нийт {orders.length} • Шүүлтийн дүн: {fmtMnt(totals.sum)} ({totals.count}) • Төлөгдсөн: {fmtMnt(totals.paid)}
+          </p>
         </div>
         <div className="flex gap-2">
           <Button onClick={() => setShowManual(true)}><Plus className="mr-2 h-4 w-4" /> Гараар оруулах</Button>
@@ -131,15 +133,42 @@ function OrdersPage() {
       </div>
 
       <Card className="rounded-2xl p-4">
-        <div className="mb-4 flex flex-wrap items-center gap-2">
-          <div className="relative flex-1 min-w-[200px]">
+        <div className="mb-4 grid gap-2 md:grid-cols-[1fr_180px_180px_140px_140px]">
+          <div className="relative">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input className="pl-9" placeholder="Утас эсвэл захиалгын дугаар..." value={search} onChange={(e) => setSearch(e.target.value)} />
           </div>
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger><SelectValue placeholder="Төлөв" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Бүх төлөв</SelectItem>
+              {STATUSES.map((s) => <SelectItem key={s} value={s}>{STATUS_LABELS[s] ?? s}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <Select value={paymentFilter} onValueChange={setPaymentFilter}>
+            <SelectTrigger><SelectValue placeholder="Төлбөр" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Бүх төлбөр</SelectItem>
+              <SelectItem value="unpaid">Төлөгдөөгүй</SelectItem>
+              <SelectItem value="confirmed">Төлөгдсөн</SelectItem>
+              <SelectItem value="refunded">Буцаагдсан</SelectItem>
+            </SelectContent>
+          </Select>
+          <Input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} />
+          <Input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} />
+        </div>
+        <div className="mb-4 flex flex-wrap items-center gap-2">
           <Badge variant="secondary">Сонгосон: {selected.size}</Badge>
-          <Button size="sm" variant="outline" onClick={exportExcel}><FileSpreadsheet className="mr-1 h-4 w-4" /> Excel</Button>
-          <Button size="sm" variant="outline" onClick={exportLabels}><Tag className="mr-1 h-4 w-4" /> Шошго</Button>
-          <Button size="sm" variant="outline" onClick={() => window.print()}><Printer className="mr-1 h-4 w-4" /> Хэвлэх</Button>
+          {(statusFilter !== "all" || paymentFilter !== "all" || dateFrom || dateTo || search) && (
+            <Button size="sm" variant="ghost" onClick={() => { setStatusFilter("all"); setPaymentFilter("all"); setDateFrom(""); setDateTo(""); setSearch(""); }}>
+              <X className="mr-1 h-3 w-3" /> Шүүлт цэвэрлэх
+            </Button>
+          )}
+          <div className="ml-auto flex flex-wrap gap-2">
+            <Button size="sm" variant="outline" onClick={exportExcel}><FileSpreadsheet className="mr-1 h-4 w-4" /> Excel</Button>
+            <Button size="sm" variant="outline" onClick={exportLabels}><Tag className="mr-1 h-4 w-4" /> Шошго</Button>
+            <Button size="sm" variant="outline" onClick={() => window.print()}><Printer className="mr-1 h-4 w-4" /> Хэвлэх</Button>
+          </div>
         </div>
 
         <div className="space-y-2">
