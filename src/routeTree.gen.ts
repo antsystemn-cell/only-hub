@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as StoresRouteImport } from './routes/stores'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as MerchantRegisterRouteImport } from './routes/merchant.register'
 import { Route as MerchantLoginRouteImport } from './routes/merchant.login'
 
 const StoresRoute = StoresRouteImport.update({
@@ -23,6 +24,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const MerchantRegisterRoute = MerchantRegisterRouteImport.update({
+  id: '/merchant/register',
+  path: '/merchant/register',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const MerchantLoginRoute = MerchantLoginRouteImport.update({
   id: '/merchant/login',
   path: '/merchant/login',
@@ -33,30 +39,34 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/stores': typeof StoresRoute
   '/merchant/login': typeof MerchantLoginRoute
+  '/merchant/register': typeof MerchantRegisterRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/stores': typeof StoresRoute
   '/merchant/login': typeof MerchantLoginRoute
+  '/merchant/register': typeof MerchantRegisterRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/stores': typeof StoresRoute
   '/merchant/login': typeof MerchantLoginRoute
+  '/merchant/register': typeof MerchantRegisterRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/stores' | '/merchant/login'
+  fullPaths: '/' | '/stores' | '/merchant/login' | '/merchant/register'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/stores' | '/merchant/login'
-  id: '__root__' | '/' | '/stores' | '/merchant/login'
+  to: '/' | '/stores' | '/merchant/login' | '/merchant/register'
+  id: '__root__' | '/' | '/stores' | '/merchant/login' | '/merchant/register'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   StoresRoute: typeof StoresRoute
   MerchantLoginRoute: typeof MerchantLoginRoute
+  MerchantRegisterRoute: typeof MerchantRegisterRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -75,6 +85,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/merchant/register': {
+      id: '/merchant/register'
+      path: '/merchant/register'
+      fullPath: '/merchant/register'
+      preLoaderRoute: typeof MerchantRegisterRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/merchant/login': {
       id: '/merchant/login'
       path: '/merchant/login'
@@ -89,6 +106,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   StoresRoute: StoresRoute,
   MerchantLoginRoute: MerchantLoginRoute,
+  MerchantRegisterRoute: MerchantRegisterRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
