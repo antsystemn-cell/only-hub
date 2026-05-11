@@ -2,13 +2,14 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { fmtMnt, PAYMENT_STATUS_LABELS, STATUS_LABELS, STATUS_TONE } from "@/lib/format";
-import { getOrderStatus } from "@/lib/orders.functions";
-import { CheckCircle2, Clock, Loader2 } from "lucide-react";
+import { getOrderStatus, retryQpayInvoice } from "@/lib/orders.functions";
+import { AlertTriangle, CheckCircle2, Clock, Loader2, RefreshCw } from "lucide-react";
 
 export const Route = createFileRoute("/store/$merchantSlug/order/$orderId")({
   component: OrderConfirmationPage,
