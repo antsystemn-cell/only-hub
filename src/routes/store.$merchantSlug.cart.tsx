@@ -1,10 +1,12 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
-import { useMemo } from "react";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import {
   Select,
@@ -15,7 +17,8 @@ import {
 } from "@/components/ui/select";
 import { fmtMnt } from "@/lib/format";
 import { cart, useCart, type CartItem } from "@/lib/cart";
-import { ArrowLeft, Minus, Plus, ShoppingBag, Trash2 } from "lucide-react";
+import { validateCoupon } from "@/lib/coupons.functions";
+import { ArrowLeft, Minus, Plus, ShoppingBag, Tag, Trash2, X } from "lucide-react";
 
 export const Route = createFileRoute("/store/$merchantSlug/cart")({
   component: CartPage,
@@ -30,7 +33,10 @@ function extractOptions(raw: any): string[] {
 
 function CartPage() {
   const { merchantSlug } = Route.useParams();
+  const navigate = useNavigate();
   const items = useCart(merchantSlug);
+  const qc = useQueryClient();
+  const validateFn = useServerFn(validateCoupon);
 
   const { data: merchant } = useQuery({
     queryKey: ["merchant", merchantSlug],
@@ -53,15 +59,69 @@ function CartPage() {
     return m;
   }, [products]);
 
-  const total = items.reduce((s, i) => s + i.price * i.quantity, 0);
+  // Realtime subscribe to product changes — auto rerender when name/price/stock changes
+  useEffect(() => {
+    if (!merchant?.id || productIds.length === 0) return;
+    const ch = supabase
+      .channel(`cart-products-${merchant.id}`)
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "products", filter: `merchant_id=eq.${merchant.id}` },
+        (payload) => {
+          const updated = payload.new as any;
+          if (productIds.includes(updated.id)) {
+            qc.invalidateQueries({ queryKey: ["cart-products", merchant.id] });
+          }
+        },
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(ch);
+    };
+  }, [merchant?.id, productIds.join(","), qc]);
+
+  // Sync stored cart names/prices when product changes
+  useEffect(() => {
+    if (productMap.size === 0) return;
+    items.forEach((i) => {
+      const p = productMap.get(i.productId);
+      if (!p) return;
+      if (p.name !== i.name || Number(p.price) !== i.price) {
+        cart.update(merchantSlug, cart.keyOf(i), { name: p.name, price: Number(p.price) });
+      }
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [products]);
+
+  const [couponCode, setCouponCode] = useState("");
+  const [coupon, setCoupon] = useState<{ code: string; discount: number } | null>(null);
+
+  // Compute live values from product map (price may have updated)
+  const lineFor = (i: CartItem) => Number(productMap.get(i.productId)?.price ?? i.price);
+  const subtotal = items.reduce((s, i) => s + lineFor(i) * i.quantity, 0);
   const totalQty = items.reduce((s, i) => s + i.quantity, 0);
+  const discount = coupon?.discount ?? 0;
+  const total = Math.max(0, subtotal - discount);
+
+  // Re-validate coupon when subtotal changes
+  useEffect(() => {
+    if (!coupon) return;
+    (async () => {
+      const r = await validateFn({ data: { merchantSlug, code: coupon.code, subtotal } });
+      if (r.ok) setCoupon({ code: r.coupon.code, discount: r.discount });
+      else {
+        setCoupon(null);
+        toast.error(r.error);
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [subtotal]);
 
   const updateVariant = (item: CartItem, next: Partial<Pick<CartItem, "color" | "size">>) => {
     const oldKey = cart.keyOf(item);
     const merged = { ...item, ...next };
     const newKey = cart.keyOf(merged);
     if (oldKey === newKey) return;
-    // Check duplicate
     const existing = items.find((i) => cart.keyOf(i) === newKey && i !== item);
     if (existing) {
       cart.setQty(merchantSlug, newKey, existing.quantity + item.quantity);
@@ -69,10 +129,43 @@ function CartPage() {
       toast.success("Хослуулсан барааг нэгтгэлээ");
       return;
     }
-    // No direct edit — remove and re-add
     cart.remove(merchantSlug, oldKey);
     cart.add(merchantSlug, merged);
   };
+
+  async function applyCoupon() {
+    if (!couponCode.trim()) return;
+    try {
+      const r = await validateFn({ data: { merchantSlug, code: couponCode.trim(), subtotal } });
+      if (r.ok) {
+        setCoupon({ code: r.coupon.code, discount: r.discount });
+        toast.success(`Купон идэвхжлээ: -${fmtMnt(r.discount)}`);
+        setCouponCode("");
+      } else {
+        toast.error(r.error);
+      }
+    } catch (e: any) {
+      toast.error(e?.message ?? "Купон шалгахад алдаа");
+    }
+  }
+
+  function clientStockCheck(): string | null {
+    for (const i of items) {
+      const p = productMap.get(i.productId);
+      if (!p) continue;
+      const k = i.color && i.size ? `${i.color}|${i.size}` : i.color || i.size || "";
+      const stock = k && p.variant_stock?.[k] != null ? p.variant_stock[k] : p.stock_quantity;
+      if (stock < i.quantity) return `"${p.name}" — үлдэгдэл ${stock}, та ${i.quantity}-г сонгосон`;
+    }
+    return null;
+  }
+
+  function goCheckout() {
+    if (items.length === 0) return;
+    const issue = clientStockCheck();
+    if (issue) return toast.error(issue);
+    navigate({ to: "/store/$merchantSlug/checkout", params: { merchantSlug } });
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -122,6 +215,8 @@ function CartPage() {
                 const stock = variantKey && variantStock[variantKey] != null
                   ? variantStock[variantKey]
                   : product?.stock_quantity ?? 99;
+                const livePrice = lineFor(item);
+                const priceChanged = product && Number(product.price) !== item.price;
 
                 return (
                   <Card key={k} className="rounded-2xl p-4">
@@ -145,7 +240,7 @@ function CartPage() {
                             params={{ merchantSlug, productSlug: product?.slug || item.productId }}
                             className="font-medium hover:underline line-clamp-2"
                           >
-                            {item.name}
+                            {product?.name ?? item.name}
                           </Link>
                           <Button
                             variant="ghost"
@@ -190,6 +285,13 @@ function CartPage() {
                           )}
                         </div>
 
+                        {priceChanged && (
+                          <p className="text-xs text-amber-600">Үнэ шинэчлэгдсэн</p>
+                        )}
+                        {item.quantity > stock && (
+                          <p className="text-xs text-red-500">Үлдэгдэл хүрэлцэхгүй (зөвхөн {stock})</p>
+                        )}
+
                         <div className="mt-auto flex items-end justify-between gap-2">
                           <div className="flex items-center rounded-lg border">
                             <Button
@@ -210,8 +312,8 @@ function CartPage() {
                             </Button>
                           </div>
                           <div className="text-right">
-                            <div className="text-xs text-muted-foreground">{fmtMnt(item.price)} × {item.quantity}</div>
-                            <div className="font-bold">{fmtMnt(item.price * item.quantity)}</div>
+                            <div className="text-xs text-muted-foreground">{fmtMnt(livePrice)} × {item.quantity}</div>
+                            <div className="font-bold">{fmtMnt(livePrice * item.quantity)}</div>
                           </div>
                         </div>
                       </div>
@@ -229,11 +331,42 @@ function CartPage() {
 
             <Card className="h-fit rounded-2xl p-5 lg:sticky lg:top-20">
               <h3 className="mb-4 font-semibold">Захиалгын дүн</h3>
+
+              {/* Coupon */}
+              {coupon ? (
+                <div className="mb-4 flex items-center justify-between rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-3 text-sm">
+                  <div className="flex items-center gap-2 text-emerald-700 dark:text-emerald-400">
+                    <Tag className="h-4 w-4" />
+                    <span className="font-medium">{coupon.code}</span>
+                    <span>-{fmtMnt(coupon.discount)}</span>
+                  </div>
+                  <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setCoupon(null)}>
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              ) : (
+                <div className="mb-4 flex gap-2">
+                  <Input
+                    placeholder="Купон код"
+                    value={couponCode}
+                    onChange={(e) => setCouponCode(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && applyCoupon()}
+                  />
+                  <Button variant="secondary" onClick={applyCoupon}>Идэвхжүүлэх</Button>
+                </div>
+              )}
+
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Бараа ({totalQty})</span>
-                  <span>{fmtMnt(total)}</span>
+                  <span>{fmtMnt(subtotal)}</span>
                 </div>
+                {discount > 0 && (
+                  <div className="flex justify-between text-emerald-600">
+                    <span>Купон хөнгөлөлт</span>
+                    <span>-{fmtMnt(discount)}</span>
+                  </div>
+                )}
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Хүргэлт</span>
                   <span className="text-muted-foreground">Дараагийн алхам</span>
@@ -244,7 +377,7 @@ function CartPage() {
                 <span className="font-medium">Нийт дүн</span>
                 <span className="text-2xl font-bold">{fmtMnt(total)}</span>
               </div>
-              <Button className="mt-4 w-full" size="lg">Худалдан авах</Button>
+              <Button className="mt-4 w-full" size="lg" onClick={goCheckout}>Худалдан авах</Button>
             </Card>
           </div>
         )}
