@@ -55,6 +55,10 @@ export const cart = {
       .filter((i) => i.quantity > 0);
     write(merchantSlug, items);
   },
+  update(merchantSlug: string, k: string, patch: Partial<CartItem>) {
+    const items = read(merchantSlug).map((i) => (keyOf(i) === k ? { ...i, ...patch } : i));
+    write(merchantSlug, items);
+  },
   remove(merchantSlug: string, k: string) {
     write(merchantSlug, read(merchantSlug).filter((i) => keyOf(i) !== k));
   },
