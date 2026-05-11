@@ -81,6 +81,42 @@ export type Database = {
           },
         ]
       }
+      chatbot_settings: {
+        Row: {
+          bot_name: string
+          created_at: string
+          greeting_message: string
+          id: string
+          is_enabled: boolean
+          knowledge: string
+          merchant_id: string
+          system_prompt: string
+          updated_at: string
+        }
+        Insert: {
+          bot_name?: string
+          created_at?: string
+          greeting_message?: string
+          id?: string
+          is_enabled?: boolean
+          knowledge?: string
+          merchant_id: string
+          system_prompt?: string
+          updated_at?: string
+        }
+        Update: {
+          bot_name?: string
+          created_at?: string
+          greeting_message?: string
+          id?: string
+          is_enabled?: boolean
+          knowledge?: string
+          merchant_id?: string
+          system_prompt?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       coupons: {
         Row: {
           code: string
@@ -226,6 +262,7 @@ export type Database = {
         Row: {
           commission_rate: number
           created_at: string
+          delivery_api_key: string | null
           description: string | null
           id: string
           is_active: boolean
@@ -238,6 +275,7 @@ export type Database = {
         Insert: {
           commission_rate?: number
           created_at?: string
+          delivery_api_key?: string | null
           description?: string | null
           id?: string
           is_active?: boolean
@@ -250,6 +288,7 @@ export type Database = {
         Update: {
           commission_rate?: number
           created_at?: string
+          delivery_api_key?: string | null
           description?: string | null
           id?: string
           is_active?: boolean
