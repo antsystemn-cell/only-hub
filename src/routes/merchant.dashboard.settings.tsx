@@ -14,6 +14,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import { Trash2, Plus, Eye, EyeOff } from "lucide-react";
 import { fmtMnt } from "@/lib/format";
+import { useServerFn } from "@tanstack/react-start";
+import { testPaymentConnection } from "@/lib/payments.functions";
 
 export const Route = createFileRoute("/merchant/dashboard/settings")({ component: SettingsPage });
 
@@ -160,17 +162,42 @@ function PaymentsTab() {
       </div>
       <div className="mt-4 flex gap-2">
         <Button onClick={() => save.mutate()}>Хадгалах</Button>
-        <Button variant="outline" onClick={() => toast.info("Холболт шалгах функц удахгүй")}>Холболт шалгах</Button>
       </div>
 
       <div className="mt-6 space-y-2">
         {(items as any[]).map((p) => (
-          <div key={p.id} className="flex items-center justify-between rounded-xl border border-border p-3 text-sm">
-            <span>{p.icon} {p.name} <span className="text-xs text-muted-foreground">({p.provider_type})</span> {p.is_active ? <span className="ml-2 rounded bg-emerald-500/10 px-2 text-xs text-emerald-600">Идэвхтэй</span> : null}</span>
-            <Button size="icon" variant="ghost" onClick={() => del(p.id)}><Trash2 className="h-4 w-4" /></Button>
-          </div>
+          <ProviderRow key={p.id} provider={p} onDelete={() => del(p.id)} />
         ))}
       </div>
     </Card>
+  );
+}
+
+function ProviderRow({ provider: p, onDelete }: { provider: any; onDelete: () => void }) {
+  const test = useServerFn(testPaymentConnection);
+  const [pending, setPending] = useState(false);
+  const hasCreds = p.credentials && Object.keys(p.credentials).length > 0;
+  const runTest = async () => {
+    setPending(true);
+    try {
+      const res = await test({ data: { providerId: p.id } });
+      if (res.ok) toast.success(res.message); else toast.error(res.message);
+    } catch (e: any) {
+      toast.error(e?.message ?? "Алдаа");
+    } finally { setPending(false); }
+  };
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border p-3 text-sm">
+      <span className="flex items-center gap-2">
+        {p.icon} {p.name}
+        <span className="text-xs text-muted-foreground">({p.provider_type})</span>
+        {p.is_active && <span className="rounded bg-emerald-500/10 px-2 py-0.5 text-xs text-emerald-600">Идэвхтэй</span>}
+        {hasCreds && <span className="rounded bg-blue-500/10 px-2 py-0.5 text-xs text-blue-600">🔐 Тохируулагдсан</span>}
+      </span>
+      <div className="flex items-center gap-1">
+        <Button size="sm" variant="outline" onClick={runTest} disabled={pending}>{pending ? "Шалгаж байна..." : "Холболт шалгах"}</Button>
+        <Button size="icon" variant="ghost" onClick={onDelete}><Trash2 className="h-4 w-4" /></Button>
+      </div>
+    </div>
   );
 }
