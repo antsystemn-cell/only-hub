@@ -14,6 +14,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import { Trash2, Plus, Eye, EyeOff } from "lucide-react";
 import { fmtMnt } from "@/lib/format";
+import { useServerFn } from "@tanstack/react-start";
+import { testPaymentConnection } from "@/lib/payments.functions";
 
 export const Route = createFileRoute("/merchant/dashboard/settings")({ component: SettingsPage });
 
