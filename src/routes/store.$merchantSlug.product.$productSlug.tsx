@@ -135,14 +135,16 @@ function ProductDetailPage() {
             {merchant.name}
           </Link>
           <div className="ml-auto flex items-center gap-2">
-            <Button variant="ghost" size="sm" className="relative">
-              <ShoppingCart className="h-5 w-5" />
-              {cartCount > 0 && (
-                <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1 text-xs font-medium text-primary-foreground">
-                  {cartCount}
-                </span>
-              )}
-            </Button>
+            <Link to="/store/$merchantSlug/cart" params={{ merchantSlug }}>
+              <Button variant="ghost" size="sm" className="relative">
+                <ShoppingCart className="h-5 w-5" />
+                {cartCount > 0 && (
+                  <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1 text-xs font-medium text-primary-foreground">
+                    {cartCount}
+                  </span>
+                )}
+              </Button>
+            </Link>
           </div>
         </div>
       </header>
