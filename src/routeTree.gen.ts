@@ -22,6 +22,7 @@ import { Route as MerchantDashboardSettingsRouteImport } from './routes/merchant
 import { Route as MerchantDashboardProductsRouteImport } from './routes/merchant.dashboard.products'
 import { Route as MerchantDashboardOrdersRouteImport } from './routes/merchant.dashboard.orders'
 import { Route as MerchantDashboardChatbotRouteImport } from './routes/merchant.dashboard.chatbot'
+import { Route as StoreMerchantSlugProductProductSlugRouteImport } from './routes/store.$merchantSlug.product.$productSlug'
 
 const StoresRoute = StoresRouteImport.update({
   id: '/stores',
@@ -91,6 +92,12 @@ const MerchantDashboardChatbotRoute =
     path: '/chatbot',
     getParentRoute: () => MerchantDashboardRoute,
   } as any)
+const StoreMerchantSlugProductProductSlugRoute =
+  StoreMerchantSlugProductProductSlugRouteImport.update({
+    id: '/product/$productSlug',
+    path: '/product/$productSlug',
+    getParentRoute: () => StoreMerchantSlugRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -99,13 +106,14 @@ export interface FileRoutesByFullPath {
   '/merchant/dashboard': typeof MerchantDashboardRouteWithChildren
   '/merchant/login': typeof MerchantLoginRoute
   '/merchant/register': typeof MerchantRegisterRoute
-  '/store/$merchantSlug': typeof StoreMerchantSlugRoute
+  '/store/$merchantSlug': typeof StoreMerchantSlugRouteWithChildren
   '/merchant/dashboard/chatbot': typeof MerchantDashboardChatbotRoute
   '/merchant/dashboard/orders': typeof MerchantDashboardOrdersRoute
   '/merchant/dashboard/products': typeof MerchantDashboardProductsRoute
   '/merchant/dashboard/settings': typeof MerchantDashboardSettingsRoute
   '/merchant/dashboard/users': typeof MerchantDashboardUsersRoute
   '/merchant/dashboard/': typeof MerchantDashboardIndexRoute
+  '/store/$merchantSlug/product/$productSlug': typeof StoreMerchantSlugProductProductSlugRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -113,13 +121,14 @@ export interface FileRoutesByTo {
   '/stores': typeof StoresRoute
   '/merchant/login': typeof MerchantLoginRoute
   '/merchant/register': typeof MerchantRegisterRoute
-  '/store/$merchantSlug': typeof StoreMerchantSlugRoute
+  '/store/$merchantSlug': typeof StoreMerchantSlugRouteWithChildren
   '/merchant/dashboard/chatbot': typeof MerchantDashboardChatbotRoute
   '/merchant/dashboard/orders': typeof MerchantDashboardOrdersRoute
   '/merchant/dashboard/products': typeof MerchantDashboardProductsRoute
   '/merchant/dashboard/settings': typeof MerchantDashboardSettingsRoute
   '/merchant/dashboard/users': typeof MerchantDashboardUsersRoute
   '/merchant/dashboard': typeof MerchantDashboardIndexRoute
+  '/store/$merchantSlug/product/$productSlug': typeof StoreMerchantSlugProductProductSlugRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -129,13 +138,14 @@ export interface FileRoutesById {
   '/merchant/dashboard': typeof MerchantDashboardRouteWithChildren
   '/merchant/login': typeof MerchantLoginRoute
   '/merchant/register': typeof MerchantRegisterRoute
-  '/store/$merchantSlug': typeof StoreMerchantSlugRoute
+  '/store/$merchantSlug': typeof StoreMerchantSlugRouteWithChildren
   '/merchant/dashboard/chatbot': typeof MerchantDashboardChatbotRoute
   '/merchant/dashboard/orders': typeof MerchantDashboardOrdersRoute
   '/merchant/dashboard/products': typeof MerchantDashboardProductsRoute
   '/merchant/dashboard/settings': typeof MerchantDashboardSettingsRoute
   '/merchant/dashboard/users': typeof MerchantDashboardUsersRoute
   '/merchant/dashboard/': typeof MerchantDashboardIndexRoute
+  '/store/$merchantSlug/product/$productSlug': typeof StoreMerchantSlugProductProductSlugRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -153,6 +163,7 @@ export interface FileRouteTypes {
     | '/merchant/dashboard/settings'
     | '/merchant/dashboard/users'
     | '/merchant/dashboard/'
+    | '/store/$merchantSlug/product/$productSlug'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -167,6 +178,7 @@ export interface FileRouteTypes {
     | '/merchant/dashboard/settings'
     | '/merchant/dashboard/users'
     | '/merchant/dashboard'
+    | '/store/$merchantSlug/product/$productSlug'
   id:
     | '__root__'
     | '/'
@@ -182,6 +194,7 @@ export interface FileRouteTypes {
     | '/merchant/dashboard/settings'
     | '/merchant/dashboard/users'
     | '/merchant/dashboard/'
+    | '/store/$merchantSlug/product/$productSlug'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -191,7 +204,7 @@ export interface RootRouteChildren {
   MerchantDashboardRoute: typeof MerchantDashboardRouteWithChildren
   MerchantLoginRoute: typeof MerchantLoginRoute
   MerchantRegisterRoute: typeof MerchantRegisterRoute
-  StoreMerchantSlugRoute: typeof StoreMerchantSlugRoute
+  StoreMerchantSlugRoute: typeof StoreMerchantSlugRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
@@ -287,6 +300,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MerchantDashboardChatbotRouteImport
       parentRoute: typeof MerchantDashboardRoute
     }
+    '/store/$merchantSlug/product/$productSlug': {
+      id: '/store/$merchantSlug/product/$productSlug'
+      path: '/product/$productSlug'
+      fullPath: '/store/$merchantSlug/product/$productSlug'
+      preLoaderRoute: typeof StoreMerchantSlugProductProductSlugRouteImport
+      parentRoute: typeof StoreMerchantSlugRoute
+    }
   }
 }
 
@@ -311,6 +331,18 @@ const MerchantDashboardRouteChildren: MerchantDashboardRouteChildren = {
 const MerchantDashboardRouteWithChildren =
   MerchantDashboardRoute._addFileChildren(MerchantDashboardRouteChildren)
 
+interface StoreMerchantSlugRouteChildren {
+  StoreMerchantSlugProductProductSlugRoute: typeof StoreMerchantSlugProductProductSlugRoute
+}
+
+const StoreMerchantSlugRouteChildren: StoreMerchantSlugRouteChildren = {
+  StoreMerchantSlugProductProductSlugRoute:
+    StoreMerchantSlugProductProductSlugRoute,
+}
+
+const StoreMerchantSlugRouteWithChildren =
+  StoreMerchantSlugRoute._addFileChildren(StoreMerchantSlugRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRoute,
@@ -318,7 +350,7 @@ const rootRouteChildren: RootRouteChildren = {
   MerchantDashboardRoute: MerchantDashboardRouteWithChildren,
   MerchantLoginRoute: MerchantLoginRoute,
   MerchantRegisterRoute: MerchantRegisterRoute,
-  StoreMerchantSlugRoute: StoreMerchantSlugRoute,
+  StoreMerchantSlugRoute: StoreMerchantSlugRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

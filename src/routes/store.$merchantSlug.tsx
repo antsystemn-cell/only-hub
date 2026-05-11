@@ -35,13 +35,19 @@ function StorePage() {
         {merchant.description && <p className="mt-2 text-muted-foreground">{merchant.description}</p>}
         <div className="mt-8 grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
           {(products as any[]).map((p) => (
-            <Card key={p.id} className="overflow-hidden rounded-2xl">
-              {p.image_url && <img src={p.image_url} alt={p.name} className="h-48 w-full object-cover" />}
-              <div className="p-4">
-                <div className="font-medium line-clamp-2">{p.name}</div>
-                <div className="mt-2 font-bold">{fmtMnt(p.price)}</div>
-              </div>
-            </Card>
+            <Link
+              key={p.id}
+              to="/store/$merchantSlug/product/$productSlug"
+              params={{ merchantSlug, productSlug: p.slug || p.id }}
+            >
+              <Card className="overflow-hidden rounded-2xl transition hover:shadow-lg">
+                {p.image_url && <img src={p.image_url} alt={p.name} className="h-48 w-full object-cover" />}
+                <div className="p-4">
+                  <div className="font-medium line-clamp-2">{p.name}</div>
+                  <div className="mt-2 font-bold">{fmtMnt(p.price)}</div>
+                </div>
+              </Card>
+            </Link>
           ))}
           {products.length === 0 && <p className="col-span-full py-10 text-center text-muted-foreground">Бараа алга</p>}
         </div>
