@@ -15,6 +15,7 @@ import { Route as MerchantRegisterRouteImport } from './routes/merchant.register
 import { Route as MerchantLoginRouteImport } from './routes/merchant.login'
 import { Route as MerchantDashboardRouteImport } from './routes/merchant.dashboard'
 import { Route as MerchantDashboardIndexRouteImport } from './routes/merchant.dashboard.index'
+import { Route as MerchantDashboardProductsRouteImport } from './routes/merchant.dashboard.products'
 
 const StoresRoute = StoresRouteImport.update({
   id: '/stores',
@@ -46,6 +47,12 @@ const MerchantDashboardIndexRoute = MerchantDashboardIndexRouteImport.update({
   path: '/',
   getParentRoute: () => MerchantDashboardRoute,
 } as any)
+const MerchantDashboardProductsRoute =
+  MerchantDashboardProductsRouteImport.update({
+    id: '/products',
+    path: '/products',
+    getParentRoute: () => MerchantDashboardRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -53,6 +60,7 @@ export interface FileRoutesByFullPath {
   '/merchant/dashboard': typeof MerchantDashboardRouteWithChildren
   '/merchant/login': typeof MerchantLoginRoute
   '/merchant/register': typeof MerchantRegisterRoute
+  '/merchant/dashboard/products': typeof MerchantDashboardProductsRoute
   '/merchant/dashboard/': typeof MerchantDashboardIndexRoute
 }
 export interface FileRoutesByTo {
@@ -60,6 +68,7 @@ export interface FileRoutesByTo {
   '/stores': typeof StoresRoute
   '/merchant/login': typeof MerchantLoginRoute
   '/merchant/register': typeof MerchantRegisterRoute
+  '/merchant/dashboard/products': typeof MerchantDashboardProductsRoute
   '/merchant/dashboard': typeof MerchantDashboardIndexRoute
 }
 export interface FileRoutesById {
@@ -69,6 +78,7 @@ export interface FileRoutesById {
   '/merchant/dashboard': typeof MerchantDashboardRouteWithChildren
   '/merchant/login': typeof MerchantLoginRoute
   '/merchant/register': typeof MerchantRegisterRoute
+  '/merchant/dashboard/products': typeof MerchantDashboardProductsRoute
   '/merchant/dashboard/': typeof MerchantDashboardIndexRoute
 }
 export interface FileRouteTypes {
@@ -79,6 +89,7 @@ export interface FileRouteTypes {
     | '/merchant/dashboard'
     | '/merchant/login'
     | '/merchant/register'
+    | '/merchant/dashboard/products'
     | '/merchant/dashboard/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -86,6 +97,7 @@ export interface FileRouteTypes {
     | '/stores'
     | '/merchant/login'
     | '/merchant/register'
+    | '/merchant/dashboard/products'
     | '/merchant/dashboard'
   id:
     | '__root__'
@@ -94,6 +106,7 @@ export interface FileRouteTypes {
     | '/merchant/dashboard'
     | '/merchant/login'
     | '/merchant/register'
+    | '/merchant/dashboard/products'
     | '/merchant/dashboard/'
   fileRoutesById: FileRoutesById
 }
@@ -149,14 +162,23 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MerchantDashboardIndexRouteImport
       parentRoute: typeof MerchantDashboardRoute
     }
+    '/merchant/dashboard/products': {
+      id: '/merchant/dashboard/products'
+      path: '/products'
+      fullPath: '/merchant/dashboard/products'
+      preLoaderRoute: typeof MerchantDashboardProductsRouteImport
+      parentRoute: typeof MerchantDashboardRoute
+    }
   }
 }
 
 interface MerchantDashboardRouteChildren {
+  MerchantDashboardProductsRoute: typeof MerchantDashboardProductsRoute
   MerchantDashboardIndexRoute: typeof MerchantDashboardIndexRoute
 }
 
 const MerchantDashboardRouteChildren: MerchantDashboardRouteChildren = {
+  MerchantDashboardProductsRoute: MerchantDashboardProductsRoute,
   MerchantDashboardIndexRoute: MerchantDashboardIndexRoute,
 }
 
