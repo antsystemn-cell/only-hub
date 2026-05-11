@@ -157,6 +157,7 @@ export const createOrder = createServerFn({ method: "POST" })
 
     // 6. QPay invoice (if applicable)
     let qpay: any = null;
+    let qpayError: string | null = null;
     if (data.paymentMethod === "qpay") {
       try {
         const reqUrl = getRequestUrl();
@@ -168,14 +169,23 @@ export const createOrder = createServerFn({ method: "POST" })
           description: `${merchant.name} - ${order.external_ref ?? order.id}`,
           callbackUrl,
         });
-        if (qpay?.invoice_id) {
+        if (!qpay) {
+          qpayError = "QPay тохиргоо хийгдээгүй байна (мерчантад invoice_code алга)";
+        } else if (qpay?.invoice_id) {
           await supabaseAdmin
             .from("orders")
-            .update({ qpay_invoice_id: qpay.invoice_id })
+            .update({ qpay_invoice_id: qpay.invoice_id, payment_error: null })
             .eq("id", order.id);
         }
       } catch (e: any) {
-        console.error("QPay invoice failed:", e?.message);
+        qpayError = e?.message ?? "QPay invoice үүсгэхэд алдаа";
+        console.error("QPay invoice failed:", qpayError);
+      }
+      if (qpayError) {
+        await supabaseAdmin
+          .from("orders")
+          .update({ payment_error: qpayError })
+          .eq("id", order.id);
       }
     }
 
