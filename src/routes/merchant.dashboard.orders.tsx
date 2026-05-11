@@ -32,6 +32,10 @@ function OrdersPage() {
   const merchantId = primaryMerchantId!;
   const qc = useQueryClient();
   const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [paymentFilter, setPaymentFilter] = useState<string>("all");
+  const [dateFrom, setDateFrom] = useState<string>("");
+  const [dateTo, setDateTo] = useState<string>("");
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [showManual, setShowManual] = useState(false);
 
@@ -43,11 +47,25 @@ function OrdersPage() {
     },
   });
 
-  const filtered = orders.filter((o: any) =>
-    !search || (o.phone ?? "").includes(search) || (o.external_ref ?? "").toLowerCase().includes(search.toLowerCase())
-  );
+  const filtered = useMemo(() => orders.filter((o: any) => {
+    if (search && !((o.phone ?? "").includes(search) || (o.external_ref ?? "").toLowerCase().includes(search.toLowerCase()))) return false;
+    if (statusFilter !== "all" && o.status !== statusFilter) return false;
+    if (paymentFilter !== "all" && o.payment_status !== paymentFilter) return false;
+    if (dateFrom && new Date(o.created_at) < new Date(dateFrom)) return false;
+    if (dateTo) {
+      const end = new Date(dateTo); end.setHours(23, 59, 59, 999);
+      if (new Date(o.created_at) > end) return false;
+    }
+    return true;
+  }), [orders, search, statusFilter, paymentFilter, dateFrom, dateTo]);
   const active = filtered.filter((o: any) => o.status !== "cancelled");
   const cancelled = filtered.filter((o: any) => o.status === "cancelled").slice(0, 5);
+
+  const totals = useMemo(() => ({
+    count: filtered.length,
+    sum: filtered.reduce((s: number, o: any) => s + Number(o.total ?? 0), 0),
+    paid: filtered.filter((o: any) => o.payment_status === "confirmed").reduce((s: number, o: any) => s + Number(o.total ?? 0), 0),
+  }), [filtered]);
 
   const updateStatus = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
