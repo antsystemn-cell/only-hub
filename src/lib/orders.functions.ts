@@ -142,11 +142,17 @@ export const createOrder = createServerFn({ method: "POST" })
     if (orderErr || !order) return { ok: false as const, error: orderErr?.message ?? "Захиалга үүсгэхэд алдаа" };
 
     if (couponId) {
-      await supabaseAdmin.rpc("noop").then(() => null).catch(() => null);
-      await supabaseAdmin
+      const { data: c } = await supabaseAdmin
         .from("coupons")
-        .update({ used_count: (await supabaseAdmin.from("coupons").select("used_count").eq("id", couponId).single()).data!.used_count + 1 })
-        .eq("id", couponId);
+        .select("used_count")
+        .eq("id", couponId)
+        .single();
+      if (c) {
+        await supabaseAdmin
+          .from("coupons")
+          .update({ used_count: c.used_count + 1 })
+          .eq("id", couponId);
+      }
     }
 
     // 6. QPay invoice (if applicable)
