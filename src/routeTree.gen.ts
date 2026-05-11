@@ -17,6 +17,7 @@ import { Route as MerchantRegisterRouteImport } from './routes/merchant.register
 import { Route as MerchantLoginRouteImport } from './routes/merchant.login'
 import { Route as MerchantDashboardRouteImport } from './routes/merchant.dashboard'
 import { Route as MerchantDashboardIndexRouteImport } from './routes/merchant.dashboard.index'
+import { Route as StoreMerchantSlugCheckoutRouteImport } from './routes/store.$merchantSlug.checkout'
 import { Route as StoreMerchantSlugCartRouteImport } from './routes/store.$merchantSlug.cart'
 import { Route as MerchantDashboardUsersRouteImport } from './routes/merchant.dashboard.users'
 import { Route as MerchantDashboardSettingsRouteImport } from './routes/merchant.dashboard.settings'
@@ -24,6 +25,7 @@ import { Route as MerchantDashboardProductsRouteImport } from './routes/merchant
 import { Route as MerchantDashboardOrdersRouteImport } from './routes/merchant.dashboard.orders'
 import { Route as MerchantDashboardChatbotRouteImport } from './routes/merchant.dashboard.chatbot'
 import { Route as StoreMerchantSlugProductProductSlugRouteImport } from './routes/store.$merchantSlug.product.$productSlug'
+import { Route as StoreMerchantSlugOrderOrderIdRouteImport } from './routes/store.$merchantSlug.order.$orderId'
 import { Route as ApiPublicQpayWebhookRouteImport } from './routes/api.public.qpay.webhook'
 
 const StoresRoute = StoresRouteImport.update({
@@ -66,6 +68,12 @@ const MerchantDashboardIndexRoute = MerchantDashboardIndexRouteImport.update({
   path: '/',
   getParentRoute: () => MerchantDashboardRoute,
 } as any)
+const StoreMerchantSlugCheckoutRoute =
+  StoreMerchantSlugCheckoutRouteImport.update({
+    id: '/checkout',
+    path: '/checkout',
+    getParentRoute: () => StoreMerchantSlugRoute,
+  } as any)
 const StoreMerchantSlugCartRoute = StoreMerchantSlugCartRouteImport.update({
   id: '/cart',
   path: '/cart',
@@ -105,6 +113,12 @@ const StoreMerchantSlugProductProductSlugRoute =
     path: '/product/$productSlug',
     getParentRoute: () => StoreMerchantSlugRoute,
   } as any)
+const StoreMerchantSlugOrderOrderIdRoute =
+  StoreMerchantSlugOrderOrderIdRouteImport.update({
+    id: '/order/$orderId',
+    path: '/order/$orderId',
+    getParentRoute: () => StoreMerchantSlugRoute,
+  } as any)
 const ApiPublicQpayWebhookRoute = ApiPublicQpayWebhookRouteImport.update({
   id: '/api/public/qpay/webhook',
   path: '/api/public/qpay/webhook',
@@ -125,8 +139,10 @@ export interface FileRoutesByFullPath {
   '/merchant/dashboard/settings': typeof MerchantDashboardSettingsRoute
   '/merchant/dashboard/users': typeof MerchantDashboardUsersRoute
   '/store/$merchantSlug/cart': typeof StoreMerchantSlugCartRoute
+  '/store/$merchantSlug/checkout': typeof StoreMerchantSlugCheckoutRoute
   '/merchant/dashboard/': typeof MerchantDashboardIndexRoute
   '/api/public/qpay/webhook': typeof ApiPublicQpayWebhookRoute
+  '/store/$merchantSlug/order/$orderId': typeof StoreMerchantSlugOrderOrderIdRoute
   '/store/$merchantSlug/product/$productSlug': typeof StoreMerchantSlugProductProductSlugRoute
 }
 export interface FileRoutesByTo {
@@ -142,8 +158,10 @@ export interface FileRoutesByTo {
   '/merchant/dashboard/settings': typeof MerchantDashboardSettingsRoute
   '/merchant/dashboard/users': typeof MerchantDashboardUsersRoute
   '/store/$merchantSlug/cart': typeof StoreMerchantSlugCartRoute
+  '/store/$merchantSlug/checkout': typeof StoreMerchantSlugCheckoutRoute
   '/merchant/dashboard': typeof MerchantDashboardIndexRoute
   '/api/public/qpay/webhook': typeof ApiPublicQpayWebhookRoute
+  '/store/$merchantSlug/order/$orderId': typeof StoreMerchantSlugOrderOrderIdRoute
   '/store/$merchantSlug/product/$productSlug': typeof StoreMerchantSlugProductProductSlugRoute
 }
 export interface FileRoutesById {
@@ -161,8 +179,10 @@ export interface FileRoutesById {
   '/merchant/dashboard/settings': typeof MerchantDashboardSettingsRoute
   '/merchant/dashboard/users': typeof MerchantDashboardUsersRoute
   '/store/$merchantSlug/cart': typeof StoreMerchantSlugCartRoute
+  '/store/$merchantSlug/checkout': typeof StoreMerchantSlugCheckoutRoute
   '/merchant/dashboard/': typeof MerchantDashboardIndexRoute
   '/api/public/qpay/webhook': typeof ApiPublicQpayWebhookRoute
+  '/store/$merchantSlug/order/$orderId': typeof StoreMerchantSlugOrderOrderIdRoute
   '/store/$merchantSlug/product/$productSlug': typeof StoreMerchantSlugProductProductSlugRoute
 }
 export interface FileRouteTypes {
@@ -181,8 +201,10 @@ export interface FileRouteTypes {
     | '/merchant/dashboard/settings'
     | '/merchant/dashboard/users'
     | '/store/$merchantSlug/cart'
+    | '/store/$merchantSlug/checkout'
     | '/merchant/dashboard/'
     | '/api/public/qpay/webhook'
+    | '/store/$merchantSlug/order/$orderId'
     | '/store/$merchantSlug/product/$productSlug'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -198,8 +220,10 @@ export interface FileRouteTypes {
     | '/merchant/dashboard/settings'
     | '/merchant/dashboard/users'
     | '/store/$merchantSlug/cart'
+    | '/store/$merchantSlug/checkout'
     | '/merchant/dashboard'
     | '/api/public/qpay/webhook'
+    | '/store/$merchantSlug/order/$orderId'
     | '/store/$merchantSlug/product/$productSlug'
   id:
     | '__root__'
@@ -216,8 +240,10 @@ export interface FileRouteTypes {
     | '/merchant/dashboard/settings'
     | '/merchant/dashboard/users'
     | '/store/$merchantSlug/cart'
+    | '/store/$merchantSlug/checkout'
     | '/merchant/dashboard/'
     | '/api/public/qpay/webhook'
+    | '/store/$merchantSlug/order/$orderId'
     | '/store/$merchantSlug/product/$productSlug'
   fileRoutesById: FileRoutesById
 }
@@ -290,6 +316,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MerchantDashboardIndexRouteImport
       parentRoute: typeof MerchantDashboardRoute
     }
+    '/store/$merchantSlug/checkout': {
+      id: '/store/$merchantSlug/checkout'
+      path: '/checkout'
+      fullPath: '/store/$merchantSlug/checkout'
+      preLoaderRoute: typeof StoreMerchantSlugCheckoutRouteImport
+      parentRoute: typeof StoreMerchantSlugRoute
+    }
     '/store/$merchantSlug/cart': {
       id: '/store/$merchantSlug/cart'
       path: '/cart'
@@ -339,6 +372,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof StoreMerchantSlugProductProductSlugRouteImport
       parentRoute: typeof StoreMerchantSlugRoute
     }
+    '/store/$merchantSlug/order/$orderId': {
+      id: '/store/$merchantSlug/order/$orderId'
+      path: '/order/$orderId'
+      fullPath: '/store/$merchantSlug/order/$orderId'
+      preLoaderRoute: typeof StoreMerchantSlugOrderOrderIdRouteImport
+      parentRoute: typeof StoreMerchantSlugRoute
+    }
     '/api/public/qpay/webhook': {
       id: '/api/public/qpay/webhook'
       path: '/api/public/qpay/webhook'
@@ -372,11 +412,15 @@ const MerchantDashboardRouteWithChildren =
 
 interface StoreMerchantSlugRouteChildren {
   StoreMerchantSlugCartRoute: typeof StoreMerchantSlugCartRoute
+  StoreMerchantSlugCheckoutRoute: typeof StoreMerchantSlugCheckoutRoute
+  StoreMerchantSlugOrderOrderIdRoute: typeof StoreMerchantSlugOrderOrderIdRoute
   StoreMerchantSlugProductProductSlugRoute: typeof StoreMerchantSlugProductProductSlugRoute
 }
 
 const StoreMerchantSlugRouteChildren: StoreMerchantSlugRouteChildren = {
   StoreMerchantSlugCartRoute: StoreMerchantSlugCartRoute,
+  StoreMerchantSlugCheckoutRoute: StoreMerchantSlugCheckoutRoute,
+  StoreMerchantSlugOrderOrderIdRoute: StoreMerchantSlugOrderOrderIdRoute,
   StoreMerchantSlugProductProductSlugRoute:
     StoreMerchantSlugProductProductSlugRoute,
 }
@@ -397,3 +441,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
