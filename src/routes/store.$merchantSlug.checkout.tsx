@@ -125,6 +125,20 @@ function CheckoutPage() {
     }
   }
 
+  // Re-validate coupon when subtotal changes (price/stock/items)
+  useEffect(() => {
+    if (!coupon) return;
+    (async () => {
+      const r = await validateFn({ data: { merchantSlug, code: coupon.code, subtotal } });
+      if (r.ok) {
+        if (r.discount !== coupon.discount) setCoupon({ code: r.coupon.code, discount: r.discount });
+      } else {
+        setCoupon(null);
+        toast.error(r.error);
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [subtotal]);
   function clientStockCheck(): string | null {
     for (const i of items) {
       const p = productMap.get(i.productId);
