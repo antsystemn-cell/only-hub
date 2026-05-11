@@ -1,0 +1,218 @@
+import { createServerFn } from "@tanstack/react-start";
+import { getRequestUrl } from "@tanstack/react-start/server";
+import { z } from "zod";
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { createQpayInvoice, checkQpayPayment } from "@/lib/qpay.server";
+
+const ItemSchema = z.object({
+  productId: z.string().uuid(),
+  name: z.string().max(500),
+  price: z.number().min(0),
+  quantity: z.number().int().min(1).max(999),
+  color: z.string().max(100).nullable().optional(),
+  size: z.string().max(100).nullable().optional(),
+  image: z.string().max(2000).nullable().optional(),
+});
+
+const CreateInput = z.object({
+  merchantSlug: z.string().min(1).max(100),
+  items: z.array(ItemSchema).min(1).max(100),
+  customerName: z.string().trim().min(1).max(120),
+  phone: z.string().trim().min(6).max(30),
+  shippingAddress: z.string().trim().min(3).max(500),
+  branch: z.string().max(120).optional().nullable(),
+  note: z.string().max(1000).optional().nullable(),
+  deliveryOptionId: z.string().uuid().nullable().optional(),
+  paymentMethod: z.enum(["qpay", "cash", "transfer", "manual"]).default("qpay"),
+  couponCode: z.string().max(50).optional().nullable(),
+});
+
+function variantKey(c?: string | null, s?: string | null) {
+  return c && s ? `${c}|${s}` : c || s || "";
+}
+
+export const createOrder = createServerFn({ method: "POST" })
+  .inputValidator((d) => CreateInput.parse(d))
+  .handler(async ({ data }) => {
+    // 1. Merchant
+    const { data: merchant } = await supabaseAdmin
+      .from("merchants")
+      .select("id,name,slug")
+      .eq("slug", data.merchantSlug)
+      .maybeSingle();
+    if (!merchant) return { ok: false as const, error: "Дэлгүүр олдсонгүй" };
+
+    // 2. Validate stock + price
+    const ids = Array.from(new Set(data.items.map((i) => i.productId)));
+    const { data: products } = await supabaseAdmin
+      .from("products")
+      .select("id,name,price,stock_quantity,variant_stock,is_active,merchant_id")
+      .in("id", ids);
+    const pmap = new Map<string, any>((products ?? []).map((p) => [p.id, p]));
+
+    const issues: string[] = [];
+    let subtotal = 0;
+    const normalized = data.items.map((i) => {
+      const p = pmap.get(i.productId);
+      if (!p || !p.is_active || p.merchant_id !== merchant.id) {
+        issues.push(`"${i.name}" бараа байхгүй болсон`);
+        return null;
+      }
+      const k = variantKey(i.color, i.size);
+      const stock =
+        k && p.variant_stock && (p.variant_stock as any)[k] != null
+          ? (p.variant_stock as any)[k]
+          : p.stock_quantity;
+      if (stock < i.quantity) {
+        issues.push(`"${p.name}" — үлдэгдэл ${stock}, та ${i.quantity}-г сонгосон`);
+      }
+      const realPrice = Number(p.price);
+      if (Math.abs(realPrice - i.price) > 0.01) {
+        // price changed; use real price
+        i.price = realPrice;
+      }
+      subtotal += realPrice * i.quantity;
+      return { ...i, price: realPrice, name: p.name };
+    });
+    if (issues.length) return { ok: false as const, error: issues.join("\n") };
+
+    // 3. Delivery
+    let deliveryFee = 0;
+    if (data.deliveryOptionId) {
+      const { data: opt } = await supabaseAdmin
+        .from("delivery_options")
+        .select("id,price,merchant_id,is_active")
+        .eq("id", data.deliveryOptionId)
+        .maybeSingle();
+      if (!opt || opt.merchant_id !== merchant.id || !opt.is_active) {
+        return { ok: false as const, error: "Хүргэлтийн сонголт буруу" };
+      }
+      deliveryFee = Number(opt.price);
+    }
+
+    // 4. Coupon
+    let discount = 0;
+    let couponId: string | null = null;
+    if (data.couponCode) {
+      const { data: coupon } = await supabaseAdmin
+        .from("coupons")
+        .select("*")
+        .eq("merchant_id", merchant.id)
+        .ilike("code", data.couponCode)
+        .eq("is_active", true)
+        .maybeSingle();
+      if (coupon) {
+        const expired = coupon.expires_at && new Date(coupon.expires_at) < new Date();
+        const maxed = coupon.max_uses != null && coupon.used_count >= coupon.max_uses;
+        const minOk = subtotal >= Number(coupon.min_order);
+        if (!expired && !maxed && minOk) {
+          discount =
+            coupon.discount_type === "percent"
+              ? Math.round((subtotal * Number(coupon.discount_value)) / 100)
+              : Math.min(subtotal, Number(coupon.discount_value));
+          couponId = coupon.id;
+        }
+      }
+    }
+
+    const total = Math.max(0, subtotal - discount) + deliveryFee;
+
+    // 5. Insert order
+    const { data: order, error: orderErr } = await supabaseAdmin
+      .from("orders")
+      .insert({
+        merchant_id: merchant.id,
+        items: normalized as any,
+        total,
+        delivery_fee: deliveryFee,
+        delivery_option_id: data.deliveryOptionId ?? null,
+        guest_name: data.customerName,
+        phone: data.phone,
+        shipping_address: data.shippingAddress,
+        branch: data.branch ?? null,
+        note: data.note ?? null,
+        is_guest: true,
+        source: "web",
+        payment_method: data.paymentMethod,
+        payment_status: "unpaid",
+        status: "pending",
+      })
+      .select("*")
+      .single();
+    if (orderErr || !order) return { ok: false as const, error: orderErr?.message ?? "Захиалга үүсгэхэд алдаа" };
+
+    if (couponId) {
+      await supabaseAdmin.rpc("noop").then(() => null).catch(() => null);
+      await supabaseAdmin
+        .from("coupons")
+        .update({ used_count: (await supabaseAdmin.from("coupons").select("used_count").eq("id", couponId).single()).data!.used_count + 1 })
+        .eq("id", couponId);
+    }
+
+    // 6. QPay invoice (if applicable)
+    let qpay: any = null;
+    if (data.paymentMethod === "qpay") {
+      try {
+        const reqUrl = getRequestUrl();
+        const callbackUrl = `${reqUrl.origin}/api/public/qpay/webhook?order_id=${order.id}`;
+        qpay = await createQpayInvoice({
+          merchantId: merchant.id,
+          orderId: order.id,
+          amount: total,
+          description: `${merchant.name} - ${order.external_ref ?? order.id}`,
+          callbackUrl,
+        });
+        if (qpay?.invoice_id) {
+          await supabaseAdmin
+            .from("orders")
+            .update({ qpay_invoice_id: qpay.invoice_id })
+            .eq("id", order.id);
+        }
+      } catch (e: any) {
+        console.error("QPay invoice failed:", e?.message);
+      }
+    }
+
+    return {
+      ok: true as const,
+      order: {
+        id: order.id,
+        external_ref: order.external_ref,
+        total,
+        subtotal,
+        discount,
+        deliveryFee,
+        payment_method: order.payment_method,
+        payment_status: order.payment_status,
+      },
+      qpay,
+    };
+  });
+
+export const getOrderStatus = createServerFn({ method: "POST" })
+  .inputValidator((d) => z.object({ orderId: z.string().uuid() }).parse(d))
+  .handler(async ({ data }) => {
+    const { data: order } = await supabaseAdmin
+      .from("orders")
+      .select("id,external_ref,status,payment_status,total,merchant_id,qpay_invoice_id,payment_method")
+      .eq("id", data.orderId)
+      .maybeSingle();
+    if (!order) return { ok: false as const, error: "Захиалга олдсонгүй" };
+
+    // Active poll: ask QPay if still unpaid
+    if (order.payment_status === "unpaid" && order.payment_method === "qpay" && order.qpay_invoice_id) {
+      try {
+        const paid = await checkQpayPayment(order.merchant_id, order.qpay_invoice_id);
+        if (paid) {
+          await supabaseAdmin
+            .from("orders")
+            .update({ payment_status: "confirmed" })
+            .eq("id", order.id);
+          order.payment_status = "confirmed";
+        }
+      } catch (e: any) {
+        console.error("QPay check failed:", e?.message);
+      }
+    }
+    return { ok: true as const, order };
+  });

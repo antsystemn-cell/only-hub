@@ -24,6 +24,7 @@ import { Route as MerchantDashboardProductsRouteImport } from './routes/merchant
 import { Route as MerchantDashboardOrdersRouteImport } from './routes/merchant.dashboard.orders'
 import { Route as MerchantDashboardChatbotRouteImport } from './routes/merchant.dashboard.chatbot'
 import { Route as StoreMerchantSlugProductProductSlugRouteImport } from './routes/store.$merchantSlug.product.$productSlug'
+import { Route as ApiPublicQpayWebhookRouteImport } from './routes/api.public.qpay.webhook'
 
 const StoresRoute = StoresRouteImport.update({
   id: '/stores',
@@ -104,6 +105,11 @@ const StoreMerchantSlugProductProductSlugRoute =
     path: '/product/$productSlug',
     getParentRoute: () => StoreMerchantSlugRoute,
   } as any)
+const ApiPublicQpayWebhookRoute = ApiPublicQpayWebhookRouteImport.update({
+  id: '/api/public/qpay/webhook',
+  path: '/api/public/qpay/webhook',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -120,6 +126,7 @@ export interface FileRoutesByFullPath {
   '/merchant/dashboard/users': typeof MerchantDashboardUsersRoute
   '/store/$merchantSlug/cart': typeof StoreMerchantSlugCartRoute
   '/merchant/dashboard/': typeof MerchantDashboardIndexRoute
+  '/api/public/qpay/webhook': typeof ApiPublicQpayWebhookRoute
   '/store/$merchantSlug/product/$productSlug': typeof StoreMerchantSlugProductProductSlugRoute
 }
 export interface FileRoutesByTo {
@@ -136,6 +143,7 @@ export interface FileRoutesByTo {
   '/merchant/dashboard/users': typeof MerchantDashboardUsersRoute
   '/store/$merchantSlug/cart': typeof StoreMerchantSlugCartRoute
   '/merchant/dashboard': typeof MerchantDashboardIndexRoute
+  '/api/public/qpay/webhook': typeof ApiPublicQpayWebhookRoute
   '/store/$merchantSlug/product/$productSlug': typeof StoreMerchantSlugProductProductSlugRoute
 }
 export interface FileRoutesById {
@@ -154,6 +162,7 @@ export interface FileRoutesById {
   '/merchant/dashboard/users': typeof MerchantDashboardUsersRoute
   '/store/$merchantSlug/cart': typeof StoreMerchantSlugCartRoute
   '/merchant/dashboard/': typeof MerchantDashboardIndexRoute
+  '/api/public/qpay/webhook': typeof ApiPublicQpayWebhookRoute
   '/store/$merchantSlug/product/$productSlug': typeof StoreMerchantSlugProductProductSlugRoute
 }
 export interface FileRouteTypes {
@@ -173,6 +182,7 @@ export interface FileRouteTypes {
     | '/merchant/dashboard/users'
     | '/store/$merchantSlug/cart'
     | '/merchant/dashboard/'
+    | '/api/public/qpay/webhook'
     | '/store/$merchantSlug/product/$productSlug'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -189,6 +199,7 @@ export interface FileRouteTypes {
     | '/merchant/dashboard/users'
     | '/store/$merchantSlug/cart'
     | '/merchant/dashboard'
+    | '/api/public/qpay/webhook'
     | '/store/$merchantSlug/product/$productSlug'
   id:
     | '__root__'
@@ -206,6 +217,7 @@ export interface FileRouteTypes {
     | '/merchant/dashboard/users'
     | '/store/$merchantSlug/cart'
     | '/merchant/dashboard/'
+    | '/api/public/qpay/webhook'
     | '/store/$merchantSlug/product/$productSlug'
   fileRoutesById: FileRoutesById
 }
@@ -217,6 +229,7 @@ export interface RootRouteChildren {
   MerchantLoginRoute: typeof MerchantLoginRoute
   MerchantRegisterRoute: typeof MerchantRegisterRoute
   StoreMerchantSlugRoute: typeof StoreMerchantSlugRouteWithChildren
+  ApiPublicQpayWebhookRoute: typeof ApiPublicQpayWebhookRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -326,6 +339,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof StoreMerchantSlugProductProductSlugRouteImport
       parentRoute: typeof StoreMerchantSlugRoute
     }
+    '/api/public/qpay/webhook': {
+      id: '/api/public/qpay/webhook'
+      path: '/api/public/qpay/webhook'
+      fullPath: '/api/public/qpay/webhook'
+      preLoaderRoute: typeof ApiPublicQpayWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -372,7 +392,18 @@ const rootRouteChildren: RootRouteChildren = {
   MerchantLoginRoute: MerchantLoginRoute,
   MerchantRegisterRoute: MerchantRegisterRoute,
   StoreMerchantSlugRoute: StoreMerchantSlugRouteWithChildren,
+  ApiPublicQpayWebhookRoute: ApiPublicQpayWebhookRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
