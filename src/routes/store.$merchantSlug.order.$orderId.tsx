@@ -18,6 +18,8 @@ export const Route = createFileRoute("/store/$merchantSlug/order/$orderId")({
 function OrderConfirmationPage() {
   const { merchantSlug, orderId } = Route.useParams();
   const getStatusFn = useServerFn(getOrderStatus);
+  const retryFn = useServerFn(retryQpayInvoice);
+  const [retrying, setRetrying] = useState(false);
 
   const { data: order, refetch } = useQuery({
     queryKey: ["order-status", orderId],
