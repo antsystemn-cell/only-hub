@@ -32,6 +32,10 @@ function OrdersPage() {
   const merchantId = primaryMerchantId!;
   const qc = useQueryClient();
   const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [paymentFilter, setPaymentFilter] = useState<string>("all");
+  const [dateFrom, setDateFrom] = useState<string>("");
+  const [dateTo, setDateTo] = useState<string>("");
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [showManual, setShowManual] = useState(false);
 
@@ -43,11 +47,25 @@ function OrdersPage() {
     },
   });
 
-  const filtered = orders.filter((o: any) =>
-    !search || (o.phone ?? "").includes(search) || (o.external_ref ?? "").toLowerCase().includes(search.toLowerCase())
-  );
+  const filtered = useMemo(() => orders.filter((o: any) => {
+    if (search && !((o.phone ?? "").includes(search) || (o.external_ref ?? "").toLowerCase().includes(search.toLowerCase()))) return false;
+    if (statusFilter !== "all" && o.status !== statusFilter) return false;
+    if (paymentFilter !== "all" && o.payment_status !== paymentFilter) return false;
+    if (dateFrom && new Date(o.created_at) < new Date(dateFrom)) return false;
+    if (dateTo) {
+      const end = new Date(dateTo); end.setHours(23, 59, 59, 999);
+      if (new Date(o.created_at) > end) return false;
+    }
+    return true;
+  }), [orders, search, statusFilter, paymentFilter, dateFrom, dateTo]);
   const active = filtered.filter((o: any) => o.status !== "cancelled");
   const cancelled = filtered.filter((o: any) => o.status === "cancelled").slice(0, 5);
+
+  const totals = useMemo(() => ({
+    count: filtered.length,
+    sum: filtered.reduce((s: number, o: any) => s + Number(o.total ?? 0), 0),
+    paid: filtered.filter((o: any) => o.payment_status === "confirmed").reduce((s: number, o: any) => s + Number(o.total ?? 0), 0),
+  }), [filtered]);
 
   const updateStatus = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
@@ -105,7 +123,9 @@ function OrdersPage() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-3xl font-bold">Захиалга</h1>
-          <p className="text-sm text-muted-foreground">Нийт {orders.length}</p>
+          <p className="text-sm text-muted-foreground">
+            Нийт {orders.length} • Шүүлтийн дүн: {fmtMnt(totals.sum)} ({totals.count}) • Төлөгдсөн: {fmtMnt(totals.paid)}
+          </p>
         </div>
         <div className="flex gap-2">
           <Button onClick={() => setShowManual(true)}><Plus className="mr-2 h-4 w-4" /> Гараар оруулах</Button>
@@ -113,15 +133,42 @@ function OrdersPage() {
       </div>
 
       <Card className="rounded-2xl p-4">
-        <div className="mb-4 flex flex-wrap items-center gap-2">
-          <div className="relative flex-1 min-w-[200px]">
+        <div className="mb-4 grid gap-2 md:grid-cols-[1fr_180px_180px_140px_140px]">
+          <div className="relative">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input className="pl-9" placeholder="Утас эсвэл захиалгын дугаар..." value={search} onChange={(e) => setSearch(e.target.value)} />
           </div>
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger><SelectValue placeholder="Төлөв" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Бүх төлөв</SelectItem>
+              {STATUSES.map((s) => <SelectItem key={s} value={s}>{STATUS_LABELS[s] ?? s}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <Select value={paymentFilter} onValueChange={setPaymentFilter}>
+            <SelectTrigger><SelectValue placeholder="Төлбөр" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Бүх төлбөр</SelectItem>
+              <SelectItem value="unpaid">Төлөгдөөгүй</SelectItem>
+              <SelectItem value="confirmed">Төлөгдсөн</SelectItem>
+              <SelectItem value="refunded">Буцаагдсан</SelectItem>
+            </SelectContent>
+          </Select>
+          <Input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} />
+          <Input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} />
+        </div>
+        <div className="mb-4 flex flex-wrap items-center gap-2">
           <Badge variant="secondary">Сонгосон: {selected.size}</Badge>
-          <Button size="sm" variant="outline" onClick={exportExcel}><FileSpreadsheet className="mr-1 h-4 w-4" /> Excel</Button>
-          <Button size="sm" variant="outline" onClick={exportLabels}><Tag className="mr-1 h-4 w-4" /> Шошго</Button>
-          <Button size="sm" variant="outline" onClick={() => window.print()}><Printer className="mr-1 h-4 w-4" /> Хэвлэх</Button>
+          {(statusFilter !== "all" || paymentFilter !== "all" || dateFrom || dateTo || search) && (
+            <Button size="sm" variant="ghost" onClick={() => { setStatusFilter("all"); setPaymentFilter("all"); setDateFrom(""); setDateTo(""); setSearch(""); }}>
+              <X className="mr-1 h-3 w-3" /> Шүүлт цэвэрлэх
+            </Button>
+          )}
+          <div className="ml-auto flex flex-wrap gap-2">
+            <Button size="sm" variant="outline" onClick={exportExcel}><FileSpreadsheet className="mr-1 h-4 w-4" /> Excel</Button>
+            <Button size="sm" variant="outline" onClick={exportLabels}><Tag className="mr-1 h-4 w-4" /> Шошго</Button>
+            <Button size="sm" variant="outline" onClick={() => window.print()}><Printer className="mr-1 h-4 w-4" /> Хэвлэх</Button>
+          </div>
         </div>
 
         <div className="space-y-2">

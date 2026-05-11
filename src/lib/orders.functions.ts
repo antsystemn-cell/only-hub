@@ -157,6 +157,7 @@ export const createOrder = createServerFn({ method: "POST" })
 
     // 6. QPay invoice (if applicable)
     let qpay: any = null;
+    let qpayError: string | null = null;
     if (data.paymentMethod === "qpay") {
       try {
         const reqUrl = getRequestUrl();
@@ -168,14 +169,23 @@ export const createOrder = createServerFn({ method: "POST" })
           description: `${merchant.name} - ${order.external_ref ?? order.id}`,
           callbackUrl,
         });
-        if (qpay?.invoice_id) {
+        if (!qpay) {
+          qpayError = "QPay тохиргоо хийгдээгүй байна (мерчантад invoice_code алга)";
+        } else if (qpay?.invoice_id) {
           await supabaseAdmin
             .from("orders")
-            .update({ qpay_invoice_id: qpay.invoice_id })
+            .update({ qpay_invoice_id: qpay.invoice_id, payment_error: null })
             .eq("id", order.id);
         }
       } catch (e: any) {
-        console.error("QPay invoice failed:", e?.message);
+        qpayError = e?.message ?? "QPay invoice үүсгэхэд алдаа";
+        console.error("QPay invoice failed:", qpayError);
+      }
+      if (qpayError) {
+        await supabaseAdmin
+          .from("orders")
+          .update({ payment_error: qpayError })
+          .eq("id", order.id);
       }
     }
 
@@ -190,6 +200,7 @@ export const createOrder = createServerFn({ method: "POST" })
         deliveryFee,
         payment_method: order.payment_method,
         payment_status: order.payment_status,
+        payment_error: qpayError,
       },
       qpay,
     };
@@ -200,25 +211,71 @@ export const getOrderStatus = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const { data: order } = await supabaseAdmin
       .from("orders")
-      .select("id,external_ref,status,payment_status,total,merchant_id,qpay_invoice_id,payment_method")
+      .select("id,external_ref,status,payment_status,total,merchant_id,qpay_invoice_id,payment_method,payment_error")
       .eq("id", data.orderId)
       .maybeSingle();
     if (!order) return { ok: false as const, error: "Захиалга олдсонгүй" };
 
-    // Active poll: ask QPay if still unpaid
     if (order.payment_status === "unpaid" && order.payment_method === "qpay" && order.qpay_invoice_id) {
       try {
         const paid = await checkQpayPayment(order.merchant_id, order.qpay_invoice_id);
         if (paid) {
           await supabaseAdmin
             .from("orders")
-            .update({ payment_status: "confirmed" })
+            .update({ payment_status: "confirmed", payment_error: null })
             .eq("id", order.id);
           order.payment_status = "confirmed";
+          order.payment_error = null;
         }
       } catch (e: any) {
         console.error("QPay check failed:", e?.message);
       }
     }
     return { ok: true as const, order };
+  });
+
+export const retryQpayInvoice = createServerFn({ method: "POST" })
+  .inputValidator((d) => z.object({ orderId: z.string().uuid() }).parse(d))
+  .handler(async ({ data }) => {
+    const { data: order } = await supabaseAdmin
+      .from("orders")
+      .select("id,merchant_id,total,external_ref,payment_method,payment_status")
+      .eq("id", data.orderId)
+      .maybeSingle();
+    if (!order) return { ok: false as const, error: "Захиалга олдсонгүй" };
+    if (order.payment_status === "confirmed") return { ok: false as const, error: "Аль хэдийн төлөгдсөн" };
+    if (order.payment_method !== "qpay") return { ok: false as const, error: "QPay-ээр төлөх захиалга биш" };
+
+    const { data: merchant } = await supabaseAdmin
+      .from("merchants")
+      .select("id,name")
+      .eq("id", order.merchant_id)
+      .maybeSingle();
+    if (!merchant) return { ok: false as const, error: "Дэлгүүр олдсонгүй" };
+
+    try {
+      const reqUrl = getRequestUrl();
+      const callbackUrl = `${reqUrl.origin}/api/public/qpay/webhook?order_id=${order.id}`;
+      const qpay = await createQpayInvoice({
+        merchantId: order.merchant_id,
+        orderId: order.id,
+        amount: Number(order.total),
+        description: `${merchant.name} - ${order.external_ref ?? order.id}`,
+        callbackUrl,
+      });
+      if (!qpay) {
+        const err = "QPay тохиргоо хийгдээгүй байна";
+        await supabaseAdmin.from("orders").update({ payment_error: err }).eq("id", order.id);
+        return { ok: false as const, error: err };
+      }
+      await supabaseAdmin
+        .from("orders")
+        .update({ qpay_invoice_id: qpay.invoice_id, payment_error: null })
+        .eq("id", order.id);
+      return { ok: true as const, qpay };
+    } catch (e: any) {
+      const err = e?.message ?? "QPay invoice үүсгэхэд алдаа";
+      await supabaseAdmin.from("orders").update({ payment_error: err }).eq("id", order.id);
+      return { ok: false as const, error: err };
+    }
   });
