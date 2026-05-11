@@ -276,6 +276,7 @@ export type Database = {
           items: Json
           merchant_id: string
           note: string | null
+          payment_error: string | null
           payment_method: string
           payment_status: string
           phone: string | null
@@ -305,6 +306,7 @@ export type Database = {
           items: Json
           merchant_id: string
           note?: string | null
+          payment_error?: string | null
           payment_method?: string
           payment_status?: string
           phone?: string | null
@@ -334,6 +336,7 @@ export type Database = {
           items?: Json
           merchant_id?: string
           note?: string | null
+          payment_error?: string | null
           payment_method?: string
           payment_status?: string
           phone?: string | null
