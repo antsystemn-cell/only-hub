@@ -17,6 +17,7 @@ import { Route as MerchantRegisterRouteImport } from './routes/merchant.register
 import { Route as MerchantLoginRouteImport } from './routes/merchant.login'
 import { Route as MerchantDashboardRouteImport } from './routes/merchant.dashboard'
 import { Route as MerchantDashboardIndexRouteImport } from './routes/merchant.dashboard.index'
+import { Route as StoreMerchantSlugCartRouteImport } from './routes/store.$merchantSlug.cart'
 import { Route as MerchantDashboardUsersRouteImport } from './routes/merchant.dashboard.users'
 import { Route as MerchantDashboardSettingsRouteImport } from './routes/merchant.dashboard.settings'
 import { Route as MerchantDashboardProductsRouteImport } from './routes/merchant.dashboard.products'
@@ -63,6 +64,11 @@ const MerchantDashboardIndexRoute = MerchantDashboardIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => MerchantDashboardRoute,
+} as any)
+const StoreMerchantSlugCartRoute = StoreMerchantSlugCartRouteImport.update({
+  id: '/cart',
+  path: '/cart',
+  getParentRoute: () => StoreMerchantSlugRoute,
 } as any)
 const MerchantDashboardUsersRoute = MerchantDashboardUsersRouteImport.update({
   id: '/users',
@@ -112,6 +118,7 @@ export interface FileRoutesByFullPath {
   '/merchant/dashboard/products': typeof MerchantDashboardProductsRoute
   '/merchant/dashboard/settings': typeof MerchantDashboardSettingsRoute
   '/merchant/dashboard/users': typeof MerchantDashboardUsersRoute
+  '/store/$merchantSlug/cart': typeof StoreMerchantSlugCartRoute
   '/merchant/dashboard/': typeof MerchantDashboardIndexRoute
   '/store/$merchantSlug/product/$productSlug': typeof StoreMerchantSlugProductProductSlugRoute
 }
@@ -127,6 +134,7 @@ export interface FileRoutesByTo {
   '/merchant/dashboard/products': typeof MerchantDashboardProductsRoute
   '/merchant/dashboard/settings': typeof MerchantDashboardSettingsRoute
   '/merchant/dashboard/users': typeof MerchantDashboardUsersRoute
+  '/store/$merchantSlug/cart': typeof StoreMerchantSlugCartRoute
   '/merchant/dashboard': typeof MerchantDashboardIndexRoute
   '/store/$merchantSlug/product/$productSlug': typeof StoreMerchantSlugProductProductSlugRoute
 }
@@ -144,6 +152,7 @@ export interface FileRoutesById {
   '/merchant/dashboard/products': typeof MerchantDashboardProductsRoute
   '/merchant/dashboard/settings': typeof MerchantDashboardSettingsRoute
   '/merchant/dashboard/users': typeof MerchantDashboardUsersRoute
+  '/store/$merchantSlug/cart': typeof StoreMerchantSlugCartRoute
   '/merchant/dashboard/': typeof MerchantDashboardIndexRoute
   '/store/$merchantSlug/product/$productSlug': typeof StoreMerchantSlugProductProductSlugRoute
 }
@@ -162,6 +171,7 @@ export interface FileRouteTypes {
     | '/merchant/dashboard/products'
     | '/merchant/dashboard/settings'
     | '/merchant/dashboard/users'
+    | '/store/$merchantSlug/cart'
     | '/merchant/dashboard/'
     | '/store/$merchantSlug/product/$productSlug'
   fileRoutesByTo: FileRoutesByTo
@@ -177,6 +187,7 @@ export interface FileRouteTypes {
     | '/merchant/dashboard/products'
     | '/merchant/dashboard/settings'
     | '/merchant/dashboard/users'
+    | '/store/$merchantSlug/cart'
     | '/merchant/dashboard'
     | '/store/$merchantSlug/product/$productSlug'
   id:
@@ -193,6 +204,7 @@ export interface FileRouteTypes {
     | '/merchant/dashboard/products'
     | '/merchant/dashboard/settings'
     | '/merchant/dashboard/users'
+    | '/store/$merchantSlug/cart'
     | '/merchant/dashboard/'
     | '/store/$merchantSlug/product/$productSlug'
   fileRoutesById: FileRoutesById
@@ -265,6 +277,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MerchantDashboardIndexRouteImport
       parentRoute: typeof MerchantDashboardRoute
     }
+    '/store/$merchantSlug/cart': {
+      id: '/store/$merchantSlug/cart'
+      path: '/cart'
+      fullPath: '/store/$merchantSlug/cart'
+      preLoaderRoute: typeof StoreMerchantSlugCartRouteImport
+      parentRoute: typeof StoreMerchantSlugRoute
+    }
     '/merchant/dashboard/users': {
       id: '/merchant/dashboard/users'
       path: '/users'
@@ -332,10 +351,12 @@ const MerchantDashboardRouteWithChildren =
   MerchantDashboardRoute._addFileChildren(MerchantDashboardRouteChildren)
 
 interface StoreMerchantSlugRouteChildren {
+  StoreMerchantSlugCartRoute: typeof StoreMerchantSlugCartRoute
   StoreMerchantSlugProductProductSlugRoute: typeof StoreMerchantSlugProductProductSlugRoute
 }
 
 const StoreMerchantSlugRouteChildren: StoreMerchantSlugRouteChildren = {
+  StoreMerchantSlugCartRoute: StoreMerchantSlugCartRoute,
   StoreMerchantSlugProductProductSlugRoute:
     StoreMerchantSlugProductProductSlugRoute,
 }
