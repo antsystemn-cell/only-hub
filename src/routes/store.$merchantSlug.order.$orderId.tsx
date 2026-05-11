@@ -97,17 +97,53 @@ function OrderConfirmationPage() {
 
           <div className="mt-6 text-3xl font-bold">{fmtMnt(Number(order.total))}</div>
 
-          {!paid && order.payment_method === "qpay" && orderDetail?.qpay_invoice_id && (
+          {!paid && order.payment_method === "qpay" && orderDetail?.qpay_invoice_id && !order.payment_error && (
             <div className="mt-6 rounded-lg border bg-muted/30 p-4 text-sm text-muted-foreground">
               QPay-р төлбөр төлж дуусмагц энэ хуудас автоматаар шинэчлэгдэнэ.
               <div className="mt-2 font-mono text-xs">Invoice: {orderDetail.qpay_invoice_id}</div>
             </div>
           )}
 
+          {!paid && order.payment_error && (
+            <div className="mt-6 rounded-lg border border-destructive/40 bg-destructive/10 p-4 text-left text-sm">
+              <div className="flex items-center gap-2 font-medium text-destructive">
+                <AlertTriangle className="h-4 w-4" /> Төлбөр үүсгэхэд алдаа гарлаа
+              </div>
+              <p className="mt-2 text-destructive/90 break-words">{order.payment_error}</p>
+            </div>
+          )}
+
           {!paid && (
-            <Button className="mt-6" variant="outline" onClick={() => refetch()}>
-              Төлбөрийн төлөв шалгах
-            </Button>
+            <div className="mt-6 flex flex-wrap justify-center gap-2">
+              <Button variant="outline" onClick={() => refetch()}>
+                <RefreshCw className="mr-2 h-4 w-4" /> Төлбөрийн төлөв шалгах
+              </Button>
+              {order.payment_method === "qpay" && (
+                <Button
+                  disabled={retrying}
+                  onClick={async () => {
+                    setRetrying(true);
+                    try {
+                      const r = await retryFn({ data: { orderId } });
+                      if (r.ok) {
+                        toast.success("QPay invoice дахин үүслээ");
+                        refetch();
+                      } else {
+                        toast.error(r.error);
+                        refetch();
+                      }
+                    } catch (e: any) {
+                      toast.error(e?.message ?? "Алдаа гарлаа");
+                    } finally {
+                      setRetrying(false);
+                    }
+                  }}
+                >
+                  {retrying ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
+                  QPay дахин оролдох
+                </Button>
+              )}
+            </div>
           )}
 
           <div className="mt-8 flex justify-center gap-3">
