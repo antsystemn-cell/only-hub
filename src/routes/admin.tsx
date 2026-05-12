@@ -71,7 +71,12 @@ function AdminPage() {
   });
 
   if (loading) return <div className="flex min-h-screen items-center justify-center">Уншиж байна...</div>;
-  if (!isPlatformAdmin) return <div className="flex min-h-screen items-center justify-center text-destructive">Зөвшөөрөлгүй</div>;
+  if (!user) return <div className="flex min-h-screen items-center justify-center text-destructive">Эхлээд нэвтэрнэ үү</div>;
+  if (!isPlatformAdmin) {
+    // Roles may still be refreshing
+    if (roles.length === 0) return <div className="flex min-h-screen items-center justify-center text-muted-foreground">Эрх шалгаж байна...</div>;
+    return <div className="flex min-h-screen items-center justify-center text-destructive">Зөвшөөрөлгүй</div>;
+  }
 
   const merchants = merchantsQ.data ?? [];
   const txs = txQ.data ?? [];
