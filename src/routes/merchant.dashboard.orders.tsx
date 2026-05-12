@@ -215,6 +215,21 @@ function OrdersPage() {
                 <span className="text-sm text-muted-foreground">{o.phone}</span>
                 <span className="ml-auto text-sm font-semibold">{fmtMnt(o.total)}</span>
                 <Button size="sm" variant="outline" onClick={() => restore.mutate(o.id)}>Сэргээх</Button>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button size="sm" variant="ghost" className="text-destructive"><Trash2 className="h-4 w-4" /></Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Захиалга устгах уу?</AlertDialogTitle>
+                      <AlertDialogDescription>Энэ үйлдлийг буцаах боломжгүй.</AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Болих</AlertDialogCancel>
+                      <AlertDialogAction onClick={() => deleteOrder.mutate(o.id)}>Устгах</AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               </Card>
             ))}
           </CollapsibleContent>
