@@ -50,8 +50,9 @@ function LoginPage() {
     const rows = rolesData ?? [];
     const merchantId = rows.find((r) => r.merchant_id)?.merchant_id ?? null;
     const isAdmin = rows.some((r) => r.role === "platform_admin");
-    if (merchantId) navigate({ to: "/merchant/dashboard" });
-    else if (isAdmin) navigate({ to: "/admin" });
+    // Hard navigation avoids React state race with auth context
+    if (merchantId) window.location.href = "/merchant/dashboard";
+    else if (isAdmin) window.location.href = "/admin";
     else toast.error("Танд хандах эрх алга. Админтай холбогдоно уу.");
   };
 
