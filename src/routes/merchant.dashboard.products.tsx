@@ -181,6 +181,16 @@ function ProductsPage() {
               <Label>SKU/Бараа код</Label>
               <Input value={editing.product_code ?? ""} onChange={(e) => setEditing({ ...editing, product_code: e.target.value })} />
             </div>
+            <div className="md:col-span-2">
+              <Label>URL slug</Label>
+              <div className="flex items-center gap-2">
+                <Input value={editing.slug ?? ""} placeholder="auto-үүснэ"
+                  onChange={(e) => setEditing({ ...editing, slug: e.target.value })} />
+                <Button type="button" variant="outline" size="sm"
+                  onClick={() => setEditing({ ...editing, slug: slugify(editing.name) })}>Авто</Button>
+              </div>
+              <p className="mt-1 text-xs text-muted-foreground">/store/.../product/{editing.slug || "..."}</p>
+            </div>
             <div>
               <Label>Үнэ</Label>
               <Input type="number" value={editing.price} onChange={(e) => setEditing({ ...editing, price: Number(e.target.value) })} />
