@@ -289,7 +289,18 @@ function OrderRow({ order, checked, onCheck, onStatus, onPayment }: {
             <Button size="sm" variant="outline" onClick={() => onPayment(order.payment_status === "confirmed" ? "unpaid" : "confirmed")}>
               {order.payment_status === "confirmed" ? "Төлөгдөөгүй болгох" : "Төлөгдсөн болгох"}
             </Button>
-            <Button size="sm" variant="outline"><Truck className="mr-1 h-4 w-4" /> Хүргэлт рүү илгээх</Button>
+            <Button size="sm" variant="outline" disabled={!!order.delivery_order_id}
+              onClick={async () => {
+                const ref = `DLV-${order.id.slice(0, 8).toUpperCase()}`;
+                const { error } = await supabase.from("orders").update({
+                  delivery_order_id: ref, delivery_status: "submitted", status: "delivering",
+                }).eq("id", order.id);
+                if (error) toast.error(error.message);
+                else toast.success(`Хүргэлт рүү илгээлээ: ${ref}`);
+              }}>
+              <Truck className="mr-1 h-4 w-4" />
+              {order.delivery_order_id ? `Илгээгдсэн: ${order.delivery_order_id}` : "Хүргэлт рүү илгээх"}
+            </Button>
           </div>
         </div>
       )}
