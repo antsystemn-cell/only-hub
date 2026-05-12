@@ -33,11 +33,26 @@ function LoginPage() {
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { data: signIn, error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error || !signIn.user) {
+      setLoading(false);
+      return toast.error(error?.message ?? "Нэвтрэхэд алдаа");
+    }
+    // Fetch roles immediately so we can redirect without waiting for context
+    const { data: rolesData } = await supabase
+      .from("user_roles")
+      .select("role, merchant_id")
+      .eq("user_id", signIn.user.id);
+    await refreshRoles();
     setLoading(false);
-    if (error) return toast.error(error.message);
     toast.success("Амжилттай нэвтэрлээ");
-    // Redirect handled by useEffect once roles load
+
+    const rows = rolesData ?? [];
+    const merchantId = rows.find((r) => r.merchant_id)?.merchant_id ?? null;
+    const isAdmin = rows.some((r) => r.role === "platform_admin");
+    if (merchantId) navigate({ to: "/merchant/dashboard" });
+    else if (isAdmin) navigate({ to: "/admin" });
+    else toast.error("Танд хандах эрх алга. Админтай холбогдоно уу.");
   };
 
   return (
