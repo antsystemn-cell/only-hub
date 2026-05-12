@@ -33,9 +33,24 @@ function SettingsPage() {
         </TabsList>
         <TabsContent value="categories"><CrudList table="categories" fields={[{ k: "name", l: "Нэр" }, { k: "icon", l: "Icon (emoji)" }]} /></TabsContent>
         <TabsContent value="brands"><CrudList table="brands" fields={[{ k: "name", l: "Нэр" }, { k: "logo_url", l: "Лого URL" }]} /></TabsContent>
-        <TabsContent value="delivery"><CrudList table="delivery_options" fields={[{ k: "name", l: "Нэр" }, { k: "description", l: "Тайлбар" }, { k: "price", l: "Үнэ", type: "number" }, { k: "address", l: "Хаяг" }, { k: "phone", l: "Утас" }]} /></TabsContent>
+        <TabsContent value="delivery"><CrudList table="delivery_options" fields={[
+          { k: "name", l: "Нэр" },
+          { k: "description", l: "Тайлбар" },
+          { k: "price", l: "Үнэ ₮", type: "number" },
+          { k: "address", l: "Хаяг" },
+          { k: "phone", l: "Утас" },
+          { k: "payment_terms", l: "Төлбөрийн нөхцөл" },
+          { k: "estimated_days_min", l: "Хам. бага хоног", type: "number" },
+          { k: "estimated_days_max", l: "Хам. их хоног", type: "number" },
+        ]} hasActiveToggle /></TabsContent>
         <TabsContent value="payments"><PaymentsTab /></TabsContent>
-        <TabsContent value="banners"><CrudList table="promo_banners" fields={[{ k: "title", l: "Гарчиг" }, { k: "subtitle", l: "Дэд гарчиг" }, { k: "button_text", l: "Товчны текст" }, { k: "button_link", l: "Товчны линк" }, { k: "banner_image", l: "Зургийн URL" }]} /></TabsContent>
+        <TabsContent value="banners"><CrudList table="promo_banners" fields={[
+          { k: "title", l: "Гарчиг" },
+          { k: "subtitle", l: "Дэд гарчиг" },
+          { k: "button_text", l: "Товчны текст" },
+          { k: "button_link", l: "Товчны линк" },
+          { k: "banner_image", l: "Зургийн URL" },
+        ]} hasActiveToggle /></TabsContent>
       </Tabs>
     </div>
   );
