@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { Card } from "@/components/ui/card";
@@ -15,8 +15,14 @@ import { Pencil, Check, X } from "lucide-react";
 export const Route = createFileRoute("/admin")({ component: AdminPage });
 
 function AdminPage() {
-  const { isPlatformAdmin, loading } = useAuth();
+  const { isPlatformAdmin, loading, user, refreshRoles, roles } = useAuth();
   const qc = useQueryClient();
+
+  // Refresh roles on mount in case they were granted after the session started
+  useEffect(() => {
+    if (user) refreshRoles();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]);
 
   const merchantsQ = useQuery({
     queryKey: ["admin-merchants"],
@@ -65,7 +71,12 @@ function AdminPage() {
   });
 
   if (loading) return <div className="flex min-h-screen items-center justify-center">Уншиж байна...</div>;
-  if (!isPlatformAdmin) return <div className="flex min-h-screen items-center justify-center text-destructive">Зөвшөөрөлгүй</div>;
+  if (!user) return <div className="flex min-h-screen items-center justify-center text-destructive">Эхлээд нэвтэрнэ үү</div>;
+  if (!isPlatformAdmin) {
+    // Roles may still be refreshing
+    if (roles.length === 0) return <div className="flex min-h-screen items-center justify-center text-muted-foreground">Эрх шалгаж байна...</div>;
+    return <div className="flex min-h-screen items-center justify-center text-destructive">Зөвшөөрөлгүй</div>;
+  }
 
   const merchants = merchantsQ.data ?? [];
   const txs = txQ.data ?? [];
