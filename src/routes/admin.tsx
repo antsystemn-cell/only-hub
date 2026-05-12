@@ -15,8 +15,14 @@ import { Pencil, Check, X } from "lucide-react";
 export const Route = createFileRoute("/admin")({ component: AdminPage });
 
 function AdminPage() {
-  const { isPlatformAdmin, loading } = useAuth();
+  const { isPlatformAdmin, loading, user, refreshRoles, roles } = useAuth();
   const qc = useQueryClient();
+
+  // Refresh roles on mount in case they were granted after the session started
+  useEffect(() => {
+    if (user) refreshRoles();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]);
 
   const merchantsQ = useQuery({
     queryKey: ["admin-merchants"],
