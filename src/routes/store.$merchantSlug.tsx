@@ -1,7 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { fmtMnt } from "@/lib/format";
 
 export const Route = createFileRoute("/store/$merchantSlug")({ component: StorePage });
@@ -17,6 +19,30 @@ function StorePage() {
     enabled: !!merchant?.id,
     queryFn: async () => (await supabase.from("products").select("*").eq("merchant_id", merchant!.id).eq("is_active", true)).data ?? [],
   });
+  const { data: banners = [] } = useQuery({
+    queryKey: ["store-banners", merchant?.id],
+    enabled: !!merchant?.id,
+    queryFn: async () => (await supabase.from("promo_banners").select("*").eq("merchant_id", merchant!.id).eq("is_active", true).order("position")).data ?? [],
+  });
+  const { data: categories = [] } = useQuery({
+    queryKey: ["store-categories", merchant?.id],
+    enabled: !!merchant?.id,
+    queryFn: async () => (await supabase.from("categories").select("*").eq("merchant_id", merchant!.id).order("position")).data ?? [],
+  });
+
+  const [activeBanner, setActiveBanner] = useState(0);
+  const [activeCategory, setActiveCategory] = useState("all");
+
+  useEffect(() => {
+    if (banners.length < 2) return;
+    const t = setInterval(() => setActiveBanner((i) => (i + 1) % banners.length), 5000);
+    return () => clearInterval(t);
+  }, [banners.length]);
+
+  const filteredProducts = useMemo(
+    () => activeCategory === "all" ? products : (products as any[]).filter((p) => p.category === activeCategory),
+    [products, activeCategory]
+  );
 
   if (!merchant) return <div className="flex min-h-screen items-center justify-center text-muted-foreground">Уншиж байна...</div>;
 
@@ -33,8 +59,57 @@ function StorePage() {
       <div className="container mx-auto px-4 py-10">
         <h1 className="text-3xl font-bold">{merchant.name}</h1>
         {merchant.description && <p className="mt-2 text-muted-foreground">{merchant.description}</p>}
+
+        {banners.length > 0 && (
+          <div className="relative mt-6 overflow-hidden rounded-2xl">
+            <div className="relative h-48 md:h-64">
+              {(banners as any[]).map((banner, i) => (
+                <div key={banner.id} className={`absolute inset-0 transition-opacity duration-500 ${i === activeBanner ? "opacity-100" : "opacity-0"}`}>
+                  {banner.banner_image && <img src={banner.banner_image} className="h-full w-full object-cover" alt={banner.title} />}
+                  <div className="absolute inset-0 flex items-center bg-gradient-to-r from-black/60 to-transparent p-8">
+                    <div>
+                      <h2 className="text-2xl font-bold text-white">{banner.title}</h2>
+                      {banner.subtitle && <p className="mt-1 text-white/80">{banner.subtitle}</p>}
+                      {banner.button_text && (
+                        <Button className="mt-4" asChild>
+                          <a href={banner.button_link ?? "#"}>{banner.button_text}</a>
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+            {banners.length > 1 && (
+              <div className="absolute bottom-3 left-1/2 flex -translate-x-1/2 gap-2">
+                {(banners as any[]).map((_, i) => (
+                  <button key={i} onClick={() => setActiveBanner(i)}
+                    className={`h-2 rounded-full transition-all ${i === activeBanner ? "w-6 bg-white" : "w-2 bg-white/50"}`} />
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {categories.length > 0 && (
+          <div className="mt-6 flex gap-2 overflow-x-auto pb-2">
+            <Button size="sm" variant={activeCategory === "all" ? "default" : "outline"}
+              className="whitespace-nowrap rounded-full"
+              onClick={() => setActiveCategory("all")}>
+              Бүгд ({products.length})
+            </Button>
+            {(categories as any[]).map((cat) => (
+              <Button key={cat.id} size="sm" variant={activeCategory === cat.name ? "default" : "outline"}
+                className="whitespace-nowrap rounded-full"
+                onClick={() => setActiveCategory(cat.name)}>
+                {cat.icon} {cat.name}
+              </Button>
+            ))}
+          </div>
+        )}
+
         <div className="mt-8 grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-          {(products as any[]).map((p) => (
+          {(filteredProducts as any[]).map((p) => (
             <Link
               key={p.id}
               to="/store/$merchantSlug/product/$productSlug"
@@ -43,13 +118,13 @@ function StorePage() {
               <Card className="overflow-hidden rounded-2xl transition hover:shadow-lg">
                 {p.image_url && <img src={p.image_url} alt={p.name} className="h-48 w-full object-cover" />}
                 <div className="p-4">
-                  <div className="font-medium line-clamp-2">{p.name}</div>
+                  <div className="line-clamp-2 font-medium">{p.name}</div>
                   <div className="mt-2 font-bold">{fmtMnt(p.price)}</div>
                 </div>
               </Card>
             </Link>
           ))}
-          {products.length === 0 && <p className="col-span-full py-10 text-center text-muted-foreground">Бараа алга</p>}
+          {filteredProducts.length === 0 && <p className="col-span-full py-10 text-center text-muted-foreground">Бараа алга</p>}
         </div>
       </div>
     </div>
