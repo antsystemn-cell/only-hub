@@ -13,10 +13,14 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import {
   Collapsible, CollapsibleContent, CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { toast } from "sonner";
-import { Plus, FileSpreadsheet, FileText, Printer, Tag, Search, ChevronDown, X, Truck } from "lucide-react";
+import { Plus, FileSpreadsheet, FileText, Printer, Tag, Search, ChevronDown, X, Truck, Trash2 } from "lucide-react";
 import { fmtMnt, STATUS_LABELS, STATUS_TONE, PAYMENT_STATUS_LABELS } from "@/lib/format";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
@@ -91,6 +95,14 @@ function OrdersPage() {
       if (error) throw error;
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["orders", merchantId] }); toast.success("Сэргээлээ"); },
+  });
+
+  const deleteOrder = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("orders").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["orders", merchantId] }); toast.success("Устгалаа"); },
   });
 
   const exportExcel = () => {
@@ -203,6 +215,21 @@ function OrdersPage() {
                 <span className="text-sm text-muted-foreground">{o.phone}</span>
                 <span className="ml-auto text-sm font-semibold">{fmtMnt(o.total)}</span>
                 <Button size="sm" variant="outline" onClick={() => restore.mutate(o.id)}>Сэргээх</Button>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button size="sm" variant="ghost" className="text-destructive"><Trash2 className="h-4 w-4" /></Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Захиалга устгах уу?</AlertDialogTitle>
+                      <AlertDialogDescription>Энэ үйлдлийг буцаах боломжгүй.</AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Болих</AlertDialogCancel>
+                      <AlertDialogAction onClick={() => deleteOrder.mutate(o.id)}>Устгах</AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               </Card>
             ))}
           </CollapsibleContent>
@@ -262,7 +289,18 @@ function OrderRow({ order, checked, onCheck, onStatus, onPayment }: {
             <Button size="sm" variant="outline" onClick={() => onPayment(order.payment_status === "confirmed" ? "unpaid" : "confirmed")}>
               {order.payment_status === "confirmed" ? "Төлөгдөөгүй болгох" : "Төлөгдсөн болгох"}
             </Button>
-            <Button size="sm" variant="outline"><Truck className="mr-1 h-4 w-4" /> Хүргэлт рүү илгээх</Button>
+            <Button size="sm" variant="outline" disabled={!!order.delivery_order_id}
+              onClick={async () => {
+                const ref = `DLV-${order.id.slice(0, 8).toUpperCase()}`;
+                const { error } = await supabase.from("orders").update({
+                  delivery_order_id: ref, delivery_status: "submitted", status: "delivering",
+                }).eq("id", order.id);
+                if (error) toast.error(error.message);
+                else toast.success(`Хүргэлт рүү илгээлээ: ${ref}`);
+              }}>
+              <Truck className="mr-1 h-4 w-4" />
+              {order.delivery_order_id ? `Илгээгдсэн: ${order.delivery_order_id}` : "Хүргэлт рүү илгээх"}
+            </Button>
           </div>
         </div>
       )}
@@ -276,22 +314,32 @@ function ManualOrderDialog({ open, onOpenChange, merchantId, onCreated }: { open
   const [address, setAddress] = useState("");
   const [deliveryFee, setDeliveryFee] = useState(8000);
   const [includeDelivery, setIncludeDelivery] = useState(true);
-  const [items, setItems] = useState<Array<{ name: string; price: number; quantity: number; sku?: string }>>([]);
-  const [itemName, setItemName] = useState(""); const [itemPrice, setItemPrice] = useState(0); const [itemQty, setItemQty] = useState(1);
+  const [items, setItems] = useState<Array<{ name: string; price: number; quantity: number; sku?: string; product_id?: string }>>([]);
   const [paymentMethod, setPaymentMethod] = useState("cash");
   const [paymentStatus, setPaymentStatus] = useState("unpaid");
   const [status, setStatus] = useState("pending");
   const [note, setNote] = useState("");
   const [saving, setSaving] = useState(false);
+  const [saleDate, setSaleDate] = useState("");
+  const [branch, setBranch] = useState("");
+  const [source, setSource] = useState("store");
+  const [productSearch, setProductSearch] = useState("");
+
+  const { data: allProducts = [] } = useQuery({
+    queryKey: ["modal-products", merchantId],
+    enabled: open,
+    queryFn: async () => (await supabase.from("products").select("id,name,product_code,price,thumbnail_url").eq("merchant_id", merchantId).eq("is_active", true)).data ?? [],
+  });
+
+  const searchResults = productSearch.length > 0
+    ? (allProducts as any[]).filter((p) =>
+        p.name.toLowerCase().includes(productSearch.toLowerCase()) ||
+        (p.product_code ?? "").toLowerCase().includes(productSearch.toLowerCase())
+      ).slice(0, 8)
+    : [];
 
   const subtotal = items.reduce((s, it) => s + it.price * it.quantity, 0);
   const total = subtotal + (includeDelivery ? deliveryFee : 0);
-
-  const addItem = () => {
-    if (!itemName || !itemPrice) return;
-    setItems([...items, { name: itemName, price: itemPrice, quantity: itemQty }]);
-    setItemName(""); setItemPrice(0); setItemQty(1);
-  };
 
   const submit = async () => {
     if (!phone || items.length === 0) return toast.error("Утас, бараа шаардлагатай");
@@ -299,12 +347,14 @@ function ManualOrderDialog({ open, onOpenChange, merchantId, onCreated }: { open
     const { error } = await supabase.from("orders").insert({
       merchant_id: merchantId, items, total, status, payment_method: paymentMethod, payment_status: paymentStatus,
       phone, guest_name: name || null, shipping_address: address || null, delivery_fee: includeDelivery ? deliveryFee : 0,
-      is_guest: true, source: "store", note: note || null,
+      is_guest: true, source, note: note || null,
+      sale_date: saleDate ? new Date(saleDate).toISOString() : null,
+      branch: branch || null,
     });
     setSaving(false);
     if (error) return toast.error(error.message);
     toast.success("Захиалга үүслээ"); onCreated(); onOpenChange(false);
-    setItems([]); setPhone(""); setName(""); setAddress(""); setNote("");
+    setItems([]); setPhone(""); setName(""); setAddress(""); setNote(""); setSaleDate(""); setBranch(""); setSource("store");
   };
 
   return (
@@ -312,6 +362,43 @@ function ManualOrderDialog({ open, onOpenChange, merchantId, onCreated }: { open
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader><DialogTitle>Гараар захиалга үүсгэх</DialogTitle></DialogHeader>
         <div className="space-y-4">
+          <section>
+            <h4 className="mb-2 font-medium">📅 Борлуулалтын мэдээлэл</h4>
+            <div className="grid gap-3 md:grid-cols-3">
+              <div>
+                <Label>Огноо цаг</Label>
+                <Input type="datetime-local" value={saleDate}
+                  max={new Date().toISOString().slice(0, 16)}
+                  onChange={(e) => setSaleDate(e.target.value)} />
+              </div>
+              <div>
+                <Label>Гарах байршил</Label>
+                <Select value={branch} onValueChange={setBranch}>
+                  <SelectTrigger><SelectValue placeholder="Сонгох" /></SelectTrigger>
+                  <SelectContent>
+                    {["Лавай", "Их наяд", "Агуулах", "Бусад"].map((b) => (
+                      <SelectItem key={b} value={b}>{b}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Эх сурвалж</Label>
+                <Select value={source} onValueChange={setSource}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="store">🏬 Дэлгүүр</SelectItem>
+                    <SelectItem value="facebook">📘 Facebook</SelectItem>
+                    <SelectItem value="instagram">📷 Instagram</SelectItem>
+                    <SelectItem value="phone">📞 Утас</SelectItem>
+                    <SelectItem value="web">🌐 Вэб</SelectItem>
+                    <SelectItem value="other">Бусад</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </section>
+
           <section>
             <h4 className="mb-2 font-medium">Үйлчлүүлэгч</h4>
             <div className="grid gap-3 md:grid-cols-2">
@@ -325,17 +412,43 @@ function ManualOrderDialog({ open, onOpenChange, merchantId, onCreated }: { open
 
           <section>
             <h4 className="mb-2 font-medium">Бараа</h4>
-            <div className="grid gap-2 md:grid-cols-[1fr_120px_80px_auto]">
-              <Input placeholder="Барааны нэр" value={itemName} onChange={(e) => setItemName(e.target.value)} />
-              <Input type="number" placeholder="Үнэ" value={itemPrice || ""} onChange={(e) => setItemPrice(Number(e.target.value))} />
-              <Input type="number" placeholder="Тоо" value={itemQty} onChange={(e) => setItemQty(Number(e.target.value))} />
-              <Button onClick={addItem}>+</Button>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input className="pl-9" placeholder="🔍 Бараа хайх (нэр эсвэл SKU)..."
+                value={productSearch} onChange={(e) => setProductSearch(e.target.value)} />
+              {searchResults.length > 0 && (
+                <div className="absolute z-10 mt-1 w-full rounded-xl border border-border bg-card shadow-lg max-h-64 overflow-y-auto">
+                  {searchResults.map((p: any) => (
+                    <button type="button" key={p.id}
+                      className="flex w-full items-center gap-3 p-3 text-left hover:bg-muted"
+                      onClick={() => {
+                        setItems([...items, { name: p.name, price: Number(p.price), quantity: 1, sku: p.product_code ?? undefined, product_id: p.id }]);
+                        setProductSearch("");
+                      }}>
+                      {p.thumbnail_url
+                        ? <img src={p.thumbnail_url} className="h-10 w-10 rounded-lg object-cover" />
+                        : <div className="h-10 w-10 rounded-lg bg-muted" />}
+                      <div className="flex-1">
+                        <div className="text-sm font-medium">{p.name}</div>
+                        <div className="text-xs text-muted-foreground">{p.product_code ?? ""} • {fmtMnt(p.price)}</div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
-            <div className="mt-2 space-y-1">
+            <div className="mt-3 space-y-1">
+              {items.length === 0 && <p className="text-center text-sm text-muted-foreground py-4">Бараа сонгоогүй байна</p>}
               {items.map((it, i) => (
-                <div key={i} className="flex items-center justify-between rounded-lg border border-border p-2 text-sm">
-                  <span>{it.name} × {it.quantity}</span>
-                  <span className="flex items-center gap-2">{fmtMnt(it.price * it.quantity)}<button onClick={() => setItems(items.filter((_, j) => j !== i))}><X className="h-4 w-4 text-muted-foreground" /></button></span>
+                <div key={i} className="flex items-center gap-2 rounded-lg border border-border p-2 text-sm">
+                  <span className="flex-1 truncate">{it.name}</span>
+                  <Input type="number" min={1} className="h-8 w-16 text-center" value={it.quantity}
+                    onChange={(e) => {
+                      const next = [...items]; next[i] = { ...next[i], quantity: Math.max(1, Number(e.target.value)) };
+                      setItems(next);
+                    }} />
+                  <span className="w-24 text-right">{fmtMnt(it.price * it.quantity)}</span>
+                  <button onClick={() => setItems(items.filter((_, j) => j !== i))}><X className="h-4 w-4 text-muted-foreground" /></button>
                 </div>
               ))}
             </div>

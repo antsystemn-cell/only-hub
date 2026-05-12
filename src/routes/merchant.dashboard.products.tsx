@@ -23,6 +23,7 @@ export const Route = createFileRoute("/merchant/dashboard/products")({
   component: ProductsPage,
 });
 
+type ColorVariant = { name: string; sku?: string; image?: string };
 type Product = {
   id?: string;
   name: string;
@@ -42,11 +43,14 @@ type Product = {
   stock_quantity: number;
   detail_media: Array<{ url: string; caption?: string }>;
   specifications: Array<{ key: string; value: string }>;
+  colors: ColorVariant[];
+  sizes: string[];
+  variant_stock: Record<string, number>;
 };
 
 const blank: Product = {
   name: "", price: 0, discount: 0, is_new: false, is_on_sale: false, is_active: true,
-  stock_quantity: 0, detail_media: [], specifications: [],
+  stock_quantity: 0, detail_media: [], specifications: [], colors: [], sizes: [], variant_stock: {},
 };
 
 function ProductsPage() {
@@ -177,6 +181,16 @@ function ProductsPage() {
               <Label>SKU/Бараа код</Label>
               <Input value={editing.product_code ?? ""} onChange={(e) => setEditing({ ...editing, product_code: e.target.value })} />
             </div>
+            <div className="md:col-span-2">
+              <Label>URL slug</Label>
+              <div className="flex items-center gap-2">
+                <Input value={editing.slug ?? ""} placeholder="auto-үүснэ"
+                  onChange={(e) => setEditing({ ...editing, slug: e.target.value })} />
+                <Button type="button" variant="outline" size="sm"
+                  onClick={() => setEditing({ ...editing, slug: slugify(editing.name) })}>Авто</Button>
+              </div>
+              <p className="mt-1 text-xs text-muted-foreground">/store/.../product/{editing.slug || "..."}</p>
+            </div>
             <div>
               <Label>Үнэ</Label>
               <Input type="number" value={editing.price} onChange={(e) => setEditing({ ...editing, price: Number(e.target.value) })} />
@@ -215,6 +229,128 @@ function ProductsPage() {
               <Label>Тайлбар</Label>
               <Textarea rows={4} value={editing.description ?? ""} onChange={(e) => setEditing({ ...editing, description: e.target.value })} />
             </div>
+            {/* Specifications */}
+            <div className="md:col-span-2">
+              <div className="mb-2 flex items-center justify-between">
+                <Label>Техникийн үзүүлэлт</Label>
+                <Button type="button" size="sm" variant="outline"
+                  onClick={() => setEditing({ ...editing, specifications: [...(editing.specifications ?? []), { key: "", value: "" }] })}>
+                  <Plus className="mr-1 h-3 w-3" /> Нэмэх
+                </Button>
+              </div>
+              <div className="space-y-2">
+                {(editing.specifications ?? []).map((spec, i) => (
+                  <div key={i} className="flex gap-2">
+                    <Input placeholder="Нэр" value={spec.key}
+                      onChange={(e) => {
+                        const s = [...editing.specifications]; s[i] = { ...s[i], key: e.target.value };
+                        setEditing({ ...editing, specifications: s });
+                      }} />
+                    <Input placeholder="Утга" value={spec.value}
+                      onChange={(e) => {
+                        const s = [...editing.specifications]; s[i] = { ...s[i], value: e.target.value };
+                        setEditing({ ...editing, specifications: s });
+                      }} />
+                    <Button type="button" size="icon" variant="ghost"
+                      onClick={() => setEditing({ ...editing, specifications: editing.specifications.filter((_, j) => j !== i) })}>
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Colors */}
+            <div className="md:col-span-2">
+              <div className="mb-2 flex items-center justify-between">
+                <Label>Өнгөний сонголт</Label>
+                <Button type="button" size="sm" variant="outline"
+                  onClick={() => setEditing({ ...editing, colors: [...(editing.colors ?? []), { name: "" }] })}>
+                  <Plus className="mr-1 h-3 w-3" /> Нэмэх
+                </Button>
+              </div>
+              <div className="space-y-2">
+                {(editing.colors ?? []).map((color, i) => (
+                  <div key={i} className="flex gap-2">
+                    <Input placeholder="Өнгийн нэр" value={color.name}
+                      onChange={(e) => {
+                        const c = [...editing.colors]; c[i] = { ...c[i], name: e.target.value };
+                        setEditing({ ...editing, colors: c });
+                      }} />
+                    <Input placeholder="SKU (заавал биш)" value={color.sku ?? ""}
+                      onChange={(e) => {
+                        const c = [...editing.colors]; c[i] = { ...c[i], sku: e.target.value };
+                        setEditing({ ...editing, colors: c });
+                      }} />
+                    <Button type="button" size="icon" variant="ghost"
+                      onClick={() => setEditing({ ...editing, colors: editing.colors.filter((_, j) => j !== i) })}>
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Sizes */}
+            <div className="md:col-span-2">
+              <Label>Хэмжээний сонголт</Label>
+              <div className="mt-2 flex flex-wrap items-center gap-2">
+                {(editing.sizes ?? []).map((size, i) => (
+                  <span key={i} className="flex items-center gap-1 rounded-full border border-border px-3 py-1 text-sm">
+                    {size}
+                    <button type="button" onClick={() => setEditing({ ...editing, sizes: editing.sizes.filter((_, j) => j !== i) })}>
+                      <X className="h-3 w-3" />
+                    </button>
+                  </span>
+                ))}
+                <Input placeholder="Хэмжээ + Enter" className="w-40"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && e.currentTarget.value.trim()) {
+                      e.preventDefault();
+                      setEditing({ ...editing, sizes: [...(editing.sizes ?? []), e.currentTarget.value.trim()] });
+                      e.currentTarget.value = "";
+                    }
+                  }} />
+              </div>
+            </div>
+
+            {/* Variant stock grid */}
+            {editing.colors?.length > 0 && editing.sizes?.length > 0 && (
+              <div className="md:col-span-2 overflow-x-auto">
+                <Label>Нөөц (өнгө × хэмжээ)</Label>
+                <table className="mt-2 border-collapse text-sm">
+                  <thead>
+                    <tr>
+                      <th className="border border-border bg-muted p-2 text-left">Өнгө / Хэмжээ</th>
+                      {editing.sizes.map((size) => (
+                        <th key={size} className="border border-border bg-muted p-2">{size}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {editing.colors.map((color) => (
+                      <tr key={color.name || Math.random()}>
+                        <td className="border border-border p-2 font-medium">{color.name || "—"}</td>
+                        {editing.sizes.map((size) => {
+                          const k = `${color.name}|${size}`;
+                          return (
+                            <td key={size} className="border border-border p-1">
+                              <Input type="number" className="h-8 w-20 text-center"
+                                value={(editing.variant_stock ?? {})[k] ?? ""}
+                                onChange={(e) => setEditing({
+                                  ...editing,
+                                  variant_stock: { ...(editing.variant_stock ?? {}), [k]: Number(e.target.value) },
+                                })} />
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
             <div className="flex items-center gap-6 md:col-span-2">
               <label className="flex items-center gap-2 text-sm"><Switch checked={editing.is_active} onCheckedChange={(v) => setEditing({ ...editing, is_active: v })} /> Идэвхтэй</label>
               <label className="flex items-center gap-2 text-sm"><Switch checked={editing.is_new} onCheckedChange={(v) => setEditing({ ...editing, is_new: v })} /> Шинэ</label>

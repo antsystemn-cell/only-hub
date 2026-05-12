@@ -115,7 +115,15 @@ export type Database = {
           system_prompt?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "chatbot_settings_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: true
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       coupons: {
         Row: {
@@ -303,6 +311,8 @@ export type Database = {
       orders: {
         Row: {
           branch: string | null
+          coupon_discount: number
+          coupon_id: string | null
           created_at: string
           delivery_fee: number
           delivery_option_id: string | null
@@ -322,6 +332,8 @@ export type Database = {
           platform_commission_amount: number | null
           platform_commission_rate: number | null
           qpay_invoice_id: string | null
+          qpay_qr_text: string | null
+          qpay_short_url: string | null
           sale_date: string | null
           shipping_address: string | null
           source: string
@@ -333,6 +345,8 @@ export type Database = {
         }
         Insert: {
           branch?: string | null
+          coupon_discount?: number
+          coupon_id?: string | null
           created_at?: string
           delivery_fee?: number
           delivery_option_id?: string | null
@@ -352,6 +366,8 @@ export type Database = {
           platform_commission_amount?: number | null
           platform_commission_rate?: number | null
           qpay_invoice_id?: string | null
+          qpay_qr_text?: string | null
+          qpay_short_url?: string | null
           sale_date?: string | null
           shipping_address?: string | null
           source?: string
@@ -363,6 +379,8 @@ export type Database = {
         }
         Update: {
           branch?: string | null
+          coupon_discount?: number
+          coupon_id?: string | null
           created_at?: string
           delivery_fee?: number
           delivery_option_id?: string | null
@@ -382,6 +400,8 @@ export type Database = {
           platform_commission_amount?: number | null
           platform_commission_rate?: number | null
           qpay_invoice_id?: string | null
+          qpay_qr_text?: string | null
+          qpay_short_url?: string | null
           sale_date?: string | null
           shipping_address?: string | null
           source?: string
@@ -392,6 +412,13 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "orders_coupon_id_fkey"
+            columns: ["coupon_id"]
+            isOneToOne: false
+            referencedRelation: "coupons"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "orders_delivery_option_id_fkey"
             columns: ["delivery_option_id"]
