@@ -20,8 +20,9 @@ function LoginPage() {
   const { user, primaryMerchantId, isPlatformAdmin } = useAuth();
 
   useEffect(() => {
-    if (user && primaryMerchantId) navigate({ to: "/merchant/dashboard" });
-    else if (user && isPlatformAdmin) navigate({ to: "/admin" });
+    if (!user) return;
+    if (primaryMerchantId) navigate({ to: "/merchant/dashboard" });
+    else if (isPlatformAdmin) navigate({ to: "/admin" });
   }, [user, primaryMerchantId, isPlatformAdmin, navigate]);
 
   const onSubmit = async (e: React.FormEvent) => {
@@ -31,7 +32,7 @@ function LoginPage() {
     setLoading(false);
     if (error) return toast.error(error.message);
     toast.success("Амжилттай нэвтэрлээ");
-    navigate({ to: "/merchant/dashboard" });
+    // Redirect handled by useEffect once roles load
   };
 
   return (
