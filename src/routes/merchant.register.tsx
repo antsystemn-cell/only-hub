@@ -37,8 +37,20 @@ function RegisterPage() {
       return toast.error(signUpErr?.message ?? "Бүртгэл амжилтгүй");
     }
 
-    // Sign-in (handles cases where email confirm is off, gives us a session for RLS)
-    await supabase.auth.signInWithPassword({ email, password });
+    // Ensure we have an active session before inserting (RLS needs auth.uid())
+    let { data: sessData } = await supabase.auth.getSession();
+    if (!sessData.session) {
+      const { error: signInErr } = await supabase.auth.signInWithPassword({ email, password });
+      if (signInErr) {
+        setLoading(false);
+        return toast.error("Нэвтрэхэд алдаа: " + signInErr.message);
+      }
+      ({ data: sessData } = await supabase.auth.getSession());
+    }
+    if (!sessData.session) {
+      setLoading(false);
+      return toast.error("Session үүсээгүй байна. Дахин оролдоно уу.");
+    }
 
     // 2. Create merchant
     const baseSlug = slugify(storeName) || "store";
