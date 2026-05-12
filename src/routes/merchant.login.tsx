@@ -17,7 +17,12 @@ function LoginPage() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const { user, primaryMerchantId, isPlatformAdmin } = useAuth();
+  const { user, primaryMerchantId, isPlatformAdmin, refreshRoles } = useAuth();
+
+  useEffect(() => {
+    if (user) refreshRoles();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]);
 
   useEffect(() => {
     if (!user) return;
