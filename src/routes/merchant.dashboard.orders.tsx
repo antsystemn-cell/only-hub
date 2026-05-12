@@ -97,6 +97,14 @@ function OrdersPage() {
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["orders", merchantId] }); toast.success("Сэргээлээ"); },
   });
 
+  const deleteOrder = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("orders").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["orders", merchantId] }); toast.success("Устгалаа"); },
+  });
+
   const exportExcel = () => {
     const rows = (selected.size ? filtered.filter((o: any) => selected.has(o.id)) : filtered).map((o: any) => ({
       Дугаар: o.external_ref, Огноо: o.created_at, Утас: o.phone, Хаяг: o.shipping_address, Дүн: o.total,
