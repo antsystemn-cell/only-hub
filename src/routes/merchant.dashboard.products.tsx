@@ -23,6 +23,7 @@ export const Route = createFileRoute("/merchant/dashboard/products")({
   component: ProductsPage,
 });
 
+type ColorVariant = { name: string; sku?: string; image?: string };
 type Product = {
   id?: string;
   name: string;
@@ -42,11 +43,14 @@ type Product = {
   stock_quantity: number;
   detail_media: Array<{ url: string; caption?: string }>;
   specifications: Array<{ key: string; value: string }>;
+  colors: ColorVariant[];
+  sizes: string[];
+  variant_stock: Record<string, number>;
 };
 
 const blank: Product = {
   name: "", price: 0, discount: 0, is_new: false, is_on_sale: false, is_active: true,
-  stock_quantity: 0, detail_media: [], specifications: [],
+  stock_quantity: 0, detail_media: [], specifications: [], colors: [], sizes: [], variant_stock: {},
 };
 
 function ProductsPage() {
