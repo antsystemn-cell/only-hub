@@ -127,12 +127,66 @@ function ChatbotPage() {
               </Button>
             </div>
 
-            <div className="rounded-xl bg-amber-500/10 p-3 text-xs text-amber-700">
-              ⚠️ Удахгүй: Чат харилцан үйлчлэлийн runtime энд нэмэгдэнэ.
-            </div>
           </>
         )}
       </Card>
+
+      <ChatPreview merchantId={merchantId} greeting={form.greeting_message} />
     </div>
+  );
+}
+
+function ChatPreview({ merchantId, greeting }: { merchantId: string; greeting: string }) {
+  const send = useServerFn(chatbotPreview);
+  const [messages, setMessages] = useState<Array<{ role: "user" | "assistant"; content: string }>>([]);
+  const [input, setInput] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const onSend = async () => {
+    if (!input.trim() || loading) return;
+    const userMsg = input.trim();
+    setInput("");
+    const next = [...messages, { role: "user" as const, content: userMsg }];
+    setMessages(next);
+    setLoading(true);
+    try {
+      const res = await send({ data: { merchantId, messages: next } });
+      if (res.ok) setMessages([...next, { role: "assistant", content: res.reply }]);
+      else toast.error(res.message);
+    } catch (e: any) {
+      toast.error(e?.message ?? "Алдаа");
+    } finally { setLoading(false); }
+  };
+
+  return (
+    <Card className="rounded-2xl p-5">
+      <h3 className="mb-4 flex items-center gap-2 font-semibold">
+        💬 Чатын урьдчилан харах <Badge variant="secondary">Preview</Badge>
+      </h3>
+      <div className="mb-3 h-64 space-y-3 overflow-y-auto rounded-xl bg-muted/40 p-3">
+        {messages.length === 0 && (
+          <p className="pt-10 text-center text-sm text-muted-foreground">{greeting}</p>
+        )}
+        {messages.map((m, i) => (
+          <div key={i} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
+            <div className={`max-w-[80%] whitespace-pre-wrap rounded-2xl px-4 py-2 text-sm ${
+              m.role === "user" ? "bg-primary text-primary-foreground" : "border border-border bg-card"
+            }`}>{m.content}</div>
+          </div>
+        ))}
+        {loading && (
+          <div className="flex justify-start">
+            <div className="rounded-2xl border border-border bg-card px-4 py-2 text-sm text-muted-foreground">Бичиж байна...</div>
+          </div>
+        )}
+      </div>
+      <div className="flex gap-2">
+        <Input placeholder="Асуулт бичих..." value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); onSend(); } }}
+          disabled={loading} />
+        <Button onClick={onSend} disabled={loading || !input.trim()}><Send className="h-4 w-4" /></Button>
+      </div>
+    </Card>
   );
 }
