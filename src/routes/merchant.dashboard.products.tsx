@@ -452,6 +452,7 @@ function ProductsPage() {
               <label className="flex items-center gap-2 text-sm"><Switch checked={editing.is_active} onCheckedChange={(v) => setEditing({ ...editing, is_active: v })} /> Идэвхтэй</label>
               <label className="flex items-center gap-2 text-sm"><Switch checked={editing.is_new} onCheckedChange={(v) => setEditing({ ...editing, is_new: v })} /> Шинэ</label>
               <label className="flex items-center gap-2 text-sm"><Switch checked={editing.is_on_sale} onCheckedChange={(v) => setEditing({ ...editing, is_on_sale: v })} /> Хямдралтай</label>
+              <label className="flex items-center gap-2 text-sm"><Switch checked={editing.is_bogo} onCheckedChange={(v) => setEditing({ ...editing, is_bogo: v })} /> 1+1 Үнэгүй</label>
             </div>
           </div>
           <div className="mt-4 flex gap-2">
