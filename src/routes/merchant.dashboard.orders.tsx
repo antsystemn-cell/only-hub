@@ -517,6 +517,28 @@ function ManualOrderDialog({ open, onOpenChange, merchantId, onCreated }: { open
                 </div>
               ))}
             </div>
+            {items.length > 0 && (
+              <div className="mt-2 flex justify-end">
+                <Button type="button" size="sm" variant="outline"
+                  onClick={() => {
+                    const pdf = new jsPDF({ unit: "mm", format: [70, 80] });
+                    pdf.setFontSize(9); pdf.text("Барааны жагсаалт", 5, 8);
+                    pdf.setFontSize(8);
+                    let y = 15;
+                    items.forEach((it) => {
+                      const line = `${it.name} x${it.quantity} = ${fmtMnt(it.price * it.quantity)}`;
+                      pdf.text(line.slice(0, 45), 5, y, { maxWidth: 60 });
+                      y += 7;
+                      if (y > 72) { pdf.addPage([70, 80]); y = 10; }
+                    });
+                    pdf.setFontSize(9);
+                    pdf.text(`Niit: ${fmtMnt(subtotal)}`, 5, y + 3);
+                    pdf.save(`items-${Date.now()}.pdf`);
+                  }}>
+                  <FileText className="mr-1 h-4 w-4" /> PDF татах
+                </Button>
+              </div>
+            )}
           </section>
 
           <section className="grid gap-3 md:grid-cols-3">
