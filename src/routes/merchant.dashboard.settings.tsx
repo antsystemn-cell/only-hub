@@ -140,7 +140,9 @@ function PaymentsTab() {
   const { primaryMerchantId } = useAuth();
   const merchantId = primaryMerchantId!;
   const qc = useQueryClient();
-  const [form, setForm] = useState<any>({ provider_type: "qpay", name: "QPay", icon: "💳", is_active: true, credentials: {} });
+  const emptyForm = { provider_type: "qpay", name: "QPay", icon: "💳", is_active: true, credentials: {} as any, description: "" };
+  const [form, setForm] = useState<any>(emptyForm);
+  const [editId, setEditId] = useState<string | null>(null);
   const [showSecret, setShowSecret] = useState(false);
 
   const { data: items = [] } = useQuery({
@@ -148,14 +150,35 @@ function PaymentsTab() {
     queryFn: async () => (await supabase.from("payment_providers").select("*").eq("merchant_id", merchantId)).data ?? [],
   });
 
+  const resetForm = () => { setForm(emptyForm); setEditId(null); };
+
   const save = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase.from("payment_providers").insert({ ...form, merchant_id: merchantId });
-      if (error) throw error;
+      if (editId) {
+        const { id, created_at, updated_at, merchant_id, ...rest } = form;
+        const { error } = await supabase.from("payment_providers").update(rest).eq("id", editId);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from("payment_providers").insert({ ...form, merchant_id: merchantId });
+        if (error) throw error;
+      }
     },
-    onSuccess: () => { toast.success("Нэмэгдлээ"); qc.invalidateQueries({ queryKey: ["payment_providers", merchantId] }); },
+    onSuccess: () => { toast.success(editId ? "Шинэчлэгдлээ" : "Нэмэгдлээ"); resetForm(); qc.invalidateQueries({ queryKey: ["payment_providers", merchantId] }); },
     onError: (e: any) => toast.error(e.message),
   });
+
+  const startEdit = (p: any) => {
+    setEditId(p.id);
+    setForm({
+      provider_type: p.provider_type,
+      name: p.name,
+      icon: p.icon ?? "💳",
+      is_active: !!p.is_active,
+      credentials: p.credentials ?? {},
+      description: p.description ?? "",
+    });
+    if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
   const del = async (id: string) => {
     await supabase.from("payment_providers").delete().eq("id", id);
@@ -172,7 +195,7 @@ function PaymentsTab() {
 
   return (
     <Card className="rounded-2xl p-5">
-      <h3 className="mb-4 font-semibold">Шинэ төлбөрийн үйлчилгээ</h3>
+      <h3 className="mb-4 font-semibold">{editId ? "Төлбөрийн үйлчилгээ засах" : "Шинэ төлбөрийн үйлчилгээ"}</h3>
       <div className="grid gap-3 md:grid-cols-3">
         <div><Label>Үйлчилгээ</Label>
           <Select value={form.provider_type} onValueChange={(v) => setForm({ ...form, provider_type: v, credentials: {} })}>
@@ -207,19 +230,20 @@ function PaymentsTab() {
         <div className="flex items-center gap-2"><Switch checked={form.is_active} onCheckedChange={(v) => setForm({ ...form, is_active: v })} /><span className="text-sm">Идэвхтэй</span></div>
       </div>
       <div className="mt-4 flex gap-2">
-        <Button onClick={() => save.mutate()}>Хадгалах</Button>
+        <Button onClick={() => save.mutate()} disabled={save.isPending}>{editId ? "Шинэчлэх" : "Хадгалах"}</Button>
+        {editId && <Button variant="ghost" onClick={resetForm}><X className="mr-1 h-4 w-4" /> Болих</Button>}
       </div>
 
       <div className="mt-6 space-y-2">
         {(items as any[]).map((p) => (
-          <ProviderRow key={p.id} provider={p} onDelete={() => del(p.id)} />
+          <ProviderRow key={p.id} provider={p} onEdit={() => startEdit(p)} onDelete={() => del(p.id)} />
         ))}
       </div>
     </Card>
   );
 }
 
-function ProviderRow({ provider: p, onDelete }: { provider: any; onDelete: () => void }) {
+function ProviderRow({ provider: p, onEdit, onDelete }: { provider: any; onEdit: () => void; onDelete: () => void }) {
   const test = useServerFn(testPaymentConnection);
   const [pending, setPending] = useState(false);
   const hasCreds = p.credentials && Object.keys(p.credentials).length > 0;
@@ -242,6 +266,7 @@ function ProviderRow({ provider: p, onDelete }: { provider: any; onDelete: () =>
       </span>
       <div className="flex items-center gap-1">
         <Button size="sm" variant="outline" onClick={runTest} disabled={pending}>{pending ? "Шалгаж байна..." : "Холболт шалгах"}</Button>
+        <Button size="icon" variant="ghost" onClick={onEdit}><Pencil className="h-4 w-4" /></Button>
         <Button size="icon" variant="ghost" onClick={onDelete}><Trash2 className="h-4 w-4" /></Button>
       </div>
     </div>
