@@ -198,7 +198,7 @@ function PaymentsTab() {
       <h3 className="mb-4 font-semibold">{editId ? "Төлбөрийн үйлчилгээ засах" : "Шинэ төлбөрийн үйлчилгээ"}</h3>
       <div className="grid gap-3 md:grid-cols-3">
         <div><Label>Үйлчилгээ</Label>
-          <Select value={form.provider_type} onValueChange={(v) => setForm({ ...form, provider_type: v, credentials: {} })}>
+          <Select value={form.provider_type} onValueChange={(v) => setForm({ ...form, provider_type: v, credentials: form.credentials ?? {} })}>
             <SelectTrigger><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="qpay">QPay</SelectItem><SelectItem value="storepay">StorePay</SelectItem>
