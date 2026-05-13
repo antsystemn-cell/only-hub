@@ -140,12 +140,32 @@ function AdminPage() {
               {merchants.map((m: any) => {
                 const stat = commissionByMerchant[m.id] ?? { gmv: 0, commission: 0, count: 0 };
                 return (
-                  <MerchantRow
-                    key={m.id}
-                    merchant={m}
-                    stat={stat}
-                    onUpdate={(patch) => updateMerchant.mutate({ id: m.id, patch })}
-                  />
+                  <div key={m.id}>
+                    <div onClick={() => setSelectedMerchant(selectedMerchant === m.id ? null : m.id)} className="cursor-pointer">
+                      <MerchantRow
+                        merchant={m}
+                        stat={stat}
+                        onUpdate={(patch) => updateMerchant.mutate({ id: m.id, patch })}
+                      />
+                    </div>
+                    {selectedMerchant === m.id && (
+                      <div className="mt-2 rounded-xl border border-border bg-muted/30 p-3">
+                        <h4 className="mb-2 text-sm font-semibold">Сүүлийн 50 захиалга</h4>
+                        <div className="max-h-64 space-y-1 overflow-y-auto">
+                          {merchantOrdersQ.data?.length === 0 && <p className="text-xs text-muted-foreground">Захиалга алга</p>}
+                          {merchantOrdersQ.data?.map((o: any) => (
+                            <div key={o.id} className="flex items-center justify-between gap-2 rounded-lg px-2 py-1 text-xs hover:bg-muted">
+                              <span className="font-medium">{o.external_ref ?? o.id.slice(0, 8)}</span>
+                              <span className="text-muted-foreground">{o.phone}</span>
+                              <span className="rounded bg-muted px-1.5 py-0.5">{o.status}</span>
+                              <span className="font-semibold">{fmtMnt(o.total)}</span>
+                              <span className="text-muted-foreground">{new Date(o.created_at).toLocaleDateString("mn-MN")}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 );
               })}
             </div>
