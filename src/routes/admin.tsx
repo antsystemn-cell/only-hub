@@ -50,11 +50,34 @@ function AdminPage() {
   });
 
   const ordersQ = useQuery({
-    queryKey: ["admin-orders-count"],
-    enabled: isPlatformAdmin,
+    queryKey: ["admin-orders-count", merchantsQ.data?.length ?? 0],
+    enabled: isPlatformAdmin && !!merchantsQ.data?.length,
     queryFn: async () => {
-      const { count } = await supabase.from("orders").select("id", { count: "exact", head: true });
-      return count ?? 0;
+      const merchants = merchantsQ.data ?? [];
+      let total = 0;
+      for (const m of merchants) {
+        const { count } = await supabase
+          .from("orders")
+          .select("id", { count: "exact", head: true })
+          .eq("merchant_id", m.id);
+        total += count ?? 0;
+      }
+      return total;
+    },
+  });
+
+  const [selectedMerchant, setSelectedMerchant] = useState<string | null>(null);
+  const merchantOrdersQ = useQuery({
+    queryKey: ["admin-merchant-orders", selectedMerchant],
+    enabled: !!selectedMerchant,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("orders")
+        .select("id,external_ref,total,status,payment_status,phone,created_at")
+        .eq("merchant_id", selectedMerchant!)
+        .order("created_at", { ascending: false })
+        .limit(50);
+      return data ?? [];
     },
   });
 
