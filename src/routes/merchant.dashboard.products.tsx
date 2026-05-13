@@ -291,6 +291,72 @@ function ProductsPage() {
               </div>
             </div>
 
+            {/* Detail Media */}
+            <div className="md:col-span-2">
+              <div className="mb-2 flex items-center justify-between">
+                <Label>Нарийвчилсан медиа (зураг/видео)</Label>
+                <Button type="button" size="sm" variant="outline"
+                  onClick={() => setEditing({ ...editing, detail_media: [...(editing.detail_media ?? []), { url: "", type: "image", caption: "" }] })}>
+                  <Plus className="mr-1 h-3 w-3" /> Нэмэх
+                </Button>
+              </div>
+              <div className="space-y-2">
+                {(editing.detail_media ?? []).map((media, i) => (
+                  <div key={i} className="flex items-start gap-2 rounded-xl border border-border p-3">
+                    <div className="grid flex-1 gap-2 md:grid-cols-[120px_1fr_1fr]">
+                      <Select value={media.type ?? "image"}
+                        onValueChange={(v) => {
+                          const m = [...editing.detail_media]; m[i] = { ...m[i], type: v as "image" | "video" };
+                          setEditing({ ...editing, detail_media: m });
+                        }}>
+                        <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="image">🖼 Зураг</SelectItem>
+                          <SelectItem value="video">🎬 Видео URL</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <Input placeholder={(media.type ?? "image") === "video" ? "YouTube/Vimeo URL" : "Зургийн URL"}
+                        value={media.url}
+                        onChange={(e) => {
+                          const m = [...editing.detail_media]; m[i] = { ...m[i], url: e.target.value };
+                          setEditing({ ...editing, detail_media: m });
+                        }} />
+                      <Input placeholder="Caption (заавал биш)" value={media.caption ?? ""}
+                        onChange={(e) => {
+                          const m = [...editing.detail_media]; m[i] = { ...m[i], caption: e.target.value };
+                          setEditing({ ...editing, detail_media: m });
+                        }} />
+                    </div>
+                    {(media.type ?? "image") === "image" && (
+                      <label className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-md border border-border hover:bg-muted">
+                        <input type="file" accept="image/*" className="hidden"
+                          onChange={async (e) => {
+                            const file = e.target.files?.[0]; if (!file) return;
+                            try {
+                              const { url } = await uploadOptimized(file, "product-images", merchantId);
+                              const m = [...editing.detail_media]; m[i] = { ...m[i], url };
+                              setEditing({ ...editing, detail_media: m });
+                              toast.success("Зураг ачаалагдлаа");
+                            } catch (err: any) { toast.error(err.message); }
+                          }} />
+                        <Upload className="h-4 w-4" />
+                      </label>
+                    )}
+                    {media.url && (media.type ?? "image") === "image" && (
+                      <img src={media.url} className="h-9 w-9 rounded-md object-cover" />
+                    )}
+                    <Button type="button" size="icon" variant="ghost"
+                      onClick={() => setEditing({ ...editing, detail_media: editing.detail_media.filter((_, j) => j !== i) })}>
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+                {(editing.detail_media ?? []).length === 0 && (
+                  <p className="py-2 text-xs text-muted-foreground">Нэмэлт зураг/видео байхгүй</p>
+                )}
+              </div>
+            </div>
+
             {/* Colors */}
             <div className="md:col-span-2">
               <div className="mb-2 flex items-center justify-between">
