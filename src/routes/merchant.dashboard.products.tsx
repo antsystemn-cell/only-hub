@@ -15,7 +15,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { Plus, Edit, Copy, Trash2, Search, ImageIcon, X } from "lucide-react";
+import { Plus, Edit, Copy, Trash2, Search, ImageIcon, X, Upload } from "lucide-react";
 import { fmtMnt, slugify } from "@/lib/format";
 import { uploadOptimized } from "@/lib/image";
 
@@ -39,9 +39,11 @@ type Product = {
   brand_id?: string | null;
   is_new: boolean;
   is_on_sale: boolean;
+  is_bogo: boolean;
   is_active: boolean;
   stock_quantity: number;
-  detail_media: Array<{ url: string; caption?: string }>;
+  detail_media: Array<{ url: string; type?: "image" | "video"; caption?: string }>;
+  gallery_images: string[];
   specifications: Array<{ key: string; value: string }>;
   colors: ColorVariant[];
   sizes: string[];
@@ -49,8 +51,8 @@ type Product = {
 };
 
 const blank: Product = {
-  name: "", price: 0, discount: 0, is_new: false, is_on_sale: false, is_active: true,
-  stock_quantity: 0, detail_media: [], specifications: [], colors: [], sizes: [], variant_stock: {},
+  name: "", price: 0, discount: 0, is_new: false, is_on_sale: false, is_bogo: false, is_active: true,
+  stock_quantity: 0, detail_media: [], gallery_images: [], specifications: [], colors: [], sizes: [], variant_stock: {},
 };
 
 function ProductsPage() {
