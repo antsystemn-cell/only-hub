@@ -175,6 +175,35 @@ function ProductsPage() {
                 <Input type="file" accept="image/*" disabled={uploading} onChange={(e) => e.target.files?.[0] && onUpload(e.target.files[0])} />
               </div>
             </div>
+            {/* Gallery images */}
+            <div className="md:col-span-2">
+              <Label>Нэмэлт зурагнууд (галерей)</Label>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {(editing.gallery_images ?? []).map((url, i) => (
+                  <div key={i} className="relative">
+                    <img src={url} className="h-16 w-16 rounded-lg object-cover" />
+                    <button type="button"
+                      onClick={() => setEditing({ ...editing, gallery_images: (editing.gallery_images ?? []).filter((_, j) => j !== i) })}
+                      className="absolute -right-1 -top-1 rounded-full bg-destructive p-0.5 text-destructive-foreground">
+                      <X className="h-2.5 w-2.5" />
+                    </button>
+                  </div>
+                ))}
+                <label className="flex h-16 w-16 cursor-pointer items-center justify-center rounded-lg border-2 border-dashed border-border hover:border-primary">
+                  <input type="file" accept="image/*" multiple className="hidden"
+                    onChange={async (e) => {
+                      const files = Array.from(e.target.files ?? []);
+                      for (const file of files) {
+                        try {
+                          const { url } = await uploadOptimized(file, "product-images", merchantId);
+                          setEditing((prev) => ({ ...prev, gallery_images: [...(prev.gallery_images ?? []), url] }));
+                        } catch (err: any) { toast.error(err.message); }
+                      }
+                    }} />
+                  <Plus className="h-5 w-5 text-muted-foreground" />
+                </label>
+              </div>
+            </div>
             <div>
               <Label>Нэр *</Label>
               <Input value={editing.name} onChange={(e) => setEditing({ ...editing, name: e.target.value })} />
