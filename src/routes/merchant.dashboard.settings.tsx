@@ -140,7 +140,9 @@ function PaymentsTab() {
   const { primaryMerchantId } = useAuth();
   const merchantId = primaryMerchantId!;
   const qc = useQueryClient();
-  const [form, setForm] = useState<any>({ provider_type: "qpay", name: "QPay", icon: "💳", is_active: true, credentials: {} });
+  const emptyForm = { provider_type: "qpay", name: "QPay", icon: "💳", is_active: true, credentials: {} as any, description: "" };
+  const [form, setForm] = useState<any>(emptyForm);
+  const [editId, setEditId] = useState<string | null>(null);
   const [showSecret, setShowSecret] = useState(false);
 
   const { data: items = [] } = useQuery({
@@ -148,14 +150,35 @@ function PaymentsTab() {
     queryFn: async () => (await supabase.from("payment_providers").select("*").eq("merchant_id", merchantId)).data ?? [],
   });
 
+  const resetForm = () => { setForm(emptyForm); setEditId(null); };
+
   const save = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase.from("payment_providers").insert({ ...form, merchant_id: merchantId });
-      if (error) throw error;
+      if (editId) {
+        const { id, created_at, updated_at, merchant_id, ...rest } = form;
+        const { error } = await supabase.from("payment_providers").update(rest).eq("id", editId);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from("payment_providers").insert({ ...form, merchant_id: merchantId });
+        if (error) throw error;
+      }
     },
-    onSuccess: () => { toast.success("Нэмэгдлээ"); qc.invalidateQueries({ queryKey: ["payment_providers", merchantId] }); },
+    onSuccess: () => { toast.success(editId ? "Шинэчлэгдлээ" : "Нэмэгдлээ"); resetForm(); qc.invalidateQueries({ queryKey: ["payment_providers", merchantId] }); },
     onError: (e: any) => toast.error(e.message),
   });
+
+  const startEdit = (p: any) => {
+    setEditId(p.id);
+    setForm({
+      provider_type: p.provider_type,
+      name: p.name,
+      icon: p.icon ?? "💳",
+      is_active: !!p.is_active,
+      credentials: p.credentials ?? {},
+      description: p.description ?? "",
+    });
+    if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
   const del = async (id: string) => {
     await supabase.from("payment_providers").delete().eq("id", id);
