@@ -15,7 +15,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { Plus, Edit, Copy, Trash2, Search, ImageIcon, X } from "lucide-react";
+import { Plus, Edit, Copy, Trash2, Search, ImageIcon, X, Upload } from "lucide-react";
 import { fmtMnt, slugify } from "@/lib/format";
 import { uploadOptimized } from "@/lib/image";
 
@@ -39,9 +39,11 @@ type Product = {
   brand_id?: string | null;
   is_new: boolean;
   is_on_sale: boolean;
+  is_bogo: boolean;
   is_active: boolean;
   stock_quantity: number;
-  detail_media: Array<{ url: string; caption?: string }>;
+  detail_media: Array<{ url: string; type?: "image" | "video"; caption?: string }>;
+  gallery_images: string[];
   specifications: Array<{ key: string; value: string }>;
   colors: ColorVariant[];
   sizes: string[];
@@ -49,8 +51,8 @@ type Product = {
 };
 
 const blank: Product = {
-  name: "", price: 0, discount: 0, is_new: false, is_on_sale: false, is_active: true,
-  stock_quantity: 0, detail_media: [], specifications: [], colors: [], sizes: [], variant_stock: {},
+  name: "", price: 0, discount: 0, is_new: false, is_on_sale: false, is_bogo: false, is_active: true,
+  stock_quantity: 0, detail_media: [], gallery_images: [], specifications: [], colors: [], sizes: [], variant_stock: {},
 };
 
 function ProductsPage() {
@@ -173,6 +175,35 @@ function ProductsPage() {
                 <Input type="file" accept="image/*" disabled={uploading} onChange={(e) => e.target.files?.[0] && onUpload(e.target.files[0])} />
               </div>
             </div>
+            {/* Gallery images */}
+            <div className="md:col-span-2">
+              <Label>Нэмэлт зурагнууд (галерей)</Label>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {(editing.gallery_images ?? []).map((url, i) => (
+                  <div key={i} className="relative">
+                    <img src={url} className="h-16 w-16 rounded-lg object-cover" />
+                    <button type="button"
+                      onClick={() => setEditing({ ...editing, gallery_images: (editing.gallery_images ?? []).filter((_, j) => j !== i) })}
+                      className="absolute -right-1 -top-1 rounded-full bg-destructive p-0.5 text-destructive-foreground">
+                      <X className="h-2.5 w-2.5" />
+                    </button>
+                  </div>
+                ))}
+                <label className="flex h-16 w-16 cursor-pointer items-center justify-center rounded-lg border-2 border-dashed border-border hover:border-primary">
+                  <input type="file" accept="image/*" multiple className="hidden"
+                    onChange={async (e) => {
+                      const files = Array.from(e.target.files ?? []);
+                      for (const file of files) {
+                        try {
+                          const { url } = await uploadOptimized(file, "product-images", merchantId);
+                          setEditing((prev) => ({ ...prev, gallery_images: [...(prev.gallery_images ?? []), url] }));
+                        } catch (err: any) { toast.error(err.message); }
+                      }
+                    }} />
+                  <Plus className="h-5 w-5 text-muted-foreground" />
+                </label>
+              </div>
+            </div>
             <div>
               <Label>Нэр *</Label>
               <Input value={editing.name} onChange={(e) => setEditing({ ...editing, name: e.target.value })} />
@@ -257,6 +288,72 @@ function ProductsPage() {
                     </Button>
                   </div>
                 ))}
+              </div>
+            </div>
+
+            {/* Detail Media */}
+            <div className="md:col-span-2">
+              <div className="mb-2 flex items-center justify-between">
+                <Label>Нарийвчилсан медиа (зураг/видео)</Label>
+                <Button type="button" size="sm" variant="outline"
+                  onClick={() => setEditing({ ...editing, detail_media: [...(editing.detail_media ?? []), { url: "", type: "image", caption: "" }] })}>
+                  <Plus className="mr-1 h-3 w-3" /> Нэмэх
+                </Button>
+              </div>
+              <div className="space-y-2">
+                {(editing.detail_media ?? []).map((media, i) => (
+                  <div key={i} className="flex items-start gap-2 rounded-xl border border-border p-3">
+                    <div className="grid flex-1 gap-2 md:grid-cols-[120px_1fr_1fr]">
+                      <Select value={media.type ?? "image"}
+                        onValueChange={(v) => {
+                          const m = [...editing.detail_media]; m[i] = { ...m[i], type: v as "image" | "video" };
+                          setEditing({ ...editing, detail_media: m });
+                        }}>
+                        <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="image">🖼 Зураг</SelectItem>
+                          <SelectItem value="video">🎬 Видео URL</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <Input placeholder={(media.type ?? "image") === "video" ? "YouTube/Vimeo URL" : "Зургийн URL"}
+                        value={media.url}
+                        onChange={(e) => {
+                          const m = [...editing.detail_media]; m[i] = { ...m[i], url: e.target.value };
+                          setEditing({ ...editing, detail_media: m });
+                        }} />
+                      <Input placeholder="Caption (заавал биш)" value={media.caption ?? ""}
+                        onChange={(e) => {
+                          const m = [...editing.detail_media]; m[i] = { ...m[i], caption: e.target.value };
+                          setEditing({ ...editing, detail_media: m });
+                        }} />
+                    </div>
+                    {(media.type ?? "image") === "image" && (
+                      <label className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-md border border-border hover:bg-muted">
+                        <input type="file" accept="image/*" className="hidden"
+                          onChange={async (e) => {
+                            const file = e.target.files?.[0]; if (!file) return;
+                            try {
+                              const { url } = await uploadOptimized(file, "product-images", merchantId);
+                              const m = [...editing.detail_media]; m[i] = { ...m[i], url };
+                              setEditing({ ...editing, detail_media: m });
+                              toast.success("Зураг ачаалагдлаа");
+                            } catch (err: any) { toast.error(err.message); }
+                          }} />
+                        <Upload className="h-4 w-4" />
+                      </label>
+                    )}
+                    {media.url && (media.type ?? "image") === "image" && (
+                      <img src={media.url} className="h-9 w-9 rounded-md object-cover" />
+                    )}
+                    <Button type="button" size="icon" variant="ghost"
+                      onClick={() => setEditing({ ...editing, detail_media: editing.detail_media.filter((_, j) => j !== i) })}>
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+                {(editing.detail_media ?? []).length === 0 && (
+                  <p className="py-2 text-xs text-muted-foreground">Нэмэлт зураг/видео байхгүй</p>
+                )}
               </div>
             </div>
 
@@ -355,6 +452,7 @@ function ProductsPage() {
               <label className="flex items-center gap-2 text-sm"><Switch checked={editing.is_active} onCheckedChange={(v) => setEditing({ ...editing, is_active: v })} /> Идэвхтэй</label>
               <label className="flex items-center gap-2 text-sm"><Switch checked={editing.is_new} onCheckedChange={(v) => setEditing({ ...editing, is_new: v })} /> Шинэ</label>
               <label className="flex items-center gap-2 text-sm"><Switch checked={editing.is_on_sale} onCheckedChange={(v) => setEditing({ ...editing, is_on_sale: v })} /> Хямдралтай</label>
+              <label className="flex items-center gap-2 text-sm"><Switch checked={editing.is_bogo} onCheckedChange={(v) => setEditing({ ...editing, is_bogo: v })} /> 1+1 Үнэгүй</label>
             </div>
           </div>
           <div className="mt-4 flex gap-2">

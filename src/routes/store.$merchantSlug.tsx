@@ -4,6 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Search } from "lucide-react";
 import { fmtMnt } from "@/lib/format";
 
 export const Route = createFileRoute("/store/$merchantSlug")({ component: StorePage });
@@ -32,6 +34,7 @@ function StorePage() {
 
   const [activeBanner, setActiveBanner] = useState(0);
   const [activeCategory, setActiveCategory] = useState("all");
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     if (banners.length < 2) return;
@@ -39,10 +42,18 @@ function StorePage() {
     return () => clearInterval(t);
   }, [banners.length]);
 
-  const filteredProducts = useMemo(
-    () => activeCategory === "all" ? products : (products as any[]).filter((p) => p.category === activeCategory),
-    [products, activeCategory]
-  );
+  const filteredProducts = useMemo(() => {
+    let list = activeCategory === "all" ? products : (products as any[]).filter((p: any) => p.category === activeCategory);
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      list = (list as any[]).filter((p: any) =>
+        p.name.toLowerCase().includes(q) ||
+        (p.description ?? "").toLowerCase().includes(q) ||
+        (p.product_code ?? "").toLowerCase().includes(q)
+      );
+    }
+    return list;
+  }, [products, activeCategory, searchQuery]);
 
   if (!merchant) return <div className="flex min-h-screen items-center justify-center text-muted-foreground">Уншиж байна...</div>;
 
@@ -90,6 +101,11 @@ function StorePage() {
             )}
           </div>
         )}
+
+        <div className="relative mt-6">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input className="pl-9" placeholder="Бараа хайх..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
+        </div>
 
         {categories.length > 0 && (
           <div className="mt-6 flex gap-2 overflow-x-auto pb-2">

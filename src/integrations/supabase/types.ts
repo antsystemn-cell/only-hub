@@ -545,9 +545,11 @@ export type Database = {
           description: string | null
           detail_media: Json
           discount: number
+          gallery_images: Json
           id: string
           image_url: string | null
           is_active: boolean
+          is_bogo: boolean
           is_new: boolean
           is_on_sale: boolean
           merchant_id: string
@@ -572,9 +574,11 @@ export type Database = {
           description?: string | null
           detail_media?: Json
           discount?: number
+          gallery_images?: Json
           id?: string
           image_url?: string | null
           is_active?: boolean
+          is_bogo?: boolean
           is_new?: boolean
           is_on_sale?: boolean
           merchant_id: string
@@ -599,9 +603,11 @@ export type Database = {
           description?: string | null
           detail_media?: Json
           discount?: number
+          gallery_images?: Json
           id?: string
           image_url?: string | null
           is_active?: boolean
+          is_bogo?: boolean
           is_new?: boolean
           is_on_sale?: boolean
           merchant_id?: string

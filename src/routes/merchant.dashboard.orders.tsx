@@ -20,7 +20,7 @@ import {
   Collapsible, CollapsibleContent, CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { toast } from "sonner";
-import { Plus, FileSpreadsheet, FileText, Printer, Tag, Search, ChevronDown, X, Truck, Trash2 } from "lucide-react";
+import { Plus, FileSpreadsheet, FileText, Printer, Tag, Search, ChevronDown, X, Truck, Trash2, Pencil, Minus } from "lucide-react";
 import { fmtMnt, STATUS_LABELS, STATUS_TONE, PAYMENT_STATUS_LABELS } from "@/lib/format";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
@@ -246,6 +246,25 @@ function OrderRow({ order, checked, onCheck, onStatus, onPayment }: {
   onStatus: (s: string) => void; onPayment: (s: string) => void;
 }) {
   const [open, setOpen] = useState(false);
+  const [editingItems, setEditingItems] = useState(false);
+  const [localItems, setLocalItems] = useState<any[]>([]);
+  const qc = useQueryClient();
+  const { primaryMerchantId } = useAuth();
+
+  const startEdit = () => {
+    setLocalItems(JSON.parse(JSON.stringify(order.items ?? [])));
+    setEditingItems(true);
+  };
+  const saveItems = async () => {
+    const itemsTotal = localItems.reduce((s, it: any) => s + Number(it.price ?? 0) * Number(it.quantity ?? 1), 0);
+    const newTotal = itemsTotal + Number(order.delivery_fee ?? 0) - Number(order.coupon_discount ?? 0);
+    const { error } = await supabase.from("orders").update({ items: localItems, total: newTotal }).eq("id", order.id);
+    if (error) { toast.error(error.message); return; }
+    toast.success("Бараа шинэчлэгдлээ");
+    setEditingItems(false);
+    qc.invalidateQueries({ queryKey: ["orders", primaryMerchantId] });
+  };
+
   return (
     <div className="rounded-xl border border-border bg-card">
       <div className="flex items-center gap-3 p-3">
@@ -267,15 +286,61 @@ function OrderRow({ order, checked, onCheck, onStatus, onPayment }: {
       {open && (
         <div className="space-y-3 border-t border-border p-3 text-sm">
           <div>
-            <div className="mb-1 text-xs font-medium uppercase text-muted-foreground">Бараа</div>
-            <ul className="space-y-1">
-              {(order.items as any[]).map((it, i) => (
-                <li key={i} className="flex justify-between">
-                  <span>{it.name} × {it.quantity}{it.color ? ` • ${it.color}` : ""}{it.size ? ` • ${it.size}` : ""}</span>
-                  <span>{fmtMnt((it.price ?? 0) * (it.quantity ?? 1))}</span>
-                </li>
-              ))}
-            </ul>
+            <div className="mb-2 flex items-center justify-between">
+              <span className="text-xs font-medium uppercase text-muted-foreground">Захиалсан бараа</span>
+              {!editingItems ? (
+                <Button size="sm" variant="outline" onClick={startEdit}>
+                  <Pencil className="mr-1 h-3 w-3" /> Засах
+                </Button>
+              ) : (
+                <div className="flex gap-1">
+                  <Button size="sm" onClick={saveItems}>Хадгалах</Button>
+                  <Button size="sm" variant="outline" onClick={() => setEditingItems(false)}>Болих</Button>
+                </div>
+              )}
+            </div>
+            {editingItems ? (
+              <div className="space-y-2">
+                {localItems.map((it: any, i: number) => (
+                  <div key={i} className="flex items-center gap-2 rounded-lg border border-border p-2">
+                    <div className="flex-1 text-sm">{it.name}</div>
+                    <Input type="number" className="h-8 w-24" value={it.price}
+                      onChange={(e) => {
+                        const next = [...localItems]; next[i] = { ...next[i], price: Number(e.target.value) };
+                        setLocalItems(next);
+                      }} />
+                    <div className="flex items-center gap-1">
+                      <Button size="icon" variant="ghost" className="h-7 w-7"
+                        onClick={() => { const n = [...localItems]; n[i] = { ...n[i], quantity: Math.max(1, n[i].quantity - 1) }; setLocalItems(n); }}>
+                        <Minus className="h-3 w-3" />
+                      </Button>
+                      <span className="w-6 text-center text-sm">{it.quantity}</span>
+                      <Button size="icon" variant="ghost" className="h-7 w-7"
+                        onClick={() => { const n = [...localItems]; n[i] = { ...n[i], quantity: n[i].quantity + 1 }; setLocalItems(n); }}>
+                        <Plus className="h-3 w-3" />
+                      </Button>
+                    </div>
+                    <span className="w-24 text-right text-sm font-medium">{fmtMnt((it.price ?? 0) * (it.quantity ?? 1))}</span>
+                    <Button size="icon" variant="ghost" className="h-7 w-7"
+                      onClick={() => setLocalItems(localItems.filter((_, j) => j !== i))}>
+                      <X className="h-3 w-3" />
+                    </Button>
+                  </div>
+                ))}
+                <div className="text-right text-sm font-semibold">
+                  Нийт: {fmtMnt(localItems.reduce((s: number, it: any) => s + (it.price ?? 0) * (it.quantity ?? 1), 0) + Number(order.delivery_fee ?? 0) - Number(order.coupon_discount ?? 0))}
+                </div>
+              </div>
+            ) : (
+              <ul className="space-y-1">
+                {(order.items as any[]).map((it, i) => (
+                  <li key={i} className="flex justify-between">
+                    <span>{it.name} × {it.quantity}{it.color ? ` • ${it.color}` : ""}{it.size ? ` • ${it.size}` : ""}</span>
+                    <span>{fmtMnt((it.price ?? 0) * (it.quantity ?? 1))}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
           {order.shipping_address && <div><span className="text-muted-foreground">Хаяг: </span>{order.shipping_address}</div>}
           {order.note && <div><span className="text-muted-foreground">Тэмдэглэл: </span>{order.note}</div>}
@@ -452,6 +517,28 @@ function ManualOrderDialog({ open, onOpenChange, merchantId, onCreated }: { open
                 </div>
               ))}
             </div>
+            {items.length > 0 && (
+              <div className="mt-2 flex justify-end">
+                <Button type="button" size="sm" variant="outline"
+                  onClick={() => {
+                    const pdf = new jsPDF({ unit: "mm", format: [70, 80] });
+                    pdf.setFontSize(9); pdf.text("Барааны жагсаалт", 5, 8);
+                    pdf.setFontSize(8);
+                    let y = 15;
+                    items.forEach((it) => {
+                      const line = `${it.name} x${it.quantity} = ${fmtMnt(it.price * it.quantity)}`;
+                      pdf.text(line.slice(0, 45), 5, y, { maxWidth: 60 });
+                      y += 7;
+                      if (y > 72) { pdf.addPage([70, 80]); y = 10; }
+                    });
+                    pdf.setFontSize(9);
+                    pdf.text(`Niit: ${fmtMnt(subtotal)}`, 5, y + 3);
+                    pdf.save(`items-${Date.now()}.pdf`);
+                  }}>
+                  <FileText className="mr-1 h-4 w-4" /> PDF татах
+                </Button>
+              </div>
+            )}
           </section>
 
           <section className="grid gap-3 md:grid-cols-3">
