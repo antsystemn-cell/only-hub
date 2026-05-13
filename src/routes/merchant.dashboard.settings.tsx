@@ -195,7 +195,7 @@ function PaymentsTab() {
 
   return (
     <Card className="rounded-2xl p-5">
-      <h3 className="mb-4 font-semibold">Шинэ төлбөрийн үйлчилгээ</h3>
+      <h3 className="mb-4 font-semibold">{editId ? "Төлбөрийн үйлчилгээ засах" : "Шинэ төлбөрийн үйлчилгээ"}</h3>
       <div className="grid gap-3 md:grid-cols-3">
         <div><Label>Үйлчилгээ</Label>
           <Select value={form.provider_type} onValueChange={(v) => setForm({ ...form, provider_type: v, credentials: {} })}>
@@ -230,19 +230,20 @@ function PaymentsTab() {
         <div className="flex items-center gap-2"><Switch checked={form.is_active} onCheckedChange={(v) => setForm({ ...form, is_active: v })} /><span className="text-sm">Идэвхтэй</span></div>
       </div>
       <div className="mt-4 flex gap-2">
-        <Button onClick={() => save.mutate()}>Хадгалах</Button>
+        <Button onClick={() => save.mutate()} disabled={save.isPending}>{editId ? "Шинэчлэх" : "Хадгалах"}</Button>
+        {editId && <Button variant="ghost" onClick={resetForm}><X className="mr-1 h-4 w-4" /> Болих</Button>}
       </div>
 
       <div className="mt-6 space-y-2">
         {(items as any[]).map((p) => (
-          <ProviderRow key={p.id} provider={p} onDelete={() => del(p.id)} />
+          <ProviderRow key={p.id} provider={p} onEdit={() => startEdit(p)} onDelete={() => del(p.id)} />
         ))}
       </div>
     </Card>
   );
 }
 
-function ProviderRow({ provider: p, onDelete }: { provider: any; onDelete: () => void }) {
+function ProviderRow({ provider: p, onEdit, onDelete }: { provider: any; onEdit: () => void; onDelete: () => void }) {
   const test = useServerFn(testPaymentConnection);
   const [pending, setPending] = useState(false);
   const hasCreds = p.credentials && Object.keys(p.credentials).length > 0;
