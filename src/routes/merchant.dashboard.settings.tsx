@@ -266,6 +266,7 @@ function ProviderRow({ provider: p, onEdit, onDelete }: { provider: any; onEdit:
       </span>
       <div className="flex items-center gap-1">
         <Button size="sm" variant="outline" onClick={runTest} disabled={pending}>{pending ? "Шалгаж байна..." : "Холболт шалгах"}</Button>
+        <Button size="icon" variant="ghost" onClick={onEdit}><Pencil className="h-4 w-4" /></Button>
         <Button size="icon" variant="ghost" onClick={onDelete}><Trash2 className="h-4 w-4" /></Button>
       </div>
     </div>
