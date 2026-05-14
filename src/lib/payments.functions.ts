@@ -40,9 +40,21 @@ export const testPaymentConnection = createServerFn({ method: "POST" })
           Authorization: "Basic " + basicAuth,
         },
       });
-      if (!res.ok) return { ok: false, message: `QPay хариу: ${res.status}` };
+      if (!res.ok) {
+        const text = await res.text().catch(() => "");
+        let detail = text;
+        try {
+          const j = JSON.parse(text);
+          detail = j.message || j.error || j.error_description || text;
+        } catch {}
+        const hint =
+          res.status === 401 || res.status === 403 || res.status === 500
+            ? " — username / password буруу эсвэл QPay merchant эрх олгогдоогүй байж магадгүй"
+            : "";
+        return { ok: false, message: `QPay (${res.status}): ${detail || "тодорхойгүй алдаа"}${hint}` };
+      }
       const json = (await res.json()) as { access_token?: string };
-      if (!json.access_token) return { ok: false, message: "Token буцаагдаагүй" };
+      if (!json.access_token) return { ok: false, message: "QPay token буцаагдаагүй" };
       return { ok: true, message: "QPay холболт амжилттай" };
     } catch (e: any) {
       console.error("testPaymentConnection failed:", e);
