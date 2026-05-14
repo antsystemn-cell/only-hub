@@ -13,7 +13,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { Trash2, Plus, Eye, EyeOff, Pencil, X } from "lucide-react";
-import { fmtMnt } from "@/lib/format";
+import { fmtMnt, slugify } from "@/lib/format";
 import { useServerFn } from "@tanstack/react-start";
 import { testPaymentConnection } from "@/lib/payments.functions";
 
@@ -30,6 +30,7 @@ function SettingsPage() {
           <TabsTrigger value="delivery">Хүргэлт</TabsTrigger>
           <TabsTrigger value="payments">Төлбөр</TabsTrigger>
           <TabsTrigger value="banners">Баннер</TabsTrigger>
+          <TabsTrigger value="import">📥 Импорт</TabsTrigger>
         </TabsList>
         <TabsContent value="categories"><CrudList table="categories" fields={[{ k: "name", l: "Нэр" }, { k: "icon", l: "Icon (emoji)" }]} /></TabsContent>
         <TabsContent value="brands"><CrudList table="brands" fields={[{ k: "name", l: "Нэр" }, { k: "logo_url", l: "Лого URL" }]} /></TabsContent>
@@ -51,8 +52,87 @@ function SettingsPage() {
           { k: "button_link", l: "Товчны линк" },
           { k: "banner_image", l: "Зургийн URL" },
         ]} hasActiveToggle /></TabsContent>
+        <TabsContent value="import"><ImportTab /></TabsContent>
       </Tabs>
     </div>
+  );
+}
+
+function ImportTab() {
+  const { primaryMerchantId } = useAuth();
+  const [jsonInput, setJsonInput] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState<{ success: number; errors: number } | null>(null);
+  const qc = useQueryClient();
+
+  const importProducts = async () => {
+    if (!jsonInput.trim()) return toast.error("JSON оруулна уу");
+    setLoading(true);
+    let items: any[];
+    try {
+      items = JSON.parse(jsonInput);
+      if (!Array.isArray(items)) items = [items];
+    } catch {
+      toast.error("JSON формат буруу"); setLoading(false); return;
+    }
+    let success = 0, errors = 0;
+    for (const item of items) {
+      try {
+        const { error } = await (supabase as any).from("products").insert({
+          merchant_id: primaryMerchantId!,
+          name: item.name,
+          slug: item.slug || slugify(item.name) + "-" + Math.random().toString(36).slice(2, 5),
+          price: Number(item.price ?? 0),
+          original_price: item.original_price ? Number(item.original_price) : null,
+          discount: Number(item.discount ?? 0),
+          image_url: item.image_url ?? null,
+          thumbnail_url: item.thumbnail_url ?? item.image_url ?? null,
+          category: item.category ?? "general",
+          description: item.description ?? null,
+          product_code: item.product_code ?? null,
+          stock_quantity: Number(item.stock_quantity ?? 0),
+          is_new: !!item.is_new,
+          is_on_sale: !!item.is_on_sale,
+          is_active: item.is_active !== false,
+          colors: item.colors ?? [],
+          sizes: item.sizes ?? [],
+          variant_stock: item.variant_stock ?? {},
+          specifications: item.specifications ?? [],
+          detail_media: item.detail_media ?? [],
+        });
+        if (error) { errors++; console.error(error.message); } else success++;
+      } catch { errors++; }
+    }
+    setResult({ success, errors });
+    setLoading(false);
+    qc.invalidateQueries({ queryKey: ["products", primaryMerchantId] });
+    toast.success(`${success} бараа импортлогдлоо${errors > 0 ? `, ${errors} алдаа` : ""}`);
+  };
+
+  return (
+    <Card className="rounded-2xl p-6">
+      <h3 className="mb-1 font-semibold">Бараа импорт (JSON)</h3>
+      <p className="mb-4 text-sm text-muted-foreground">JSON массив форматаар бараануудыг нэг дор оруулна.</p>
+      <textarea
+        className="w-full rounded-xl border border-border bg-muted p-3 font-mono text-xs focus:outline-none focus:ring-2 focus:ring-primary/20"
+        rows={12}
+        placeholder={`[\n  {\n    "name": "Барааны нэр",\n    "price": 25000,\n    "original_price": 30000,\n    "category": "Хувцас",\n    "image_url": "https://...",\n    "is_new": true\n  }\n]`}
+        value={jsonInput}
+        onChange={(e) => setJsonInput(e.target.value)}
+      />
+      {result && (
+        <div className="mt-2 rounded-xl bg-muted p-3 text-sm">
+          ✅ Амжилттай: <span className="font-semibold text-emerald-600">{result.success}</span>{" "}
+          {result.errors > 0 && <>❌ Алдаа: <span className="font-semibold text-red-600">{result.errors}</span></>}
+        </div>
+      )}
+      <div className="mt-4 flex gap-2">
+        <Button onClick={importProducts} disabled={loading || !jsonInput.trim()}>
+          {loading ? "Импортлож байна..." : "Импортлох"}
+        </Button>
+        <Button variant="outline" onClick={() => { setJsonInput(""); setResult(null); }}>Цэвэрлэх</Button>
+      </div>
+    </Card>
   );
 }
 
