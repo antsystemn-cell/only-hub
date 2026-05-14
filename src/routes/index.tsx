@@ -279,10 +279,15 @@ function Index() {
                     </div>
                   </Card>
                 );
-                return m && p.slug ? (
-                  <Link key={p.id} to="/store/$merchantSlug/product/$productSlug" params={{ merchantSlug: m.slug, productSlug: p.slug }}>{card}</Link>
-                ) : m ? (
-                  <Link key={p.id} to="/store/$merchantSlug" params={{ merchantSlug: m.slug }}>{card}</Link>
+                // Always link to product detail — the route handler accepts either slug or id.
+                return m ? (
+                  <Link
+                    key={p.id}
+                    to="/store/$merchantSlug/product/$productSlug"
+                    params={{ merchantSlug: m.slug, productSlug: p.slug || p.id }}
+                  >
+                    {card}
+                  </Link>
                 ) : (
                   <div key={p.id}>{card}</div>
                 );
