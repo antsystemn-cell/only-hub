@@ -153,6 +153,48 @@ function AdminPage() {
         <Card className="rounded-2xl p-5"><div className="text-sm text-muted-foreground">Шимтгэлийн орлого</div><div className="mt-2 text-2xl font-bold text-emerald-600">{fmtMnt(totalCommission)}</div></Card>
       </div>
 
+      {/* Pending approvals */}
+      {merchants.filter((m: any) => m.approval_status === "pending").length > 0 && (
+        <Card className="mt-8 rounded-2xl border-amber-300/50 bg-amber-50/40 p-4 dark:bg-amber-950/20">
+          <h2 className="mb-3 text-lg font-semibold">Баталгаажуулалт хүлээж буй ({merchants.filter((m: any) => m.approval_status === "pending").length})</h2>
+          <div className="space-y-2">
+            {merchants.filter((m: any) => m.approval_status === "pending").map((m: any) => (
+              <div key={m.id} className="grid gap-2 rounded-xl border border-border bg-background p-3 text-sm md:grid-cols-[2fr_1fr_1fr_auto]">
+                <div>
+                  <div className="font-medium">{m.name} <span className="text-xs text-muted-foreground">/{m.slug}</span></div>
+                  <div className="text-xs text-muted-foreground">{m.business_type ?? "—"} · РД: {m.register_number ?? "—"}</div>
+                </div>
+                <div className="text-xs"><div>{m.contact_name ?? "—"}</div><div className="text-muted-foreground">{m.contact_phone ?? "—"}</div></div>
+                <div className="text-xs text-muted-foreground">{new Date(m.created_at).toLocaleDateString("mn-MN")}</div>
+                <div className="flex gap-1">
+                  <Button size="sm" onClick={() => approveMerchant.mutate(m.id)} disabled={approveMerchant.isPending}>
+                    <Check className="mr-1 h-3.5 w-3.5" /> Зөвшөөрөх
+                  </Button>
+                  <AlertDialog open={rejectingId === m.id} onOpenChange={(o) => { if (!o) { setRejectingId(null); setRejectReason(""); } }}>
+                    <AlertDialogTrigger asChild>
+                      <Button size="sm" variant="outline" onClick={() => setRejectingId(m.id)}>
+                        <X className="mr-1 h-3.5 w-3.5" /> Татгалзах
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Татгалзах шалтгаан</AlertDialogTitle>
+                        <AlertDialogDescription>Энэ дэлгүүрийг яагаад татгалзаж байгаагаа бичнэ үү.</AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <Input value={rejectReason} onChange={(e) => setRejectReason(e.target.value)} placeholder="Жишээ нь: Бүртгэлийн мэдээлэл буруу" />
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Болих</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => { rejectMerchant.mutate({ id: m.id, reason: rejectReason || "Татгалзсан" }); setRejectingId(null); setRejectReason(""); }}>Татгалзах</AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
+
       <Tabs defaultValue="merchants" className="mt-8">
         <TabsList>
           <TabsTrigger value="merchants">Мерчантууд</TabsTrigger>
