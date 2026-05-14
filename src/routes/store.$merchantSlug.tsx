@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, Outlet, useRouterState } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -12,6 +12,8 @@ export const Route = createFileRoute("/store/$merchantSlug")({ component: StoreP
 
 function StorePage() {
   const { merchantSlug } = Route.useParams();
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
+  const isStoreIndex = pathname === `/store/${merchantSlug}` || pathname === `/store/${merchantSlug}/`;
   const { data: merchant } = useQuery({
     queryKey: ["merchant", merchantSlug],
     queryFn: async () => (await supabase.from("merchants").select("*").eq("slug", merchantSlug).maybeSingle()).data,
@@ -54,6 +56,8 @@ function StorePage() {
     }
     return list;
   }, [products, activeCategory, searchQuery]);
+
+  if (!isStoreIndex) return <Outlet />;
 
   if (!merchant) return <div className="flex min-h-screen items-center justify-center text-muted-foreground">Уншиж байна...</div>;
 
