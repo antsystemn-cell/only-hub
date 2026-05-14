@@ -112,6 +112,45 @@ function Index() {
         </section>
       )}
 
+      {products && products.length > 0 && (
+        <section className="container mx-auto px-4 py-16">
+          <div className="mb-8 flex items-end justify-between">
+            <h2 className="text-3xl font-bold">Шинэ бүтээгдэхүүн</h2>
+            <Link to="/stores" className="text-sm text-primary hover:underline">Бүх дэлгүүр →</Link>
+          </div>
+          <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+            {products.map((p: any) => {
+              const slug = merchantBySlug[p.merchant_id];
+              const inner = (
+                <Card className="group flex h-full flex-col overflow-hidden rounded-2xl transition-all hover:border-primary">
+                  <div className="relative aspect-square bg-muted">
+                    {p.thumbnail_url || p.image_url ? (
+                      <img src={p.thumbnail_url ?? p.image_url} alt={p.name} className="h-full w-full object-cover transition-transform group-hover:scale-105" loading="lazy" />
+                    ) : null}
+                    {p.is_new && <span className="absolute left-2 top-2 rounded bg-primary px-2 py-0.5 text-[10px] font-semibold text-primary-foreground">ШИНЭ</span>}
+                    {p.is_on_sale && <span className="absolute right-2 top-2 rounded bg-destructive px-2 py-0.5 text-[10px] font-semibold text-destructive-foreground">SALE</span>}
+                  </div>
+                  <div className="flex flex-1 flex-col p-3">
+                    <h3 className="line-clamp-2 text-sm font-medium group-hover:text-primary">{p.name}</h3>
+                    <div className="mt-2 flex items-baseline gap-2">
+                      <span className="font-bold text-foreground">{fmtMnt(p.price)}</span>
+                      {p.original_price && Number(p.original_price) > Number(p.price) && (
+                        <span className="text-xs text-muted-foreground line-through">{fmtMnt(p.original_price)}</span>
+                      )}
+                    </div>
+                  </div>
+                </Card>
+              );
+              return slug ? (
+                <Link key={p.id} to="/store/$merchantSlug" params={{ merchantSlug: slug }}>{inner}</Link>
+              ) : (
+                <div key={p.id}>{inner}</div>
+              );
+            })}
+          </div>
+        </section>
+      )}
+
       <footer className="border-t border-border py-8 text-center text-sm text-muted-foreground">
         © {new Date().getFullYear()} Only Platform
       </footer>
