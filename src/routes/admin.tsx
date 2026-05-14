@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { fmtMnt } from "@/lib/format";
 import { toast } from "sonner";
 import { Pencil, Check, X } from "lucide-react";
@@ -30,7 +31,7 @@ function AdminPage() {
     queryFn: async () => {
       const { data } = await supabase
         .from("merchants")
-        .select("id,name,slug,commission_rate,is_active,created_at")
+        .select("id,name,slug,commission_rate,is_active,created_at,approval_status,rejection_reason,contact_name,contact_phone,business_type,register_number")
         .order("created_at", { ascending: false });
       return data ?? [];
     },
@@ -90,6 +91,28 @@ function AdminPage() {
       toast.success("Шинэчиллээ");
       qc.invalidateQueries({ queryKey: ["admin-merchants"] });
     },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const approveMerchant = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("merchants").update({
+        approval_status: "approved", is_active: true,
+        approved_at: new Date().toISOString(), approved_by: user?.id,
+      } as any).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => { toast.success("Дэлгүүр баталгаажлаа"); qc.invalidateQueries({ queryKey: ["admin-merchants"] }); },
+    onError: (e: any) => toast.error(e.message),
+  });
+  const rejectMerchant = useMutation({
+    mutationFn: async ({ id, reason }: { id: string; reason: string }) => {
+      const { error } = await supabase.from("merchants").update({
+        approval_status: "rejected", is_active: false, rejection_reason: reason,
+      } as any).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => { toast.success("Татгалзлаа"); qc.invalidateQueries({ queryKey: ["admin-merchants"] }); },
     onError: (e: any) => toast.error(e.message),
   });
 
