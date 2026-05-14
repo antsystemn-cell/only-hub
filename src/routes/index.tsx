@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Store, ShoppingBag, TrendingUp, Sparkles } from "lucide-react";
+import { fmtMnt } from "@/lib/format";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -21,10 +22,26 @@ function Index() {
   const { data: merchants } = useQuery({
     queryKey: ["home-merchants"],
     queryFn: async () => {
-      const { data } = await supabase.from("merchants").select("id,name,slug,logo_url,description").eq("is_active", true).limit(8);
+      const { data } = await supabase.from("merchants").select("id,name,slug,logo_url,description").eq("is_active", true).eq("approval_status", "approved").limit(8);
       return data ?? [];
     },
   });
+
+  const { data: products } = useQuery({
+    queryKey: ["home-products"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("products")
+        .select("id,name,price,original_price,image_url,thumbnail_url,merchant_id,is_new,is_on_sale,slug")
+        .eq("is_active", true)
+        .order("created_at", { ascending: false })
+        .limit(12);
+      return data ?? [];
+    },
+  });
+
+  const merchantBySlug: Record<string, string> = {};
+  (merchants ?? []).forEach((m: any) => { merchantBySlug[m.id] = m.slug; });
 
   return (
     <div className="min-h-screen bg-background">
@@ -91,6 +108,45 @@ function Index() {
                 </Card>
               </Link>
             ))}
+          </div>
+        </section>
+      )}
+
+      {products && products.length > 0 && (
+        <section className="container mx-auto px-4 py-16">
+          <div className="mb-8 flex items-end justify-between">
+            <h2 className="text-3xl font-bold">Шинэ бүтээгдэхүүн</h2>
+            <Link to="/stores" className="text-sm text-primary hover:underline">Бүх дэлгүүр →</Link>
+          </div>
+          <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+            {products.map((p: any) => {
+              const slug = merchantBySlug[p.merchant_id];
+              const inner = (
+                <Card className="group flex h-full flex-col overflow-hidden rounded-2xl transition-all hover:border-primary">
+                  <div className="relative aspect-square bg-muted">
+                    {p.thumbnail_url || p.image_url ? (
+                      <img src={p.thumbnail_url ?? p.image_url} alt={p.name} className="h-full w-full object-cover transition-transform group-hover:scale-105" loading="lazy" />
+                    ) : null}
+                    {p.is_new && <span className="absolute left-2 top-2 rounded bg-primary px-2 py-0.5 text-[10px] font-semibold text-primary-foreground">ШИНЭ</span>}
+                    {p.is_on_sale && <span className="absolute right-2 top-2 rounded bg-destructive px-2 py-0.5 text-[10px] font-semibold text-destructive-foreground">SALE</span>}
+                  </div>
+                  <div className="flex flex-1 flex-col p-3">
+                    <h3 className="line-clamp-2 text-sm font-medium group-hover:text-primary">{p.name}</h3>
+                    <div className="mt-2 flex items-baseline gap-2">
+                      <span className="font-bold text-foreground">{fmtMnt(p.price)}</span>
+                      {p.original_price && Number(p.original_price) > Number(p.price) && (
+                        <span className="text-xs text-muted-foreground line-through">{fmtMnt(p.original_price)}</span>
+                      )}
+                    </div>
+                  </div>
+                </Card>
+              );
+              return slug ? (
+                <Link key={p.id} to="/store/$merchantSlug" params={{ merchantSlug: slug }}>{inner}</Link>
+              ) : (
+                <div key={p.id}>{inner}</div>
+              );
+            })}
           </div>
         </section>
       )}
