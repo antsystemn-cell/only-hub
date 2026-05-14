@@ -166,6 +166,7 @@ function Index() {
         .select("id,name,price,original_price,image_url,thumbnail_url,merchant_id,is_new,is_on_sale,slug,description", { count: "exact" })
         .eq("is_active", true)
         .order("created_at", { ascending: false })
+        .order("id", { ascending: false })
         .range(from, to);
       return { items: data ?? [], count: count ?? 0, page: pageParam as number };
     },
@@ -175,7 +176,13 @@ function Index() {
     },
   });
 
-  const items = productsQ.data?.pages.flatMap((p) => p.items) ?? [];
+  const rawItems = productsQ.data?.pages.flatMap((p) => p.items) ?? [];
+  const seen = new Set<string>();
+  const items = rawItems.filter((it: any) => {
+    if (seen.has(it.id)) return false;
+    seen.add(it.id);
+    return true;
+  });
   const total = productsQ.data?.pages[0]?.count ?? 0;
 
   // Infinite scroll via IntersectionObserver
