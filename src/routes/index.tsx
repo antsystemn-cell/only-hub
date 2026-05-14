@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Store, ShoppingBag, TrendingUp, Sparkles } from "lucide-react";
+import { fmtMnt } from "@/lib/format";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -21,10 +22,26 @@ function Index() {
   const { data: merchants } = useQuery({
     queryKey: ["home-merchants"],
     queryFn: async () => {
-      const { data } = await supabase.from("merchants").select("id,name,slug,logo_url,description").eq("is_active", true).limit(8);
+      const { data } = await supabase.from("merchants").select("id,name,slug,logo_url,description").eq("is_active", true).eq("approval_status", "approved").limit(8);
       return data ?? [];
     },
   });
+
+  const { data: products } = useQuery({
+    queryKey: ["home-products"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("products")
+        .select("id,name,price,original_price,image_url,thumbnail_url,merchant_id,is_new,is_on_sale,slug")
+        .eq("is_active", true)
+        .order("created_at", { ascending: false })
+        .limit(12);
+      return data ?? [];
+    },
+  });
+
+  const merchantBySlug: Record<string, string> = {};
+  (merchants ?? []).forEach((m: any) => { merchantBySlug[m.id] = m.slug; });
 
   return (
     <div className="min-h-screen bg-background">
