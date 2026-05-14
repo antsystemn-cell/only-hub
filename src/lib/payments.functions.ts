@@ -39,6 +39,7 @@ export const testPaymentConnection = createServerFn({ method: "POST" })
           "Content-Type": "application/json",
           Authorization: "Basic " + basicAuth,
         },
+        body: JSON.stringify({}),
       });
       if (!res.ok) {
         const text = await res.text().catch(() => "");
