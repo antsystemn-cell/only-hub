@@ -7,31 +7,37 @@ export const testPaymentConnection = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { providerId: string }) => d)
   .handler(async ({ data, context }) => {
-    const { supabase } = context;
-    const { data: provider, error } = await supabase
-      .from("payment_providers")
-      .select("provider_type,credentials,merchant_id")
-      .eq("id", data.providerId)
-      .maybeSingle();
-    if (error || !provider) return { ok: false, message: "Үйлчилгээ олдсонгүй" };
-
-    if (provider.provider_type !== "qpay") {
-      return { ok: true, message: "Тохиргоо хадгалагдсан (бодит шалгалт удахгүй)" };
-    }
-
-    const creds = (provider.credentials as QpayCreds) ?? {};
-    const username = creds.username || creds.client_id;
-    const password = creds.password || creds.client_secret;
-    const baseUrl = (creds.base_url || "https://merchant.qpay.mn/v2").replace(/\/$/, "");
-    if (!username || !password || !creds.invoice_code) {
-      return { ok: false, message: "username / password / invoice_code дутуу" };
-    }
     try {
+      const { supabase } = context;
+      const { data: provider, error } = await supabase
+        .from("payment_providers")
+        .select("provider_type,credentials,merchant_id")
+        .eq("id", data.providerId)
+        .maybeSingle();
+      if (error || !provider) return { ok: false, message: "Үйлчилгээ олдсонгүй" };
+
+      if (provider.provider_type !== "qpay") {
+        return { ok: true, message: "Тохиргоо хадгалагдсан (бодит шалгалт удахгүй)" };
+      }
+
+      const creds = (provider.credentials as QpayCreds) ?? {};
+      const username = creds.username || creds.client_id;
+      const password = creds.password || creds.client_secret;
+      const baseUrl = (creds.base_url || "https://merchant.qpay.mn/v2").replace(/\/$/, "");
+      if (!username || !password || !creds.invoice_code) {
+        return { ok: false, message: "username / password / invoice_code дутуу" };
+      }
+
+      const basicAuth =
+        typeof btoa === "function"
+          ? btoa(`${username}:${password}`)
+          : Buffer.from(`${username}:${password}`).toString("base64");
+
       const res = await fetch(`${baseUrl}/auth/token`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: "Basic " + Buffer.from(`${username}:${password}`).toString("base64"),
+          Authorization: "Basic " + basicAuth,
         },
       });
       if (!res.ok) return { ok: false, message: `QPay хариу: ${res.status}` };
@@ -39,6 +45,7 @@ export const testPaymentConnection = createServerFn({ method: "POST" })
       if (!json.access_token) return { ok: false, message: "Token буцаагдаагүй" };
       return { ok: true, message: "QPay холболт амжилттай" };
     } catch (e: any) {
-      return { ok: false, message: e?.message ?? "Алдаа" };
+      console.error("testPaymentConnection failed:", e);
+      return { ok: false, message: e?.message ?? "Сүлжээний алдаа" };
     }
   });
