@@ -128,7 +128,7 @@ function StorePage() {
           </div>
         )}
 
-        <div className="mt-8 grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+        <div className="mt-8 grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4">
           {(filteredProducts as any[]).map((p) => (
             <Link
               key={p.id}
