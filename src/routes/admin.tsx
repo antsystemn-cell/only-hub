@@ -68,6 +68,8 @@ function AdminPage() {
   });
 
   const [selectedMerchant, setSelectedMerchant] = useState<string | null>(null);
+  const [rejectReason, setRejectReason] = useState("");
+  const [rejectingId, setRejectingId] = useState<string | null>(null);
   const merchantOrdersQ = useQuery({
     queryKey: ["admin-merchant-orders", selectedMerchant],
     enabled: !!selectedMerchant,
