@@ -268,7 +268,13 @@ export type Database = {
       }
       merchants: {
         Row: {
+          approval_status: string
+          approved_at: string | null
+          approved_by: string | null
+          business_type: string | null
           commission_rate: number
+          contact_name: string | null
+          contact_phone: string | null
           created_at: string
           delivery_api_key: string | null
           description: string | null
@@ -277,11 +283,19 @@ export type Database = {
           logo_url: string | null
           name: string
           owner_id: string | null
+          register_number: string | null
+          rejection_reason: string | null
           slug: string
           updated_at: string
         }
         Insert: {
+          approval_status?: string
+          approved_at?: string | null
+          approved_by?: string | null
+          business_type?: string | null
           commission_rate?: number
+          contact_name?: string | null
+          contact_phone?: string | null
           created_at?: string
           delivery_api_key?: string | null
           description?: string | null
@@ -290,11 +304,19 @@ export type Database = {
           logo_url?: string | null
           name: string
           owner_id?: string | null
+          register_number?: string | null
+          rejection_reason?: string | null
           slug: string
           updated_at?: string
         }
         Update: {
+          approval_status?: string
+          approved_at?: string | null
+          approved_by?: string | null
+          business_type?: string | null
           commission_rate?: number
+          contact_name?: string | null
+          contact_phone?: string | null
           created_at?: string
           delivery_api_key?: string | null
           description?: string | null
@@ -303,6 +325,8 @@ export type Database = {
           logo_url?: string | null
           name?: string
           owner_id?: string | null
+          register_number?: string | null
+          rejection_reason?: string | null
           slug?: string
           updated_at?: string
         }
