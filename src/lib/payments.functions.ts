@@ -3,6 +3,8 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 type QpayCreds = { username?: string; client_id?: string; password?: string; client_secret?: string; invoice_code?: string; base_url?: string };
 
+const clean = (value?: string) => value?.trim() ?? "";
+
 export const testPaymentConnection = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { providerId: string }) => d)
@@ -21,11 +23,18 @@ export const testPaymentConnection = createServerFn({ method: "POST" })
       }
 
       const creds = (provider.credentials as QpayCreds) ?? {};
-      const username = creds.username || creds.client_id;
-      const password = creds.password || creds.client_secret;
+      const username = clean(creds.username || creds.client_id);
+      const password = clean(creds.password || creds.client_secret);
+      const invoiceCode = clean(creds.invoice_code);
       const baseUrl = (creds.base_url || "https://merchant.qpay.mn/v2").replace(/\/$/, "");
-      if (!username || !password || !creds.invoice_code) {
-        return { ok: false, message: "username / password / invoice_code дутуу" };
+      if (!username || !password || !invoiceCode) {
+        return { ok: false, message: "QPay client_id / client_secret / invoice_code дутуу" };
+      }
+      if (password === invoiceCode) {
+        return {
+          ok: false,
+          message: "QPay client_secret/password нь invoice_code-той ижил хадгалагдсан байна. Only Shop дээр QPAY_CLIENT_ID, QPAY_CLIENT_SECRET, QPAY_INVOICE_CODE гэсэн 3 тусдаа утга ашигладаг — client_secret-ээ password талбарт оруулна уу.",
+        };
       }
 
       const basicAuth =
@@ -39,7 +48,7 @@ export const testPaymentConnection = createServerFn({ method: "POST" })
           "Content-Type": "application/json",
           Authorization: "Basic " + basicAuth,
         },
-        body: JSON.stringify({}),
+        body: "",
       });
       if (!res.ok) {
         const text = await res.text().catch(() => "");

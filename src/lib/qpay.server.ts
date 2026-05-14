@@ -9,6 +9,8 @@ type QpayCredentials = {
   base_url?: string;
 };
 
+const clean = (value?: string) => value?.trim() ?? "";
+
 export type QpayInvoice = {
   invoice_id: string;
   qr_text?: string;
@@ -18,14 +20,22 @@ export type QpayInvoice = {
 };
 
 async function getQpayToken(creds: QpayCredentials, baseUrl: string) {
-  const username = creds.username || creds.client_id || "";
-  const password = creds.password || creds.client_secret || "";
+  const username = clean(creds.username || creds.client_id);
+  const password = clean(creds.password || creds.client_secret);
+  const invoiceCode = clean(creds.invoice_code);
+  if (!username || !password || !invoiceCode) {
+    throw new Error("QPay client_id / client_secret / invoice_code дутуу");
+  }
+  if (password === invoiceCode) {
+    throw new Error("QPay client_secret/password нь invoice_code-той ижил хадгалагдсан байна");
+  }
   const res = await fetch(`${baseUrl}/auth/token`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       Authorization: "Basic " + Buffer.from(`${username}:${password}`).toString("base64"),
     },
+    body: "",
   });
   if (!res.ok) throw new Error(`QPay auth failed: ${res.status} ${await res.text()}`);
   const json = (await res.json()) as { access_token: string };
