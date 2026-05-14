@@ -293,11 +293,16 @@ function PaymentsTab() {
         {fields.length > 0 && (
           <div className="md:col-span-3">
             <div className="mb-2 flex items-center justify-between">
-              <Label>API мэдээлэл</Label>
+              <Label>{form.provider_type === "qpay" ? "QPay API мэдээлэл" : "API мэдээлэл"}</Label>
               <Button size="sm" variant="ghost" onClick={() => setShowSecret(!showSecret)}>
                 {showSecret ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </Button>
             </div>
+            {form.provider_type === "qpay" && (
+              <p className="mb-3 text-sm text-muted-foreground">
+                Only Shop шиг QPay-н client_id, client_secret, invoice_code гэсэн 3 тусдаа утгыг оруулна. client_secret/password талбарт invoice_code-г давтаж оруулахгүй.
+              </p>
+            )}
             <div className="grid gap-2 md:grid-cols-3">
               {fields.map((f) => (
                 <Input key={f} type={showSecret ? "text" : "password"} placeholder={f}
