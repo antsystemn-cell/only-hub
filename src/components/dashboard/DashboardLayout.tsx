@@ -4,7 +4,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
-  BarChart3, Package, ShoppingCart, Users, Bot, Settings, LogOut, Store, Menu,
+  BarChart3, Package, ShoppingCart, Users, Bot, Settings, LogOut, Store, Menu, ShieldCheck,
 } from "lucide-react";
 import { useState } from "react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -14,7 +14,8 @@ const TABS: Tab[] = [
   { to: "/merchant/dashboard", label: "Статистик", icon: BarChart3, end: true },
   { to: "/merchant/dashboard/products", label: "Бараа", icon: Package },
   { to: "/merchant/dashboard/orders", label: "Захиалга", icon: ShoppingCart },
-  { to: "/merchant/dashboard/users", label: "Хэрэглэгч", icon: Users },
+  { to: "/merchant/dashboard/users", label: "Үйлчлүүлэгч", icon: Users },
+  { to: "/merchant/dashboard/staff", label: "Ажилтан / Эрх", icon: ShieldCheck },
   { to: "/merchant/dashboard/chatbot", label: "AI Чатбот", icon: Bot },
   { to: "/merchant/dashboard/settings", label: "Тохиргоо", icon: Settings },
 ];

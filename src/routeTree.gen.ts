@@ -23,6 +23,7 @@ import { Route as MerchantDashboardIndexRouteImport } from './routes/merchant.da
 import { Route as StoreMerchantSlugCheckoutRouteImport } from './routes/store.$merchantSlug.checkout'
 import { Route as StoreMerchantSlugCartRouteImport } from './routes/store.$merchantSlug.cart'
 import { Route as MerchantDashboardUsersRouteImport } from './routes/merchant.dashboard.users'
+import { Route as MerchantDashboardStaffRouteImport } from './routes/merchant.dashboard.staff'
 import { Route as MerchantDashboardSettingsRouteImport } from './routes/merchant.dashboard.settings'
 import { Route as MerchantDashboardProductsRouteImport } from './routes/merchant.dashboard.products'
 import { Route as MerchantDashboardOrdersRouteImport } from './routes/merchant.dashboard.orders'
@@ -102,6 +103,11 @@ const MerchantDashboardUsersRoute = MerchantDashboardUsersRouteImport.update({
   path: '/users',
   getParentRoute: () => MerchantDashboardRoute,
 } as any)
+const MerchantDashboardStaffRoute = MerchantDashboardStaffRouteImport.update({
+  id: '/staff',
+  path: '/staff',
+  getParentRoute: () => MerchantDashboardRoute,
+} as any)
 const MerchantDashboardSettingsRoute =
   MerchantDashboardSettingsRouteImport.update({
     id: '/settings',
@@ -158,6 +164,7 @@ export interface FileRoutesByFullPath {
   '/merchant/dashboard/orders': typeof MerchantDashboardOrdersRoute
   '/merchant/dashboard/products': typeof MerchantDashboardProductsRoute
   '/merchant/dashboard/settings': typeof MerchantDashboardSettingsRoute
+  '/merchant/dashboard/staff': typeof MerchantDashboardStaffRoute
   '/merchant/dashboard/users': typeof MerchantDashboardUsersRoute
   '/store/$merchantSlug/cart': typeof StoreMerchantSlugCartRoute
   '/store/$merchantSlug/checkout': typeof StoreMerchantSlugCheckoutRoute
@@ -180,6 +187,7 @@ export interface FileRoutesByTo {
   '/merchant/dashboard/orders': typeof MerchantDashboardOrdersRoute
   '/merchant/dashboard/products': typeof MerchantDashboardProductsRoute
   '/merchant/dashboard/settings': typeof MerchantDashboardSettingsRoute
+  '/merchant/dashboard/staff': typeof MerchantDashboardStaffRoute
   '/merchant/dashboard/users': typeof MerchantDashboardUsersRoute
   '/store/$merchantSlug/cart': typeof StoreMerchantSlugCartRoute
   '/store/$merchantSlug/checkout': typeof StoreMerchantSlugCheckoutRoute
@@ -204,6 +212,7 @@ export interface FileRoutesById {
   '/merchant/dashboard/orders': typeof MerchantDashboardOrdersRoute
   '/merchant/dashboard/products': typeof MerchantDashboardProductsRoute
   '/merchant/dashboard/settings': typeof MerchantDashboardSettingsRoute
+  '/merchant/dashboard/staff': typeof MerchantDashboardStaffRoute
   '/merchant/dashboard/users': typeof MerchantDashboardUsersRoute
   '/store/$merchantSlug/cart': typeof StoreMerchantSlugCartRoute
   '/store/$merchantSlug/checkout': typeof StoreMerchantSlugCheckoutRoute
@@ -229,6 +238,7 @@ export interface FileRouteTypes {
     | '/merchant/dashboard/orders'
     | '/merchant/dashboard/products'
     | '/merchant/dashboard/settings'
+    | '/merchant/dashboard/staff'
     | '/merchant/dashboard/users'
     | '/store/$merchantSlug/cart'
     | '/store/$merchantSlug/checkout'
@@ -251,6 +261,7 @@ export interface FileRouteTypes {
     | '/merchant/dashboard/orders'
     | '/merchant/dashboard/products'
     | '/merchant/dashboard/settings'
+    | '/merchant/dashboard/staff'
     | '/merchant/dashboard/users'
     | '/store/$merchantSlug/cart'
     | '/store/$merchantSlug/checkout'
@@ -274,6 +285,7 @@ export interface FileRouteTypes {
     | '/merchant/dashboard/orders'
     | '/merchant/dashboard/products'
     | '/merchant/dashboard/settings'
+    | '/merchant/dashboard/staff'
     | '/merchant/dashboard/users'
     | '/store/$merchantSlug/cart'
     | '/store/$merchantSlug/checkout'
@@ -397,6 +409,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MerchantDashboardUsersRouteImport
       parentRoute: typeof MerchantDashboardRoute
     }
+    '/merchant/dashboard/staff': {
+      id: '/merchant/dashboard/staff'
+      path: '/staff'
+      fullPath: '/merchant/dashboard/staff'
+      preLoaderRoute: typeof MerchantDashboardStaffRouteImport
+      parentRoute: typeof MerchantDashboardRoute
+    }
     '/merchant/dashboard/settings': {
       id: '/merchant/dashboard/settings'
       path: '/settings'
@@ -454,6 +473,7 @@ interface MerchantDashboardRouteChildren {
   MerchantDashboardOrdersRoute: typeof MerchantDashboardOrdersRoute
   MerchantDashboardProductsRoute: typeof MerchantDashboardProductsRoute
   MerchantDashboardSettingsRoute: typeof MerchantDashboardSettingsRoute
+  MerchantDashboardStaffRoute: typeof MerchantDashboardStaffRoute
   MerchantDashboardUsersRoute: typeof MerchantDashboardUsersRoute
   MerchantDashboardIndexRoute: typeof MerchantDashboardIndexRoute
 }
@@ -463,6 +483,7 @@ const MerchantDashboardRouteChildren: MerchantDashboardRouteChildren = {
   MerchantDashboardOrdersRoute: MerchantDashboardOrdersRoute,
   MerchantDashboardProductsRoute: MerchantDashboardProductsRoute,
   MerchantDashboardSettingsRoute: MerchantDashboardSettingsRoute,
+  MerchantDashboardStaffRoute: MerchantDashboardStaffRoute,
   MerchantDashboardUsersRoute: MerchantDashboardUsersRoute,
   MerchantDashboardIndexRoute: MerchantDashboardIndexRoute,
 }
