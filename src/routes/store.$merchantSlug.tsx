@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
 import { fmtMnt } from "@/lib/format";
+import { AccountNav } from "@/components/AccountNav";
 
 export const Route = createFileRoute("/store/$merchantSlug")({ component: StorePage });
 
@@ -69,6 +70,9 @@ function StorePage() {
           <span className="text-muted-foreground">/</span>
           {merchant.logo_url && <img src={merchant.logo_url} className="h-8 w-8 rounded-full object-cover" />}
           <span className="font-semibold">{merchant.name}</span>
+          <div className="ml-auto flex items-center gap-2">
+            <AccountNav />
+          </div>
         </div>
       </header>
       <div className="container mx-auto px-4 py-10">

@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search } from "lucide-react";
+import { AccountNav } from "@/components/AccountNav";
 
 export const Route = createFileRoute("/stores")({
   head: () => ({
@@ -34,7 +35,9 @@ function StoresPage() {
       <header className="border-b border-border">
         <div className="container mx-auto flex h-16 items-center justify-between px-4">
           <Link to="/" className="text-2xl font-bold">Only</Link>
-          <Link to="/merchant/register"><Button>Дэлгүүр нээх</Button></Link>
+          <div className="flex items-center gap-2">
+            <AccountNav />
+          </div>
         </div>
       </header>
 

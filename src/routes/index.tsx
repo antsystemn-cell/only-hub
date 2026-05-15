@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/card";
 import { Sparkles, ShoppingBag, Menu, X, Eye, Loader2 } from "lucide-react";
 import { fmtMnt } from "@/lib/format";
 import { QuickViewDialog, type QuickViewProduct } from "@/components/QuickViewDialog";
+import { AccountNav } from "@/components/AccountNav";
 
 const PAGE_SIZE = 12;
 
@@ -208,8 +209,7 @@ function Index() {
           <Link to="/" className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">Only</Link>
           <nav className="hidden items-center gap-1 sm:flex">
             <Link to="/stores"><Button variant="ghost" size="sm">Дэлгүүрүүд</Button></Link>
-            <Link to="/merchant/login"><Button variant="ghost" size="sm">Нэвтрэх</Button></Link>
-            <Link to="/merchant/register"><Button size="sm">Дэлгүүр нээх</Button></Link>
+            <AccountNav />
           </nav>
           <button
             className="inline-flex h-9 w-9 items-center justify-center rounded-md hover:bg-accent sm:hidden"
@@ -224,8 +224,7 @@ function Index() {
           <div className="border-t border-border bg-background sm:hidden">
             <div className="container mx-auto flex flex-col gap-1 p-3">
               <Link to="/stores" onClick={() => setMenuOpen(false)}><Button variant="ghost" className="w-full justify-start">Дэлгүүрүүд</Button></Link>
-              <Link to="/merchant/login" onClick={() => setMenuOpen(false)}><Button variant="ghost" className="w-full justify-start">Нэвтрэх</Button></Link>
-              <Link to="/merchant/register" onClick={() => setMenuOpen(false)}><Button className="w-full">Дэлгүүр нээх</Button></Link>
+              <AccountNav variant="vertical" onNavigate={() => setMenuOpen(false)} />
             </div>
           </div>
         )}

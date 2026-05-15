@@ -10,7 +10,10 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as StoresRouteImport } from './routes/stores'
+import { Route as RegisterRouteImport } from './routes/register'
+import { Route as LoginRouteImport } from './routes/login'
 import { Route as AdminRouteImport } from './routes/admin'
+import { Route as AccountRouteImport } from './routes/account'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as StoreMerchantSlugRouteImport } from './routes/store.$merchantSlug'
 import { Route as MerchantRegisterRouteImport } from './routes/merchant.register'
@@ -20,6 +23,7 @@ import { Route as MerchantDashboardIndexRouteImport } from './routes/merchant.da
 import { Route as StoreMerchantSlugCheckoutRouteImport } from './routes/store.$merchantSlug.checkout'
 import { Route as StoreMerchantSlugCartRouteImport } from './routes/store.$merchantSlug.cart'
 import { Route as MerchantDashboardUsersRouteImport } from './routes/merchant.dashboard.users'
+import { Route as MerchantDashboardStaffRouteImport } from './routes/merchant.dashboard.staff'
 import { Route as MerchantDashboardSettingsRouteImport } from './routes/merchant.dashboard.settings'
 import { Route as MerchantDashboardProductsRouteImport } from './routes/merchant.dashboard.products'
 import { Route as MerchantDashboardOrdersRouteImport } from './routes/merchant.dashboard.orders'
@@ -33,9 +37,24 @@ const StoresRoute = StoresRouteImport.update({
   path: '/stores',
   getParentRoute: () => rootRouteImport,
 } as any)
+const RegisterRoute = RegisterRouteImport.update({
+  id: '/register',
+  path: '/register',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminRoute = AdminRouteImport.update({
   id: '/admin',
   path: '/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AccountRoute = AccountRouteImport.update({
+  id: '/account',
+  path: '/account',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -84,6 +103,11 @@ const MerchantDashboardUsersRoute = MerchantDashboardUsersRouteImport.update({
   path: '/users',
   getParentRoute: () => MerchantDashboardRoute,
 } as any)
+const MerchantDashboardStaffRoute = MerchantDashboardStaffRouteImport.update({
+  id: '/staff',
+  path: '/staff',
+  getParentRoute: () => MerchantDashboardRoute,
+} as any)
 const MerchantDashboardSettingsRoute =
   MerchantDashboardSettingsRouteImport.update({
     id: '/settings',
@@ -127,7 +151,10 @@ const ApiPublicQpayWebhookRoute = ApiPublicQpayWebhookRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/account': typeof AccountRoute
   '/admin': typeof AdminRoute
+  '/login': typeof LoginRoute
+  '/register': typeof RegisterRoute
   '/stores': typeof StoresRoute
   '/merchant/dashboard': typeof MerchantDashboardRouteWithChildren
   '/merchant/login': typeof MerchantLoginRoute
@@ -137,6 +164,7 @@ export interface FileRoutesByFullPath {
   '/merchant/dashboard/orders': typeof MerchantDashboardOrdersRoute
   '/merchant/dashboard/products': typeof MerchantDashboardProductsRoute
   '/merchant/dashboard/settings': typeof MerchantDashboardSettingsRoute
+  '/merchant/dashboard/staff': typeof MerchantDashboardStaffRoute
   '/merchant/dashboard/users': typeof MerchantDashboardUsersRoute
   '/store/$merchantSlug/cart': typeof StoreMerchantSlugCartRoute
   '/store/$merchantSlug/checkout': typeof StoreMerchantSlugCheckoutRoute
@@ -147,7 +175,10 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/account': typeof AccountRoute
   '/admin': typeof AdminRoute
+  '/login': typeof LoginRoute
+  '/register': typeof RegisterRoute
   '/stores': typeof StoresRoute
   '/merchant/login': typeof MerchantLoginRoute
   '/merchant/register': typeof MerchantRegisterRoute
@@ -156,6 +187,7 @@ export interface FileRoutesByTo {
   '/merchant/dashboard/orders': typeof MerchantDashboardOrdersRoute
   '/merchant/dashboard/products': typeof MerchantDashboardProductsRoute
   '/merchant/dashboard/settings': typeof MerchantDashboardSettingsRoute
+  '/merchant/dashboard/staff': typeof MerchantDashboardStaffRoute
   '/merchant/dashboard/users': typeof MerchantDashboardUsersRoute
   '/store/$merchantSlug/cart': typeof StoreMerchantSlugCartRoute
   '/store/$merchantSlug/checkout': typeof StoreMerchantSlugCheckoutRoute
@@ -167,7 +199,10 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/account': typeof AccountRoute
   '/admin': typeof AdminRoute
+  '/login': typeof LoginRoute
+  '/register': typeof RegisterRoute
   '/stores': typeof StoresRoute
   '/merchant/dashboard': typeof MerchantDashboardRouteWithChildren
   '/merchant/login': typeof MerchantLoginRoute
@@ -177,6 +212,7 @@ export interface FileRoutesById {
   '/merchant/dashboard/orders': typeof MerchantDashboardOrdersRoute
   '/merchant/dashboard/products': typeof MerchantDashboardProductsRoute
   '/merchant/dashboard/settings': typeof MerchantDashboardSettingsRoute
+  '/merchant/dashboard/staff': typeof MerchantDashboardStaffRoute
   '/merchant/dashboard/users': typeof MerchantDashboardUsersRoute
   '/store/$merchantSlug/cart': typeof StoreMerchantSlugCartRoute
   '/store/$merchantSlug/checkout': typeof StoreMerchantSlugCheckoutRoute
@@ -189,7 +225,10 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/account'
     | '/admin'
+    | '/login'
+    | '/register'
     | '/stores'
     | '/merchant/dashboard'
     | '/merchant/login'
@@ -199,6 +238,7 @@ export interface FileRouteTypes {
     | '/merchant/dashboard/orders'
     | '/merchant/dashboard/products'
     | '/merchant/dashboard/settings'
+    | '/merchant/dashboard/staff'
     | '/merchant/dashboard/users'
     | '/store/$merchantSlug/cart'
     | '/store/$merchantSlug/checkout'
@@ -209,7 +249,10 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/account'
     | '/admin'
+    | '/login'
+    | '/register'
     | '/stores'
     | '/merchant/login'
     | '/merchant/register'
@@ -218,6 +261,7 @@ export interface FileRouteTypes {
     | '/merchant/dashboard/orders'
     | '/merchant/dashboard/products'
     | '/merchant/dashboard/settings'
+    | '/merchant/dashboard/staff'
     | '/merchant/dashboard/users'
     | '/store/$merchantSlug/cart'
     | '/store/$merchantSlug/checkout'
@@ -228,7 +272,10 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/account'
     | '/admin'
+    | '/login'
+    | '/register'
     | '/stores'
     | '/merchant/dashboard'
     | '/merchant/login'
@@ -238,6 +285,7 @@ export interface FileRouteTypes {
     | '/merchant/dashboard/orders'
     | '/merchant/dashboard/products'
     | '/merchant/dashboard/settings'
+    | '/merchant/dashboard/staff'
     | '/merchant/dashboard/users'
     | '/store/$merchantSlug/cart'
     | '/store/$merchantSlug/checkout'
@@ -249,7 +297,10 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AccountRoute: typeof AccountRoute
   AdminRoute: typeof AdminRoute
+  LoginRoute: typeof LoginRoute
+  RegisterRoute: typeof RegisterRoute
   StoresRoute: typeof StoresRoute
   MerchantDashboardRoute: typeof MerchantDashboardRouteWithChildren
   MerchantLoginRoute: typeof MerchantLoginRoute
@@ -267,11 +318,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof StoresRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/register': {
+      id: '/register'
+      path: '/register'
+      fullPath: '/register'
+      preLoaderRoute: typeof RegisterRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin': {
       id: '/admin'
       path: '/admin'
       fullPath: '/admin'
       preLoaderRoute: typeof AdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/account': {
+      id: '/account'
+      path: '/account'
+      fullPath: '/account'
+      preLoaderRoute: typeof AccountRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -337,6 +409,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MerchantDashboardUsersRouteImport
       parentRoute: typeof MerchantDashboardRoute
     }
+    '/merchant/dashboard/staff': {
+      id: '/merchant/dashboard/staff'
+      path: '/staff'
+      fullPath: '/merchant/dashboard/staff'
+      preLoaderRoute: typeof MerchantDashboardStaffRouteImport
+      parentRoute: typeof MerchantDashboardRoute
+    }
     '/merchant/dashboard/settings': {
       id: '/merchant/dashboard/settings'
       path: '/settings'
@@ -394,6 +473,7 @@ interface MerchantDashboardRouteChildren {
   MerchantDashboardOrdersRoute: typeof MerchantDashboardOrdersRoute
   MerchantDashboardProductsRoute: typeof MerchantDashboardProductsRoute
   MerchantDashboardSettingsRoute: typeof MerchantDashboardSettingsRoute
+  MerchantDashboardStaffRoute: typeof MerchantDashboardStaffRoute
   MerchantDashboardUsersRoute: typeof MerchantDashboardUsersRoute
   MerchantDashboardIndexRoute: typeof MerchantDashboardIndexRoute
 }
@@ -403,6 +483,7 @@ const MerchantDashboardRouteChildren: MerchantDashboardRouteChildren = {
   MerchantDashboardOrdersRoute: MerchantDashboardOrdersRoute,
   MerchantDashboardProductsRoute: MerchantDashboardProductsRoute,
   MerchantDashboardSettingsRoute: MerchantDashboardSettingsRoute,
+  MerchantDashboardStaffRoute: MerchantDashboardStaffRoute,
   MerchantDashboardUsersRoute: MerchantDashboardUsersRoute,
   MerchantDashboardIndexRoute: MerchantDashboardIndexRoute,
 }
@@ -430,7 +511,10 @@ const StoreMerchantSlugRouteWithChildren =
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AccountRoute: AccountRoute,
   AdminRoute: AdminRoute,
+  LoginRoute: LoginRoute,
+  RegisterRoute: RegisterRoute,
   StoresRoute: StoresRoute,
   MerchantDashboardRoute: MerchantDashboardRouteWithChildren,
   MerchantLoginRoute: MerchantLoginRoute,
@@ -441,13 +525,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
