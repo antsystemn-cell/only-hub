@@ -113,7 +113,7 @@ function OrderConfirmationPage() {
                     />
                   ) : (
                     <img
-                      src={`https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(orderDetail.qpay_qr_text)}`}
+                      src={`https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(orderDetail.qpay_qr_text ?? "")}`}
                       alt="QPay QR код"
                       className="h-56 w-56 rounded-lg bg-white p-2"
                     />
