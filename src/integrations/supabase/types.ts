@@ -356,8 +356,10 @@ export type Database = {
           platform_commission_amount: number | null
           platform_commission_rate: number | null
           qpay_invoice_id: string | null
+          qpay_qr_image: string | null
           qpay_qr_text: string | null
           qpay_short_url: string | null
+          qpay_urls: Json
           sale_date: string | null
           shipping_address: string | null
           source: string
@@ -390,8 +392,10 @@ export type Database = {
           platform_commission_amount?: number | null
           platform_commission_rate?: number | null
           qpay_invoice_id?: string | null
+          qpay_qr_image?: string | null
           qpay_qr_text?: string | null
           qpay_short_url?: string | null
+          qpay_urls?: Json
           sale_date?: string | null
           shipping_address?: string | null
           source?: string
@@ -424,8 +428,10 @@ export type Database = {
           platform_commission_amount?: number | null
           platform_commission_rate?: number | null
           qpay_invoice_id?: string | null
+          qpay_qr_image?: string | null
           qpay_qr_text?: string | null
           qpay_short_url?: string | null
+          qpay_urls?: Json
           sale_date?: string | null
           shipping_address?: string | null
           source?: string

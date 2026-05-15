@@ -98,9 +98,68 @@ function OrderConfirmationPage() {
           <div className="mt-6 text-3xl font-bold">{fmtMnt(Number(order.total))}</div>
 
           {!paid && order.payment_method === "qpay" && orderDetail?.qpay_invoice_id && !order.payment_error && (
-            <div className="mt-6 rounded-lg border bg-muted/30 p-4 text-sm text-muted-foreground">
-              QPay-р төлбөр төлж дуусмагц энэ хуудас автоматаар шинэчлэгдэнэ.
-              <div className="mt-2 font-mono text-xs">Invoice: {orderDetail.qpay_invoice_id}</div>
+            <div className="mt-6 space-y-4">
+              {(orderDetail.qpay_qr_image || orderDetail.qpay_qr_text) && (
+                <div className="flex flex-col items-center gap-3 rounded-xl border bg-card p-5">
+                  {orderDetail.qpay_qr_image ? (
+                    <img
+                      src={
+                        orderDetail.qpay_qr_image.startsWith("data:")
+                          ? orderDetail.qpay_qr_image
+                          : `data:image/png;base64,${orderDetail.qpay_qr_image}`
+                      }
+                      alt="QPay QR код"
+                      className="h-56 w-56 rounded-lg bg-white p-2"
+                    />
+                  ) : (
+                    <img
+                      src={`https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(orderDetail.qpay_qr_text ?? "")}`}
+                      alt="QPay QR код"
+                      className="h-56 w-56 rounded-lg bg-white p-2"
+                    />
+                  )}
+                  <p className="text-xs text-muted-foreground">
+                    QPay апп эсвэл аль ч банкны апп-аар уншуулж төлбөрөө төлнө үү
+                  </p>
+                </div>
+              )}
+
+              {Array.isArray(orderDetail.qpay_urls) && orderDetail.qpay_urls.length > 0 && (
+                <div>
+                  <p className="mb-3 text-sm font-medium text-left">Банкны апп-аар төлөх</p>
+                  <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+                    {(orderDetail.qpay_urls as any[]).map((u, idx) => (
+                      <a
+                        key={idx}
+                        href={u.link}
+                        className="flex flex-col items-center gap-2 rounded-lg border bg-card p-3 text-xs hover:border-primary/50 hover:bg-accent/50"
+                      >
+                        {u.logo ? (
+                          <img src={u.logo} alt={u.name ?? "bank"} className="h-10 w-10 rounded object-contain" />
+                        ) : (
+                          <div className="h-10 w-10 rounded bg-muted" />
+                        )}
+                        <span className="line-clamp-1">{u.name ?? u.description ?? "Bank"}</span>
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {orderDetail.qpay_short_url && (
+                <a
+                  href={orderDetail.qpay_short_url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-block text-sm text-primary underline"
+                >
+                  QPay вэб хуудсаар нээх
+                </a>
+              )}
+
+              <p className="text-xs text-muted-foreground">
+                Төлбөр төлөгдмөгц энэ хуудас автоматаар шинэчлэгдэнэ.
+              </p>
             </div>
           )}
 
