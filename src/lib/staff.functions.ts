@@ -85,18 +85,34 @@ export const assignStaffRole = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     await assertOwner(context.supabase, context.userId, data.merchantId);
-    const { error } = await supabaseAdmin
+    // Check existing role row to avoid duplicates (no DB unique constraint guaranteed)
+    const { data: existing } = await supabaseAdmin
       .from("user_roles")
-      .upsert(
-        { user_id: data.userId, merchant_id: data.merchantId, role: data.role as StaffRole },
-        { onConflict: "user_id,merchant_id,role" } as any,
-      );
-    if (error) throw new Response(error.message, { status: 500 });
-    // Also mirror into merchant_users for legacy compatibility
-    await supabaseAdmin.from("merchant_users").upsert(
-      { user_id: data.userId, merchant_id: data.merchantId, role: data.role.replace("merchant_", "") },
-      { onConflict: "user_id,merchant_id" } as any,
-    );
+      .select("id")
+      .eq("user_id", data.userId)
+      .eq("merchant_id", data.merchantId)
+      .eq("role", data.role as StaffRole)
+      .maybeSingle();
+    if (!existing) {
+      const { error } = await supabaseAdmin
+        .from("user_roles")
+        .insert({ user_id: data.userId, merchant_id: data.merchantId, role: data.role as StaffRole });
+      if (error) throw new Response(error.message, { status: 500 });
+    }
+    // Mirror into merchant_users (legacy)
+    const { data: muExisting } = await supabaseAdmin
+      .from("merchant_users")
+      .select("id")
+      .eq("user_id", data.userId)
+      .eq("merchant_id", data.merchantId)
+      .maybeSingle();
+    if (!muExisting) {
+      await supabaseAdmin.from("merchant_users").insert({
+        user_id: data.userId,
+        merchant_id: data.merchantId,
+        role: data.role.replace("merchant_", ""),
+      });
+    }
     return { ok: true as const };
   });
 
