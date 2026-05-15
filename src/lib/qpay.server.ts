@@ -11,12 +11,14 @@ type QpayCredentials = {
 
 const clean = (value?: string) => value?.trim() ?? "";
 
+export type QpayUrl = { name?: string; description?: string; logo?: string; link?: string };
+
 export type QpayInvoice = {
   invoice_id: string;
   qr_text?: string;
   qr_image?: string;
   qPay_shortUrl?: string;
-  urls?: any;
+  urls?: QpayUrl[];
 };
 
 async function getQpayToken(creds: QpayCredentials, baseUrl: string) {
