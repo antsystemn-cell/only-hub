@@ -174,7 +174,14 @@ export const createOrder = createServerFn({ method: "POST" })
         } else if (qpay?.invoice_id) {
           await supabaseAdmin
             .from("orders")
-            .update({ qpay_invoice_id: qpay.invoice_id, payment_error: null })
+            .update({
+              qpay_invoice_id: qpay.invoice_id,
+              qpay_qr_text: qpay.qr_text ?? null,
+              qpay_qr_image: qpay.qr_image ?? null,
+              qpay_short_url: qpay.qPay_shortUrl ?? null,
+              qpay_urls: (qpay.urls ?? []) as any,
+              payment_error: null,
+            })
             .eq("id", order.id);
         }
       } catch (e: any) {
