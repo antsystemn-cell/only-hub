@@ -23,13 +23,26 @@ export const Route = createFileRoute("/")({
   component: Index,
 });
 
-const SLIDES = [
-  { title: "Шинэ улирлын онцлох бараа", sub: "Монголын мерчантуудаас шилдэг сонголтууд", cta: "Дэлгүүрүүд", href: "/stores" as const, bg: "from-primary/90 via-primary/70 to-primary/40" },
-  { title: "Өөрийн дэлгүүрээ нээ", sub: "Хэдхэн минутад онлайн худалдаагаа эхэл", cta: "Бүртгүүлэх", href: "/merchant/register" as const, bg: "from-emerald-500/90 via-emerald-500/60 to-emerald-500/30" },
-  { title: "QPay, StorePay, бэлэн", sub: "Бүх төлбөрийн систем нэг дор", cta: "Дэлгэрэнгүй", href: "/stores" as const, bg: "from-violet-500/90 via-violet-500/60 to-violet-500/30" },
+const FALLBACK_SLIDES = [
+  { title: "Шинэ улирлын онцлох бараа", subtitle: "Монголын мерчантуудаас шилдэг сонголтууд", button_text: "Дэлгүүрүүд", button_link: "/stores", bg_gradient: "from-primary/90 via-primary/70 to-primary/40", banner_image: null as string | null },
+  { title: "Өөрийн дэлгүүрээ нээ", subtitle: "Хэдхэн минутад онлайн худалдаагаа эхэл", button_text: "Бүртгүүлэх", button_link: "/merchant/register", bg_gradient: "from-emerald-500/90 via-emerald-500/60 to-emerald-500/30", banner_image: null },
+  { title: "QPay, StorePay, бэлэн", subtitle: "Бүх төлбөрийн систем нэг дор", button_text: "Дэлгэрэнгүй", button_link: "/stores", bg_gradient: "from-violet-500/90 via-violet-500/60 to-violet-500/30", banner_image: null },
 ];
 
 function Banner() {
+  const { data: dbSlides } = useQuery({
+    queryKey: ["platform-banners-home"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("platform_banners")
+        .select("title,subtitle,button_text,button_link,bg_gradient,banner_image,is_active,position")
+        .eq("is_active", true)
+        .order("position", { ascending: true });
+      return data ?? [];
+    },
+  });
+  const SLIDES = (dbSlides && dbSlides.length > 0 ? dbSlides : FALLBACK_SLIDES) as any[];
+
   const [i, setI] = useState(0);
   const [paused, setPaused] = useState(false);
   const touchStartX = useRef<number | null>(null);
@@ -38,15 +51,15 @@ function Banner() {
 
   const goto = useCallback((idx: number) => {
     setI(((idx % SLIDES.length) + SLIDES.length) % SLIDES.length);
-  }, []);
+  }, [SLIDES.length]);
   const next = useCallback(() => goto(i + 1), [i, goto]);
   const prev = useCallback(() => goto(i - 1), [i, goto]);
 
   useEffect(() => {
-    if (paused) return;
+    if (paused || SLIDES.length <= 1) return;
     const t = setInterval(() => setI((v) => (v + 1) % SLIDES.length), 5500);
     return () => clearInterval(t);
-  }, [paused]);
+  }, [paused, SLIDES.length]);
 
   const onKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "ArrowRight") { e.preventDefault(); next(); }
@@ -72,7 +85,8 @@ function Banner() {
     setTimeout(() => setPaused(false), 100);
   };
 
-  const s = SLIDES[i];
+  const safeI = Math.min(i, SLIDES.length - 1);
+  const s = SLIDES[safeI];
   return (
     <section className="container mx-auto px-3 pt-3 sm:px-4 sm:pt-4">
       <div
@@ -89,10 +103,10 @@ function Banner() {
         onTouchStart={onTouchStart}
         onTouchMove={onTouchMove}
         onTouchEnd={onTouchEnd}
-        className={`relative touch-pan-y select-none overflow-hidden rounded-2xl bg-gradient-to-r outline-none ring-offset-background transition-all duration-500 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${s.bg}`}
+        className={`relative touch-pan-y select-none overflow-hidden rounded-2xl bg-gradient-to-r outline-none ring-offset-background transition-all duration-500 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${s.bg_gradient ?? "from-primary/90 via-primary/70 to-primary/40"}`}
       >
         <div aria-live="polite" aria-atomic="true" className="sr-only">
-          Слайд {i + 1} / {SLIDES.length}: {s.title}
+          Слайд {safeI + 1} / {SLIDES.length}: {s.title}
         </div>
 
         {SLIDES.map((slide, idx) => (
@@ -101,36 +115,41 @@ function Banner() {
             role="group"
             aria-roledescription="slide"
             aria-label={`${idx + 1} / ${SLIDES.length}`}
-            aria-hidden={idx !== i}
-            className={`${idx === i ? "block" : "hidden"} flex items-center justify-between gap-3 px-4 py-5 sm:px-8 sm:py-7 md:py-8`}
+            aria-hidden={idx !== safeI}
+            className={`${idx === safeI ? "block" : "hidden"} relative flex items-center justify-between gap-3 px-4 py-5 sm:px-8 sm:py-7 md:py-8`}
           >
-            <div className="min-w-0 text-white">
+            {slide.banner_image && (
+              <img src={slide.banner_image} alt="" aria-hidden className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-30" />
+            )}
+            <div className="relative min-w-0 text-white">
               <div className="mb-1 inline-flex items-center gap-1.5 rounded-full bg-white/20 px-2.5 py-0.5 text-[11px] font-medium backdrop-blur sm:text-xs">
                 <Sparkles className="h-3 w-3" /> Only платформ
               </div>
               <h2 className="truncate text-lg font-bold sm:text-2xl md:text-3xl">{slide.title}</h2>
-              <p className="mt-0.5 line-clamp-1 text-xs text-white/90 sm:text-sm md:text-base">{slide.sub}</p>
+              {slide.subtitle && <p className="mt-0.5 line-clamp-1 text-xs text-white/90 sm:text-sm md:text-base">{slide.subtitle}</p>}
             </div>
-            <Link to={slide.href} className="shrink-0" tabIndex={idx === i ? 0 : -1}>
+            <a href={slide.button_link ?? "/"} className="relative shrink-0" tabIndex={idx === safeI ? 0 : -1}>
               <Button size="sm" variant="secondary" className="rounded-full px-3 sm:px-5 sm:text-sm">
-                {slide.cta}
+                {slide.button_text ?? "Дэлгэрэнгүй"}
               </Button>
-            </Link>
+            </a>
           </div>
         ))}
 
-        <div className="absolute bottom-2 left-1/2 flex -translate-x-1/2 gap-1.5">
-          {SLIDES.map((_, idx) => (
-            <button
-              key={idx}
-              type="button"
-              aria-label={`Слайд ${idx + 1} рүү очих`}
-              aria-current={idx === i}
-              onClick={() => goto(idx)}
-              className={`h-1.5 rounded-full transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80 ${idx === i ? "w-5 bg-white" : "w-1.5 bg-white/50 hover:bg-white/80"}`}
-            />
-          ))}
-        </div>
+        {SLIDES.length > 1 && (
+          <div className="absolute bottom-2 left-1/2 flex -translate-x-1/2 gap-1.5">
+            {SLIDES.map((_, idx) => (
+              <button
+                key={idx}
+                type="button"
+                aria-label={`Слайд ${idx + 1} рүү очих`}
+                aria-current={idx === safeI}
+                onClick={() => goto(idx)}
+                className={`h-1.5 rounded-full transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80 ${idx === safeI ? "w-5 bg-white" : "w-1.5 bg-white/50 hover:bg-white/80"}`}
+              />
+            ))}
+          </div>
+        )}
       </div>
     </section>
   );
