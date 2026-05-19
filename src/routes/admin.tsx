@@ -12,7 +12,8 @@ import { useQuery } from "@tanstack/react-query";
 
 export const Route = createFileRoute("/admin")({ component: AdminLayout });
 
-const NAV = [
+type NavItem = { to: string; label: string; icon: typeof LayoutDashboard; end?: boolean };
+const NAV: NavItem[] = [
   { to: "/admin", label: "Тойм", icon: LayoutDashboard, end: true },
   { to: "/admin/merchants", label: "Мерчантууд", icon: Store },
   { to: "/admin/analytics", label: "Аналитик", icon: BarChart3 },
@@ -20,7 +21,7 @@ const NAV = [
   { to: "/admin/users", label: "Хэрэглэгч", icon: Users },
   { to: "/admin/banners", label: "Баннер", icon: ImageIcon },
   { to: "/admin/blog", label: "Блог", icon: FileText },
-] as const;
+];
 
 function AdminLayout() {
   const { isPlatformAdmin, loading, user, refreshRoles, roles } = useAuth();

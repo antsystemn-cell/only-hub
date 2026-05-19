@@ -98,7 +98,7 @@ export function BlogEditor({ mode, postId }: Props) {
           </Link>
           <div>
             <h1 className="text-2xl font-bold">{mode === "new" ? "Нийтлэл бичих" : "Нийтлэл засах"}</h1>
-            <p className="text-sm text-muted-foreground">{form.status === "published" ? "Нийтлэгдсэн" : "Ноорог"}</p>
+            <p className="text-sm text-muted-foreground">{(form.status as string) === "published" ? "Нийтлэгдсэн" : "Ноорог"}</p>
           </div>
         </div>
         <div className="flex gap-2">
