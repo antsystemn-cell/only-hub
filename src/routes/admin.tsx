@@ -1,334 +1,125 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { createFileRoute, Link, Outlet, useLocation } from "@tanstack/react-router";
+import { useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
-import { Card } from "@/components/ui/card";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Switch } from "@/components/ui/switch";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { fmtMnt } from "@/lib/format";
-import { toast } from "sonner";
-import { Pencil, Check, X } from "lucide-react";
+import {
+  LayoutDashboard, Store, BarChart3, ShoppingCart,
+  Users, Image as ImageIcon, FileText, LogOut,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
+import { useQuery } from "@tanstack/react-query";
 
-export const Route = createFileRoute("/admin")({ component: AdminPage });
+export const Route = createFileRoute("/admin")({ component: AdminLayout });
 
-function AdminPage() {
+type NavItem = { to: string; label: string; icon: typeof LayoutDashboard; end?: boolean };
+const NAV: NavItem[] = [
+  { to: "/admin", label: "Тойм", icon: LayoutDashboard, end: true },
+  { to: "/admin/merchants", label: "Мерчантууд", icon: Store },
+  { to: "/admin/analytics", label: "Аналитик", icon: BarChart3 },
+  { to: "/admin/orders", label: "Захиалга", icon: ShoppingCart },
+  { to: "/admin/users", label: "Хэрэглэгч", icon: Users },
+  { to: "/admin/banners", label: "Баннер", icon: ImageIcon },
+  { to: "/admin/blog", label: "Блог", icon: FileText },
+];
+
+function AdminLayout() {
   const { isPlatformAdmin, loading, user, refreshRoles, roles } = useAuth();
-  const qc = useQueryClient();
+  const location = useLocation();
 
-  // Refresh roles on mount in case they were granted after the session started
-  useEffect(() => {
-    if (user) refreshRoles();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id]);
+  useEffect(() => { if (user) refreshRoles(); /* eslint-disable-next-line */ }, [user?.id]);
 
-  const merchantsQ = useQuery({
-    queryKey: ["admin-merchants"],
+  const { data: pendingCount = 0 } = useQuery({
+    queryKey: ["admin-pending-count"],
     enabled: isPlatformAdmin,
     queryFn: async () => {
-      const { data } = await supabase
+      const { count } = await supabase
         .from("merchants")
-        .select("id,name,slug,commission_rate,is_active,created_at,approval_status,rejection_reason,contact_name,contact_phone,business_type,register_number")
-        .order("created_at", { ascending: false });
-      return data ?? [];
+        .select("id", { count: "exact", head: true })
+        .eq("approval_status", "pending");
+      return count ?? 0;
     },
+    refetchInterval: 60_000,
   });
 
-  const txQ = useQuery({
-    queryKey: ["admin-tx"],
-    enabled: isPlatformAdmin,
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("platform_transactions")
-        .select("id,merchant_id,order_id,order_total,commission_rate,commission_amount,status,created_at")
-        .order("created_at", { ascending: false })
-        .limit(200);
-      return data ?? [];
-    },
-  });
-
-  const ordersQ = useQuery({
-    queryKey: ["admin-orders-count", merchantsQ.data?.length ?? 0],
-    enabled: isPlatformAdmin && !!merchantsQ.data?.length,
-    queryFn: async () => {
-      const merchants = merchantsQ.data ?? [];
-      let total = 0;
-      for (const m of merchants) {
-        const { count } = await supabase
-          .from("orders")
-          .select("id", { count: "exact", head: true })
-          .eq("merchant_id", m.id);
-        total += count ?? 0;
-      }
-      return total;
-    },
-  });
-
-  const [selectedMerchant, setSelectedMerchant] = useState<string | null>(null);
-  const [rejectReason, setRejectReason] = useState("");
-  const [rejectingId, setRejectingId] = useState<string | null>(null);
-  const merchantOrdersQ = useQuery({
-    queryKey: ["admin-merchant-orders", selectedMerchant],
-    enabled: !!selectedMerchant,
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("orders")
-        .select("id,external_ref,total,status,payment_status,phone,created_at")
-        .eq("merchant_id", selectedMerchant!)
-        .order("created_at", { ascending: false })
-        .limit(50);
-      return data ?? [];
-    },
-  });
-
-  const updateMerchant = useMutation({
-    mutationFn: async ({ id, patch }: { id: string; patch: any }) => {
-      const { error } = await supabase.from("merchants").update(patch).eq("id", id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      toast.success("Шинэчиллээ");
-      qc.invalidateQueries({ queryKey: ["admin-merchants"] });
-    },
-    onError: (e: any) => toast.error(e.message),
-  });
-
-  const approveMerchant = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from("merchants").update({
-        approval_status: "approved", is_active: true,
-        approved_at: new Date().toISOString(), approved_by: user?.id,
-      } as any).eq("id", id);
-      if (error) throw error;
-    },
-    onSuccess: () => { toast.success("Дэлгүүр баталгаажлаа"); qc.invalidateQueries({ queryKey: ["admin-merchants"] }); },
-    onError: (e: any) => toast.error(e.message),
-  });
-  const rejectMerchant = useMutation({
-    mutationFn: async ({ id, reason }: { id: string; reason: string }) => {
-      const { error } = await supabase.from("merchants").update({
-        approval_status: "rejected", is_active: false, rejection_reason: reason,
-      } as any).eq("id", id);
-      if (error) throw error;
-    },
-    onSuccess: () => { toast.success("Татгалзлаа"); qc.invalidateQueries({ queryKey: ["admin-merchants"] }); },
-    onError: (e: any) => toast.error(e.message),
-  });
-
-  if (loading) return <div className="flex min-h-screen items-center justify-center">Уншиж байна...</div>;
+  if (loading) return (
+    <div className="flex min-h-screen items-center justify-center">
+      <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+    </div>
+  );
   if (!user) return <div className="flex min-h-screen items-center justify-center text-destructive">Эхлээд нэвтэрнэ үү</div>;
   if (!isPlatformAdmin) {
-    // Roles may still be refreshing
     if (roles.length === 0) return <div className="flex min-h-screen items-center justify-center text-muted-foreground">Эрх шалгаж байна...</div>;
     return <div className="flex min-h-screen items-center justify-center text-destructive">Зөвшөөрөлгүй</div>;
   }
 
-  const merchants = merchantsQ.data ?? [];
-  const txs = txQ.data ?? [];
-  const totalCommission = txs.reduce((s: number, t: any) => s + Number(t.commission_amount), 0);
-  const totalGmv = txs.reduce((s: number, t: any) => s + Number(t.order_total), 0);
-  const activeMerchants = merchants.filter((m: any) => m.is_active).length;
-
-  // commission per merchant lookup
-  const commissionByMerchant: Record<string, { gmv: number; commission: number; count: number }> = {};
-  for (const t of txs as any[]) {
-    const m = (commissionByMerchant[t.merchant_id] ??= { gmv: 0, commission: 0, count: 0 });
-    m.gmv += Number(t.order_total);
-    m.commission += Number(t.commission_amount);
-    m.count += 1;
-  }
-
   return (
-    <div className="min-h-screen bg-background p-6 md:p-10">
-      <h1 className="text-3xl font-bold">Платформ Админ</h1>
-      <p className="text-sm text-muted-foreground">Бүх дэлгүүр болон шимтгэлийн тойм</p>
-
-      <div className="mt-6 grid gap-4 md:grid-cols-4">
-        <Card className="rounded-2xl p-5"><div className="text-sm text-muted-foreground">Идэвхтэй мерчант</div><div className="mt-2 text-2xl font-bold">{activeMerchants} / {merchants.length}</div></Card>
-        <Card className="rounded-2xl p-5"><div className="text-sm text-muted-foreground">Нийт захиалга</div><div className="mt-2 text-2xl font-bold">{ordersQ.data ?? 0}</div></Card>
-        <Card className="rounded-2xl p-5"><div className="text-sm text-muted-foreground">Нийт GMV</div><div className="mt-2 text-2xl font-bold">{fmtMnt(totalGmv)}</div></Card>
-        <Card className="rounded-2xl p-5"><div className="text-sm text-muted-foreground">Шимтгэлийн орлого</div><div className="mt-2 text-2xl font-bold text-emerald-600">{fmtMnt(totalCommission)}</div></Card>
-      </div>
-
-      {/* Pending approvals */}
-      {merchants.filter((m: any) => m.approval_status === "pending").length > 0 && (
-        <Card className="mt-8 rounded-2xl border-amber-300/50 bg-amber-50/40 p-4 dark:bg-amber-950/20">
-          <h2 className="mb-3 text-lg font-semibold">Баталгаажуулалт хүлээж буй ({merchants.filter((m: any) => m.approval_status === "pending").length})</h2>
-          <div className="space-y-2">
-            {merchants.filter((m: any) => m.approval_status === "pending").map((m: any) => (
-              <div key={m.id} className="grid gap-2 rounded-xl border border-border bg-background p-3 text-sm md:grid-cols-[2fr_1fr_1fr_auto]">
-                <div>
-                  <div className="font-medium">{m.name} <span className="text-xs text-muted-foreground">/{m.slug}</span></div>
-                  <div className="text-xs text-muted-foreground">{m.business_type ?? "—"} · РД: {m.register_number ?? "—"}</div>
-                </div>
-                <div className="text-xs"><div>{m.contact_name ?? "—"}</div><div className="text-muted-foreground">{m.contact_phone ?? "—"}</div></div>
-                <div className="text-xs text-muted-foreground">{new Date(m.created_at).toLocaleDateString("mn-MN")}</div>
-                <div className="flex gap-1">
-                  <Button size="sm" onClick={() => approveMerchant.mutate(m.id)} disabled={approveMerchant.isPending}>
-                    <Check className="mr-1 h-3.5 w-3.5" /> Зөвшөөрөх
-                  </Button>
-                  <AlertDialog open={rejectingId === m.id} onOpenChange={(o) => { if (!o) { setRejectingId(null); setRejectReason(""); } }}>
-                    <AlertDialogTrigger asChild>
-                      <Button size="sm" variant="outline" onClick={() => setRejectingId(m.id)}>
-                        <X className="mr-1 h-3.5 w-3.5" /> Татгалзах
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Татгалзах шалтгаан</AlertDialogTitle>
-                        <AlertDialogDescription>Энэ дэлгүүрийг яагаад татгалзаж байгаагаа бичнэ үү.</AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <Input value={rejectReason} onChange={(e) => setRejectReason(e.target.value)} placeholder="Жишээ нь: Бүртгэлийн мэдээлэл буруу" />
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Болих</AlertDialogCancel>
-                        <AlertDialogAction onClick={() => { rejectMerchant.mutate({ id: m.id, reason: rejectReason || "Татгалзсан" }); setRejectingId(null); setRejectReason(""); }}>Татгалзах</AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                </div>
-              </div>
-            ))}
-          </div>
-        </Card>
-      )}
-
-      <Tabs defaultValue="merchants" className="mt-8">
-        <TabsList>
-          <TabsTrigger value="merchants">Мерчантууд</TabsTrigger>
-          <TabsTrigger value="transactions">Гүйлгээ</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="merchants">
-          <Card className="rounded-2xl p-4">
-            <div className="space-y-2">
-              {merchants.map((m: any) => {
-                const stat = commissionByMerchant[m.id] ?? { gmv: 0, commission: 0, count: 0 };
-                return (
-                  <div key={m.id}>
-                    <div onClick={() => setSelectedMerchant(selectedMerchant === m.id ? null : m.id)} className="cursor-pointer">
-                      <MerchantRow
-                        merchant={m}
-                        stat={stat}
-                        onUpdate={(patch) => updateMerchant.mutate({ id: m.id, patch })}
-                      />
-                    </div>
-                    {selectedMerchant === m.id && (
-                      <div className="mt-2 rounded-xl border border-border bg-muted/30 p-3">
-                        <h4 className="mb-2 text-sm font-semibold">Сүүлийн 50 захиалга</h4>
-                        <div className="max-h-64 space-y-1 overflow-y-auto">
-                          {merchantOrdersQ.data?.length === 0 && <p className="text-xs text-muted-foreground">Захиалга алга</p>}
-                          {merchantOrdersQ.data?.map((o: any) => (
-                            <div key={o.id} className="flex items-center justify-between gap-2 rounded-lg px-2 py-1 text-xs hover:bg-muted">
-                              <span className="font-medium">{o.external_ref ?? o.id.slice(0, 8)}</span>
-                              <span className="text-muted-foreground">{o.phone}</span>
-                              <span className="rounded bg-muted px-1.5 py-0.5">{o.status}</span>
-                              <span className="font-semibold">{fmtMnt(o.total)}</span>
-                              <span className="text-muted-foreground">{new Date(o.created_at).toLocaleDateString("mn-MN")}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="transactions">
-          <Card className="rounded-2xl p-4">
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="text-left text-xs text-muted-foreground">
-                    <th className="p-2">Огноо</th>
-                    <th className="p-2">Мерчант</th>
-                    <th className="p-2">Захиалгын дүн</th>
-                    <th className="p-2">Хувь</th>
-                    <th className="p-2">Шимтгэл</th>
-                    <th className="p-2">Төлөв</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {txs.map((t: any) => {
-                    const m = merchants.find((x: any) => x.id === t.merchant_id);
-                    return (
-                      <tr key={t.id} className="border-t border-border">
-                        <td className="p-2">{new Date(t.created_at).toLocaleString("mn-MN")}</td>
-                        <td className="p-2">{m?.name ?? t.merchant_id.slice(0, 6)}</td>
-                        <td className="p-2">{fmtMnt(t.order_total)}</td>
-                        <td className="p-2">{t.commission_rate}%</td>
-                        <td className="p-2 font-medium text-emerald-600">{fmtMnt(t.commission_amount)}</td>
-                        <td className="p-2"><span className="rounded bg-muted px-2 py-0.5 text-xs">{t.status}</span></td>
-                      </tr>
-                    );
-                  })}
-                  {txs.length === 0 && (
-                    <tr><td colSpan={6} className="p-8 text-center text-muted-foreground">Гүйлгээ алга</td></tr>
+    <div className="flex min-h-screen bg-background">
+      <aside className="hidden w-64 shrink-0 flex-col border-r border-border bg-card md:flex">
+        <div className="flex h-16 items-center gap-2 border-b border-border px-6">
+          <Link to="/" className="text-xl font-bold">Only</Link>
+          <span className="rounded bg-primary px-1.5 py-0.5 text-[10px] font-bold uppercase text-primary-foreground">Admin</span>
+        </div>
+        <nav className="flex flex-1 flex-col gap-1 p-3">
+          {NAV.map((item) => {
+            const active = item.end
+              ? location.pathname === item.to
+              : location.pathname.startsWith(item.to);
+            const Icon = item.icon;
+            return (
+              <Link key={item.to} to={item.to}>
+                <div className={cn(
+                  "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors",
+                  active
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                )}>
+                  <Icon className="h-4 w-4 shrink-0" />
+                  {item.label}
+                  {item.label === "Мерчантууд" && pendingCount > 0 && (
+                    <span className="ml-auto flex h-5 w-5 items-center justify-center rounded-full bg-amber-500 text-[10px] font-bold text-white">
+                      {pendingCount}
+                    </span>
                   )}
-                </tbody>
-                {txs.length > 0 && (
-                  <tfoot>
-                    <tr className="border-t-2 border-border font-semibold">
-                      <td className="p-2" colSpan={2}>Нийт</td>
-                      <td className="p-2">{fmtMnt(totalGmv)}</td>
-                      <td className="p-2"></td>
-                      <td className="p-2 text-emerald-600">{fmtMnt(totalCommission)}</td>
-                      <td className="p-2"></td>
-                    </tr>
-                  </tfoot>
-                )}
-              </table>
+                </div>
+              </Link>
+            );
+          })}
+        </nav>
+        <div className="border-t border-border p-3">
+          <div className="mb-2 flex items-center gap-2 rounded-xl px-3 py-2 text-sm text-muted-foreground">
+            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
+              {user.email?.[0]?.toUpperCase()}
             </div>
-          </Card>
-        </TabsContent>
-      </Tabs>
-    </div>
-  );
-}
+            <span className="truncate text-xs">{user.email}</span>
+          </div>
+          <Button variant="ghost" size="sm" className="w-full justify-start text-muted-foreground hover:text-destructive"
+            onClick={() => supabase.auth.signOut().then(() => { window.location.href = "/"; })}>
+            <LogOut className="mr-2 h-4 w-4" /> Гарах
+          </Button>
+        </div>
+      </aside>
 
-function MerchantRow({ merchant: m, stat, onUpdate }: { merchant: any; stat: { gmv: number; commission: number; count: number }; onUpdate: (patch: any) => void }) {
-  const [editRate, setEditRate] = useState(false);
-  const [rate, setRate] = useState<string>(String(m.commission_rate));
+      <div className="fixed inset-x-0 top-0 z-40 flex h-14 items-center justify-between gap-2 border-b border-border bg-background px-3 md:hidden">
+        <Link to="/" className="text-lg font-bold">Only Admin</Link>
+        <div className="flex gap-1 overflow-x-auto">
+          {NAV.map((item) => {
+            const Icon = item.icon;
+            const active = item.end ? location.pathname === item.to : location.pathname.startsWith(item.to);
+            return (
+              <Link key={item.to} to={item.to}>
+                <Button variant={active ? "default" : "ghost"} size="icon" className="h-9 w-9 shrink-0">
+                  <Icon className="h-4 w-4" />
+                </Button>
+              </Link>
+            );
+          })}
+        </div>
+      </div>
 
-  const saveRate = () => {
-    const v = Number(rate);
-    if (Number.isNaN(v) || v < 0 || v > 100) return toast.error("0-100 хооронд утга оруулна уу");
-    onUpdate({ commission_rate: v });
-    setEditRate(false);
-  };
-
-  return (
-    <div className="grid items-center gap-3 rounded-xl border border-border p-3 text-sm md:grid-cols-[2fr_1fr_1fr_1fr_140px_100px]">
-      <div>
-        <div className="font-medium">{m.name}</div>
-        <div className="text-xs text-muted-foreground">/{m.slug}</div>
-      </div>
-      <div className="text-xs"><span className="text-muted-foreground">Захиалга: </span>{stat.count}</div>
-      <div className="text-xs"><span className="text-muted-foreground">GMV: </span>{fmtMnt(stat.gmv)}</div>
-      <div className="text-xs"><span className="text-muted-foreground">Шимтгэл: </span><span className="text-emerald-600">{fmtMnt(stat.commission)}</span></div>
-      <div className="flex items-center gap-1">
-        {editRate ? (
-          <>
-            <Input className="h-8 w-20" type="number" step="0.1" value={rate} onChange={(e) => setRate(e.target.value)} />
-            <Button size="icon" variant="ghost" onClick={saveRate}><Check className="h-4 w-4 text-emerald-600" /></Button>
-            <Button size="icon" variant="ghost" onClick={() => { setEditRate(false); setRate(String(m.commission_rate)); }}><X className="h-4 w-4" /></Button>
-          </>
-        ) : (
-          <>
-            <span className="text-sm font-medium">{m.commission_rate}%</span>
-            <Button size="icon" variant="ghost" onClick={() => setEditRate(true)}><Pencil className="h-3.5 w-3.5" /></Button>
-          </>
-        )}
-      </div>
-      <div className="flex items-center gap-2">
-        <Switch checked={m.is_active} onCheckedChange={(v) => onUpdate({ is_active: v })} />
-        <span className="text-xs">{m.is_active ? "Идэвхтэй" : "Хаалттай"}</span>
-      </div>
+      <main className="flex-1 overflow-auto pt-14 md:pt-0">
+        <Outlet />
+      </main>
     </div>
   );
 }
