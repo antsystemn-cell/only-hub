@@ -14,6 +14,54 @@ export type Database = {
   }
   public: {
     Tables: {
+      blog_posts: {
+        Row: {
+          author_id: string | null
+          content: string
+          cover_image: string | null
+          created_at: string
+          excerpt: string | null
+          id: string
+          published_at: string | null
+          slug: string
+          status: string
+          tags: string[]
+          title: string
+          updated_at: string
+          view_count: number
+        }
+        Insert: {
+          author_id?: string | null
+          content?: string
+          cover_image?: string | null
+          created_at?: string
+          excerpt?: string | null
+          id?: string
+          published_at?: string | null
+          slug: string
+          status?: string
+          tags?: string[]
+          title: string
+          updated_at?: string
+          view_count?: number
+        }
+        Update: {
+          author_id?: string | null
+          content?: string
+          cover_image?: string | null
+          created_at?: string
+          excerpt?: string | null
+          id?: string
+          published_at?: string | null
+          slug?: string
+          status?: string
+          tags?: string[]
+          title?: string
+          updated_at?: string
+          view_count?: number
+        }
+        Relationships: []
+      }
       brands: {
         Row: {
           created_at: string
@@ -286,7 +334,10 @@ export type Database = {
           register_number: string | null
           rejection_reason: string | null
           slug: string
+          social_facebook: string | null
+          social_instagram: string | null
           updated_at: string
+          website_url: string | null
         }
         Insert: {
           approval_status?: string
@@ -307,7 +358,10 @@ export type Database = {
           register_number?: string | null
           rejection_reason?: string | null
           slug: string
+          social_facebook?: string | null
+          social_instagram?: string | null
           updated_at?: string
+          website_url?: string | null
         }
         Update: {
           approval_status?: string
@@ -328,7 +382,10 @@ export type Database = {
           register_number?: string | null
           rejection_reason?: string | null
           slug?: string
+          social_facebook?: string | null
+          social_instagram?: string | null
           updated_at?: string
+          website_url?: string | null
         }
         Relationships: []
       }
@@ -517,6 +574,48 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      platform_banners: {
+        Row: {
+          banner_image: string | null
+          bg_gradient: string | null
+          button_link: string | null
+          button_text: string | null
+          created_at: string
+          id: string
+          is_active: boolean
+          position: number
+          subtitle: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          banner_image?: string | null
+          bg_gradient?: string | null
+          button_link?: string | null
+          button_text?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          position?: number
+          subtitle?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          banner_image?: string | null
+          bg_gradient?: string | null
+          button_link?: string | null
+          button_text?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          position?: number
+          subtitle?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       platform_transactions: {
         Row: {
