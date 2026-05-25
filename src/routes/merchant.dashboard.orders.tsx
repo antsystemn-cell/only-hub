@@ -20,10 +20,36 @@ import {
   Collapsible, CollapsibleContent, CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { toast } from "sonner";
-import { Plus, FileSpreadsheet, FileText, Printer, Tag, Search, ChevronDown, X, Truck, Trash2, Pencil, Minus } from "lucide-react";
+import { Plus, FileSpreadsheet, FileText, Printer, Tag, Search, ChevronDown, X, Truck, Trash2, Pencil, Minus, CheckCircle, Loader2 } from "lucide-react";
 import { fmtMnt, STATUS_LABELS, STATUS_TONE, PAYMENT_STATUS_LABELS } from "@/lib/format";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
+import { useServerFn } from "@tanstack/react-start";
+import { sendOrderToDelivery } from "@/lib/delivery.functions";
+
+export const DELIVERY_STATUS_LABELS: Record<string, string> = {
+  submitted: "Илгээгдсэн",
+  confirmed: "Баталгаажсан",
+  phone_confirmed: "Утсаар баталгаажсан",
+  preparing: "Бэлдэж буй",
+  out_for_delivery: "Хүргэлтэнд гарсан",
+  delivering: "Хүргэлтэнд",
+  delivered: "Хүргэгдсэн",
+  completed: "Хүргэгдсэн",
+  cancelled: "Цуцлагдсан",
+};
+
+export const DELIVERY_STATUS_TONE: Record<string, string> = {
+  submitted: "bg-violet-500/10 text-violet-600",
+  confirmed: "bg-blue-500/10 text-blue-600",
+  phone_confirmed: "bg-blue-500/10 text-blue-600",
+  preparing: "bg-blue-500/10 text-blue-600",
+  out_for_delivery: "bg-violet-500/10 text-violet-600",
+  delivering: "bg-violet-500/10 text-violet-600",
+  delivered: "bg-emerald-500/10 text-emerald-600",
+  completed: "bg-emerald-500/10 text-emerald-600",
+  cancelled: "bg-red-500/10 text-red-600",
+};
 
 export const Route = createFileRoute("/merchant/dashboard/orders")({
   component: OrdersPage,
