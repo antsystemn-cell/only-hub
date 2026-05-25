@@ -176,6 +176,27 @@ function AdminOverview() {
       </div>
 
       <Card className="rounded-2xl p-5">
+        <div className="mb-4 flex items-center gap-2">
+          <Truck className="h-5 w-5 text-violet-500" />
+          <h3 className="font-semibold">Хүргэлтийн тойм</h3>
+        </div>
+        <div className="grid gap-4 md:grid-cols-3">
+          {[
+            { label: "Хүргэлтэнд илгээсэн", value: deliveryOrders.length, color: "text-violet-600" },
+            { label: "Хүргэлтэнд гарсан", value: deliveryOrders.filter((o) => ["out_for_delivery","delivering"].includes(o.delivery_status)).length, color: "text-blue-600" },
+            { label: "Хүргэгдсэн", value: deliveryOrders.filter((o) => ["delivered","completed"].includes(o.delivery_status)).length, color: "text-emerald-600" },
+          ].map((s) => (
+            <div key={s.label} className="rounded-xl bg-muted/40 p-3">
+              <p className="text-xs text-muted-foreground">{s.label}</p>
+              <p className={`mt-1 text-2xl font-bold ${s.color}`}>{s.value}</p>
+            </div>
+          ))}
+        </div>
+      </Card>
+
+
+
+      <Card className="rounded-2xl p-5">
         <div className="mb-4 flex items-center justify-between">
           <h3 className="font-semibold">Сүүлийн гүйлгээнүүд</h3>
           <Link to="/admin/analytics"><Button variant="ghost" size="sm">Бүгд <ChevronRight className="ml-1 h-3.5 w-3.5" /></Button></Link>
