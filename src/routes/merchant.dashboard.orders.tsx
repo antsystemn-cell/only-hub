@@ -301,6 +301,13 @@ function OrderRow({ order, checked, onCheck, onStatus, onPayment }: {
             <span className={`rounded-md border px-2 py-0.5 text-xs ${STATUS_TONE[order.status] ?? ""}`}>{STATUS_LABELS[order.status] ?? order.status}</span>
             <span className="rounded-md bg-muted px-2 py-0.5 text-xs">{order.payment_method}</span>
             <span className={`rounded-md px-2 py-0.5 text-xs ${order.payment_status === "confirmed" ? "bg-emerald-500/10 text-emerald-600" : "bg-amber-500/10 text-amber-600"}`}>{PAYMENT_STATUS_LABELS[order.payment_status] ?? order.payment_status}</span>
+            {order.delivery_order_id && (
+              <span className={`flex items-center gap-1 rounded-md px-2 py-0.5 text-xs ${DELIVERY_STATUS_TONE[order.delivery_status ?? "submitted"] ?? "bg-muted text-muted-foreground"}`}>
+                <Truck className="h-3 w-3" />
+                {DELIVERY_STATUS_LABELS[order.delivery_status ?? "submitted"] ?? order.delivery_status}
+                <span className="opacity-70">• {order.delivery_order_id}</span>
+              </span>
+            )}
           </div>
           <div className="mt-1 text-xs text-muted-foreground">{order.phone} • {new Date(order.created_at).toLocaleString("mn-MN")}</div>
         </div>
