@@ -274,8 +274,10 @@ function OrderRow({ order, checked, onCheck, onStatus, onPayment }: {
   const [open, setOpen] = useState(false);
   const [editingItems, setEditingItems] = useState(false);
   const [localItems, setLocalItems] = useState<any[]>([]);
+  const [sendingDelivery, setSendingDelivery] = useState(false);
   const qc = useQueryClient();
   const { primaryMerchantId } = useAuth();
+  const sendDeliveryFn = useServerFn(sendOrderToDelivery);
 
   const startEdit = () => {
     setLocalItems(JSON.parse(JSON.stringify(order.items ?? [])));
