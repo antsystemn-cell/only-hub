@@ -6,7 +6,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { fmtMnt } from "@/lib/format";
-import { Store, TrendingUp, ShoppingCart, BarChart3, Clock, ChevronRight } from "lucide-react";
+import { Store, TrendingUp, ShoppingCart, BarChart3, Clock, ChevronRight, Truck } from "lucide-react";
 import {
   ResponsiveContainer, AreaChart, Area, XAxis, YAxis,
   Tooltip, CartesianGrid, BarChart, Bar,
