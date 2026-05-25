@@ -20,10 +20,36 @@ import {
   Collapsible, CollapsibleContent, CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { toast } from "sonner";
-import { Plus, FileSpreadsheet, FileText, Printer, Tag, Search, ChevronDown, X, Truck, Trash2, Pencil, Minus } from "lucide-react";
+import { Plus, FileSpreadsheet, FileText, Printer, Tag, Search, ChevronDown, X, Truck, Trash2, Pencil, Minus, CheckCircle, Loader2 } from "lucide-react";
 import { fmtMnt, STATUS_LABELS, STATUS_TONE, PAYMENT_STATUS_LABELS } from "@/lib/format";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
+import { useServerFn } from "@tanstack/react-start";
+import { sendOrderToDelivery } from "@/lib/delivery.functions";
+
+export const DELIVERY_STATUS_LABELS: Record<string, string> = {
+  submitted: "Илгээгдсэн",
+  confirmed: "Баталгаажсан",
+  phone_confirmed: "Утсаар баталгаажсан",
+  preparing: "Бэлдэж буй",
+  out_for_delivery: "Хүргэлтэнд гарсан",
+  delivering: "Хүргэлтэнд",
+  delivered: "Хүргэгдсэн",
+  completed: "Хүргэгдсэн",
+  cancelled: "Цуцлагдсан",
+};
+
+export const DELIVERY_STATUS_TONE: Record<string, string> = {
+  submitted: "bg-violet-500/10 text-violet-600",
+  confirmed: "bg-blue-500/10 text-blue-600",
+  phone_confirmed: "bg-blue-500/10 text-blue-600",
+  preparing: "bg-blue-500/10 text-blue-600",
+  out_for_delivery: "bg-violet-500/10 text-violet-600",
+  delivering: "bg-violet-500/10 text-violet-600",
+  delivered: "bg-emerald-500/10 text-emerald-600",
+  completed: "bg-emerald-500/10 text-emerald-600",
+  cancelled: "bg-red-500/10 text-red-600",
+};
 
 export const Route = createFileRoute("/merchant/dashboard/orders")({
   component: OrdersPage,
@@ -248,8 +274,10 @@ function OrderRow({ order, checked, onCheck, onStatus, onPayment }: {
   const [open, setOpen] = useState(false);
   const [editingItems, setEditingItems] = useState(false);
   const [localItems, setLocalItems] = useState<any[]>([]);
+  const [sendingDelivery, setSendingDelivery] = useState(false);
   const qc = useQueryClient();
   const { primaryMerchantId } = useAuth();
+  const sendDeliveryFn = useServerFn(sendOrderToDelivery);
 
   const startEdit = () => {
     setLocalItems(JSON.parse(JSON.stringify(order.items ?? [])));
@@ -275,6 +303,13 @@ function OrderRow({ order, checked, onCheck, onStatus, onPayment }: {
             <span className={`rounded-md border px-2 py-0.5 text-xs ${STATUS_TONE[order.status] ?? ""}`}>{STATUS_LABELS[order.status] ?? order.status}</span>
             <span className="rounded-md bg-muted px-2 py-0.5 text-xs">{order.payment_method}</span>
             <span className={`rounded-md px-2 py-0.5 text-xs ${order.payment_status === "confirmed" ? "bg-emerald-500/10 text-emerald-600" : "bg-amber-500/10 text-amber-600"}`}>{PAYMENT_STATUS_LABELS[order.payment_status] ?? order.payment_status}</span>
+            {order.delivery_order_id && (
+              <span className={`flex items-center gap-1 rounded-md px-2 py-0.5 text-xs ${DELIVERY_STATUS_TONE[order.delivery_status ?? "submitted"] ?? "bg-muted text-muted-foreground"}`}>
+                <Truck className="h-3 w-3" />
+                {DELIVERY_STATUS_LABELS[order.delivery_status ?? "submitted"] ?? order.delivery_status}
+                <span className="opacity-70">• {order.delivery_order_id}</span>
+              </span>
+            )}
           </div>
           <div className="mt-1 text-xs text-muted-foreground">{order.phone} • {new Date(order.created_at).toLocaleString("mn-MN")}</div>
         </div>
@@ -354,17 +389,34 @@ function OrderRow({ order, checked, onCheck, onStatus, onPayment }: {
             <Button size="sm" variant="outline" onClick={() => onPayment(order.payment_status === "confirmed" ? "unpaid" : "confirmed")}>
               {order.payment_status === "confirmed" ? "Төлөгдөөгүй болгох" : "Төлөгдсөн болгох"}
             </Button>
-            <Button size="sm" variant="outline" disabled={!!order.delivery_order_id}
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={!!order.delivery_order_id || sendingDelivery}
               onClick={async () => {
-                const ref = `DLV-${order.id.slice(0, 8).toUpperCase()}`;
-                const { error } = await supabase.from("orders").update({
-                  delivery_order_id: ref, delivery_status: "submitted", status: "delivering",
-                }).eq("id", order.id);
-                if (error) toast.error(error.message);
-                else toast.success(`Хүргэлт рүү илгээлээ: ${ref}`);
-              }}>
-              <Truck className="mr-1 h-4 w-4" />
-              {order.delivery_order_id ? `Илгээгдсэн: ${order.delivery_order_id}` : "Хүргэлт рүү илгээх"}
+                setSendingDelivery(true);
+                try {
+                  const res = await sendDeliveryFn({ data: { orderId: order.id } });
+                  if (res.ok) {
+                    toast.success(res.message);
+                    qc.invalidateQueries({ queryKey: ["orders", primaryMerchantId] });
+                  } else {
+                    toast.error(res.error);
+                  }
+                } catch (e: any) {
+                  toast.error(e?.message ?? "Алдаа");
+                } finally {
+                  setSendingDelivery(false);
+                }
+              }}
+            >
+              {sendingDelivery ? (
+                <><Loader2 className="mr-1 h-4 w-4 animate-spin" /> Илгээж байна...</>
+              ) : order.delivery_order_id ? (
+                <><CheckCircle className="mr-1 h-4 w-4 text-emerald-600" /> {order.delivery_order_id}</>
+              ) : (
+                <><Truck className="mr-1 h-4 w-4" /> Хүргэлт рүү илгээх</>
+              )}
             </Button>
           </div>
         </div>

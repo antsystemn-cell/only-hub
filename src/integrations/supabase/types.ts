@@ -282,6 +282,36 @@ export type Database = {
           },
         ]
       }
+      delivery_webhooks: {
+        Row: {
+          created_at: string
+          event: string | null
+          fulfillment_status: string | null
+          id: string
+          merchant_id: string | null
+          order_id: string | null
+          payload: Json
+        }
+        Insert: {
+          created_at?: string
+          event?: string | null
+          fulfillment_status?: string | null
+          id?: string
+          merchant_id?: string | null
+          order_id?: string | null
+          payload?: Json
+        }
+        Update: {
+          created_at?: string
+          event?: string | null
+          fulfillment_status?: string | null
+          id?: string
+          merchant_id?: string | null
+          order_id?: string | null
+          payload?: Json
+        }
+        Relationships: []
+      }
       merchant_users: {
         Row: {
           created_at: string
@@ -325,6 +355,8 @@ export type Database = {
           contact_phone: string | null
           created_at: string
           delivery_api_key: string | null
+          delivery_endpoint: string | null
+          delivery_webhook_secret: string | null
           description: string | null
           id: string
           is_active: boolean
@@ -349,6 +381,8 @@ export type Database = {
           contact_phone?: string | null
           created_at?: string
           delivery_api_key?: string | null
+          delivery_endpoint?: string | null
+          delivery_webhook_secret?: string | null
           description?: string | null
           id?: string
           is_active?: boolean
@@ -373,6 +407,8 @@ export type Database = {
           contact_phone?: string | null
           created_at?: string
           delivery_api_key?: string | null
+          delivery_endpoint?: string | null
+          delivery_webhook_secret?: string | null
           description?: string | null
           id?: string
           is_active?: boolean

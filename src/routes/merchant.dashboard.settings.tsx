@@ -12,7 +12,7 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Trash2, Plus, Eye, EyeOff, Pencil, X } from "lucide-react";
+import { Trash2, Plus, Eye, EyeOff, Pencil, X, Truck, Copy, CheckCircle, RefreshCw } from "lucide-react";
 import { fmtMnt, slugify } from "@/lib/format";
 import { useServerFn } from "@tanstack/react-start";
 import { testPaymentConnection } from "@/lib/payments.functions";
@@ -34,16 +34,21 @@ function SettingsPage() {
         </TabsList>
         <TabsContent value="categories"><CrudList table="categories" fields={[{ k: "name", l: "Нэр" }, { k: "icon", l: "Icon (emoji)" }]} /></TabsContent>
         <TabsContent value="brands"><CrudList table="brands" fields={[{ k: "name", l: "Нэр" }, { k: "logo_url", l: "Лого URL" }]} /></TabsContent>
-        <TabsContent value="delivery"><CrudList table="delivery_options" fields={[
-          { k: "name", l: "Нэр" },
-          { k: "description", l: "Тайлбар" },
-          { k: "price", l: "Үнэ ₮", type: "number" },
-          { k: "address", l: "Хаяг" },
-          { k: "phone", l: "Утас" },
-          { k: "payment_terms", l: "Төлбөрийн нөхцөл" },
-          { k: "estimated_days_min", l: "Хам. бага хоног", type: "number" },
-          { k: "estimated_days_max", l: "Хам. их хоног", type: "number" },
-        ]} hasActiveToggle /></TabsContent>
+        <TabsContent value="delivery">
+          <div className="space-y-5">
+            <DeliveryApiCard />
+            <CrudList table="delivery_options" fields={[
+              { k: "name", l: "Нэр" },
+              { k: "description", l: "Тайлбар" },
+              { k: "price", l: "Үнэ ₮", type: "number" },
+              { k: "address", l: "Хаяг" },
+              { k: "phone", l: "Утас" },
+              { k: "payment_terms", l: "Төлбөрийн нөхцөл" },
+              { k: "estimated_days_min", l: "Хам. бага хоног", type: "number" },
+              { k: "estimated_days_max", l: "Хам. их хоног", type: "number" },
+            ]} hasActiveToggle />
+          </div>
+        </TabsContent>
         <TabsContent value="payments"><PaymentsTab /></TabsContent>
         <TabsContent value="banners"><CrudList table="promo_banners" fields={[
           { k: "title", l: "Гарчиг" },
@@ -355,5 +360,179 @@ function ProviderRow({ provider: p, onEdit, onDelete }: { provider: any; onEdit:
         <Button size="icon" variant="ghost" onClick={onDelete}><Trash2 className="h-4 w-4" /></Button>
       </div>
     </div>
+  );
+}
+
+function DeliveryApiCard() {
+  const { primaryMerchantId } = useAuth();
+  const merchantId = primaryMerchantId!;
+  const qc = useQueryClient();
+  const [showKey, setShowKey] = useState(false);
+  const [showSecret, setShowSecret] = useState(false);
+  const [apiKey, setApiKey] = useState("");
+  const [endpoint, setEndpoint] = useState("");
+  const [webhookSecret, setWebhookSecret] = useState("");
+
+  const { data: merchant } = useQuery({
+    queryKey: ["merchant-delivery", merchantId],
+    queryFn: async () => {
+      const { data } = await (supabase as any)
+        .from("merchants")
+        .select("id,delivery_api_key,delivery_endpoint,delivery_webhook_secret")
+        .eq("id", merchantId)
+        .maybeSingle();
+      if (data) {
+        setApiKey(data.delivery_api_key ?? "");
+        setEndpoint(data.delivery_endpoint ?? "");
+        setWebhookSecret(data.delivery_webhook_secret ?? "");
+      }
+      return data;
+    },
+  });
+
+  const webhookUrl =
+    typeof window !== "undefined"
+      ? `${window.location.origin}/api/public/delivery/webhook`
+      : "/api/public/delivery/webhook";
+
+  const save = useMutation({
+    mutationFn: async () => {
+      const { error } = await (supabase as any)
+        .from("merchants")
+        .update({
+          delivery_api_key: apiKey.trim() || null,
+          delivery_endpoint: endpoint.trim() || null,
+          delivery_webhook_secret: webhookSecret.trim() || null,
+        })
+        .eq("id", merchantId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Хүргэлтийн тохиргоо хадгалагдлаа");
+      qc.invalidateQueries({ queryKey: ["merchant-delivery", merchantId] });
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const generateSecret = () => {
+    const arr = new Uint8Array(24);
+    crypto.getRandomValues(arr);
+    const hex = Array.from(arr).map((b) => b.toString(16).padStart(2, "0")).join("");
+    setWebhookSecret(`whsec_${hex}`);
+  };
+
+  const copy = (val: string, label: string) => {
+    navigator.clipboard.writeText(val);
+    toast.success(`${label} хуулагдлаа`);
+  };
+
+  const connected = !!merchant?.delivery_api_key;
+
+  return (
+    <Card className="rounded-2xl border-violet-200/60 bg-violet-50/30 p-5 dark:border-violet-800/30 dark:bg-violet-950/10">
+      <div className="flex items-start gap-3">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-violet-500/10">
+          <Truck className="h-5 w-5 text-violet-500" />
+        </div>
+        <div className="flex-1 space-y-4">
+          <div>
+            <div className="flex items-center gap-2">
+              <h3 className="font-semibold">Хүргэлтийн системийн API холболт</h3>
+              {connected && (
+                <span className="flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-xs text-emerald-600">
+                  <CheckCircle className="h-3 w-3" /> Холбогдсон
+                </span>
+              )}
+            </div>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Гадаад хүргэлтийн системд (жишээ нь Swift / hurgelt.only.mn) захиалгуудыг автоматаар илгээх боломжтой. Хүргэлтийн системээс олгосон API key, endpoint URL-г оруулна.
+            </p>
+          </div>
+
+          <div className="grid gap-3 md:grid-cols-2">
+            <div>
+              <Label>Хүргэлтийн API Key</Label>
+              <div className="mt-1 flex gap-2">
+                <Input
+                  type={showKey ? "text" : "password"}
+                  value={apiKey}
+                  onChange={(e) => setApiKey(e.target.value)}
+                  placeholder="sk_xxxxxxxxxxxxxxxxxx"
+                  className="font-mono text-sm"
+                />
+                <Button type="button" size="icon" variant="outline" onClick={() => setShowKey(!showKey)}>
+                  {showKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </Button>
+              </div>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Хүргэлтийн систем дэх Эх сурвалж (Source System)-н API key.
+              </p>
+            </div>
+            <div>
+              <Label>API Endpoint URL</Label>
+              <Input
+                value={endpoint}
+                onChange={(e) => setEndpoint(e.target.value)}
+                placeholder="https://hurgelt.only.mn/functions/v1/receive-order"
+                className="mt-1 font-mono text-sm"
+              />
+              <p className="mt-1 text-xs text-muted-foreground">
+                Хоосон бол default Swift endpoint ашиглана.
+              </p>
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-dashed border-violet-300/50 bg-background p-4">
+            <p className="text-sm font-medium">Буцах Webhook (Хүргэлтийн систем → Only)</p>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              Хүргэлтийн систем дээр энэ URL болон Secret-г бүртгэнэ. Захиалгын төлөв өөрчлөгдөх болгонд автомат шинэчлэгдэнэ.
+            </p>
+            <div className="mt-3 space-y-2">
+              <div>
+                <Label className="text-xs">Webhook URL</Label>
+                <div className="mt-1 flex gap-2">
+                  <Input readOnly value={webhookUrl} className="font-mono text-xs" />
+                  <Button type="button" size="icon" variant="outline" onClick={() => copy(webhookUrl, "URL")}>
+                    <Copy className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+              <div>
+                <Label className="text-xs">Webhook Secret (X-Webhook-Secret header)</Label>
+                <div className="mt-1 flex gap-2">
+                  <Input
+                    type={showSecret ? "text" : "password"}
+                    value={webhookSecret}
+                    onChange={(e) => setWebhookSecret(e.target.value)}
+                    placeholder="whsec_..."
+                    className="font-mono text-xs"
+                  />
+                  <Button type="button" size="icon" variant="outline" onClick={() => setShowSecret(!showSecret)}>
+                    {showSecret ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </Button>
+                  <Button type="button" size="icon" variant="outline" onClick={generateSecret} title="Шинэ secret үүсгэх">
+                    <RefreshCw className="h-4 w-4" />
+                  </Button>
+                  {webhookSecret && (
+                    <Button type="button" size="icon" variant="outline" onClick={() => copy(webhookSecret, "Secret")}>
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Хоосон үлдээвэл webhook signature шалгахгүй (зөвхөн туршилтын үед).
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex justify-end">
+            <Button onClick={() => save.mutate()} disabled={save.isPending}>
+              {save.isPending ? "Хадгалж байна..." : "Хадгалах"}
+            </Button>
+          </div>
+        </div>
+      </div>
+    </Card>
   );
 }

@@ -6,7 +6,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { fmtMnt } from "@/lib/format";
-import { Store, TrendingUp, ShoppingCart, BarChart3, Clock, ChevronRight } from "lucide-react";
+import { Store, TrendingUp, ShoppingCart, BarChart3, Clock, ChevronRight, Truck } from "lucide-react";
 import {
   ResponsiveContainer, AreaChart, Area, XAxis, YAxis,
   Tooltip, CartesianGrid, BarChart, Bar,
@@ -40,6 +40,19 @@ function AdminOverview() {
       return data ?? [];
     },
   });
+
+  const deliveryQ = useQuery({
+    queryKey: ["admin-delivery-overview"],
+    enabled: isPlatformAdmin,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("orders")
+        .select("id,delivery_order_id,delivery_status")
+        .not("delivery_order_id", "is", null);
+      return data ?? [];
+    },
+  });
+  const deliveryOrders = (deliveryQ.data ?? []) as any[];
 
   const txs = (txQ.data ?? []) as any[];
   const merchants = (merchantsQ.data ?? []) as any[];
@@ -161,6 +174,27 @@ function AdminOverview() {
           </ResponsiveContainer>
         </Card>
       </div>
+
+      <Card className="rounded-2xl p-5">
+        <div className="mb-4 flex items-center gap-2">
+          <Truck className="h-5 w-5 text-violet-500" />
+          <h3 className="font-semibold">Хүргэлтийн тойм</h3>
+        </div>
+        <div className="grid gap-4 md:grid-cols-3">
+          {[
+            { label: "Хүргэлтэнд илгээсэн", value: deliveryOrders.length, color: "text-violet-600" },
+            { label: "Хүргэлтэнд гарсан", value: deliveryOrders.filter((o) => ["out_for_delivery","delivering"].includes(o.delivery_status)).length, color: "text-blue-600" },
+            { label: "Хүргэгдсэн", value: deliveryOrders.filter((o) => ["delivered","completed"].includes(o.delivery_status)).length, color: "text-emerald-600" },
+          ].map((s) => (
+            <div key={s.label} className="rounded-xl bg-muted/40 p-3">
+              <p className="text-xs text-muted-foreground">{s.label}</p>
+              <p className={`mt-1 text-2xl font-bold ${s.color}`}>{s.value}</p>
+            </div>
+          ))}
+        </div>
+      </Card>
+
+
 
       <Card className="rounded-2xl p-5">
         <div className="mb-4 flex items-center justify-between">
