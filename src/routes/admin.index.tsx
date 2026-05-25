@@ -41,6 +41,19 @@ function AdminOverview() {
     },
   });
 
+  const deliveryQ = useQuery({
+    queryKey: ["admin-delivery-overview"],
+    enabled: isPlatformAdmin,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("orders")
+        .select("id,delivery_order_id,delivery_status")
+        .not("delivery_order_id", "is", null);
+      return data ?? [];
+    },
+  });
+  const deliveryOrders = (deliveryQ.data ?? []) as any[];
+
   const txs = (txQ.data ?? []) as any[];
   const merchants = (merchantsQ.data ?? []) as any[];
   const pendingMerchants = useMemo(() => merchants.filter((m) => m.approval_status === "pending"), [merchants]);
