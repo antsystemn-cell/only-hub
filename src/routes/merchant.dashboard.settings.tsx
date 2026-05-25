@@ -12,7 +12,7 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Trash2, Plus, Eye, EyeOff, Pencil, X } from "lucide-react";
+import { Trash2, Plus, Eye, EyeOff, Pencil, X, Truck, Copy, CheckCircle, RefreshCw } from "lucide-react";
 import { fmtMnt, slugify } from "@/lib/format";
 import { useServerFn } from "@tanstack/react-start";
 import { testPaymentConnection } from "@/lib/payments.functions";
