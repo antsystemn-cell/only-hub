@@ -215,6 +215,93 @@ function AdminSettingsPage() {
           {save.isPending ? "Хадгалж байна..." : "Хадгалах"}
         </Button>
       </div>
+
+      <SwiftTestOrderCard />
     </div>
+  );
+}
+
+function SwiftTestOrderCard() {
+  const sendFn = useServerFn(sendSwiftTestOrder);
+  const [customerName, setCustomerName] = useState("Тест Хэрэглэгч");
+  const [phone, setPhone] = useState("99999999");
+  const [address, setAddress] = useState("Тест хаяг, Улаанбаатар");
+  const [note, setNote] = useState("Admin тохиргооноос илгээсэн тест");
+  const [result, setResult] = useState<any>(null);
+
+  const mut = useMutation({
+    mutationFn: async () =>
+      sendFn({ data: { customerName, phone, address, note } }),
+    onSuccess: (res: any) => {
+      setResult(res);
+      if (res?.ok) toast.success(`Амжилттай (${res.elapsedMs}ms)`);
+      else toast.error(res?.error ?? "Алдаа");
+    },
+    onError: (e: any) => {
+      setResult({ ok: false, error: e?.message });
+      toast.error(e?.message ?? "Алдаа");
+    },
+  });
+
+  return (
+    <Card className="mt-4 rounded-2xl p-6">
+      <div className="flex items-center gap-2">
+        <Send className="h-5 w-5" />
+        <h2 className="text-lg font-semibold">Swift Delivery Hub — тест захиалга</h2>
+      </div>
+      <p className="mt-1 text-xs text-muted-foreground">
+        Гадаад хүргэлтийн API руу бодит дуудлага илгээж холболтыг шалгана.
+        external_order_id нь <code className="font-mono">OMH-TEST-…</code> prefix-тэй
+        тул бодит захиалгатай хольж андуурахгүй.
+      </p>
+
+      <div className="mt-4 grid gap-4 md:grid-cols-2">
+        <div>
+          <Label>Хэрэглэгчийн нэр</Label>
+          <Input value={customerName} onChange={(e) => setCustomerName(e.target.value)} className="mt-1" />
+        </div>
+        <div>
+          <Label>Утас</Label>
+          <Input value={phone} onChange={(e) => setPhone(e.target.value)} className="mt-1" />
+        </div>
+        <div className="md:col-span-2">
+          <Label>Хаяг</Label>
+          <Input value={address} onChange={(e) => setAddress(e.target.value)} className="mt-1" />
+        </div>
+        <div className="md:col-span-2">
+          <Label>Тэмдэглэл</Label>
+          <Textarea value={note} onChange={(e) => setNote(e.target.value)} className="mt-1" rows={2} />
+        </div>
+      </div>
+
+      <div className="mt-4 flex justify-end">
+        <Button onClick={() => mut.mutate()} disabled={mut.isPending} variant="secondary">
+          <Send className="mr-2 h-4 w-4" />
+          {mut.isPending ? "Илгээж байна..." : "Тест захиалга илгээх"}
+        </Button>
+      </div>
+
+      {result && (
+        <div className="mt-4 rounded-lg border p-3 text-xs">
+          <div className="flex items-center justify-between">
+            <span className={result.ok ? "font-semibold text-green-600" : "font-semibold text-destructive"}>
+              {result.ok ? "Амжилттай" : "Амжилтгүй"}
+            </span>
+            <span className="text-muted-foreground">
+              {result.status ? `HTTP ${result.status}` : ""} {result.elapsedMs ? `· ${result.elapsedMs}ms` : ""}
+            </span>
+          </div>
+          {result.externalOrderId && (
+            <div className="mt-2 font-mono">external_order_id: {result.externalOrderId}</div>
+          )}
+          {result.error && <div className="mt-2 text-destructive">{result.error}</div>}
+          {result.raw && (
+            <pre className="mt-2 max-h-60 overflow-auto rounded bg-muted p-2 font-mono text-[11px]">
+{JSON.stringify(result.raw, null, 2)}
+            </pre>
+          )}
+        </div>
+      )}
+    </Card>
   );
 }
