@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { checkQpayPayment } from "@/lib/qpay.server";
+import { createDeliveryRequest } from "@/lib/delivery/delivery.service";
 
 export const Route = createFileRoute("/api/public/qpay/webhook")({
   server: {
@@ -22,7 +23,10 @@ async function handle(request: Request) {
     .eq("id", orderId)
     .maybeSingle();
   if (!order) return new Response("not found", { status: 404 });
-  if (order.payment_status === "confirmed") return new Response("ok");
+  if (order.payment_status === "confirmed") {
+    await createDeliveryRequest({ orderId: order.id }).catch(() => null);
+    return new Response("ok");
+  }
   if (!order.qpay_invoice_id) return new Response("no invoice", { status: 400 });
 
   try {
@@ -32,6 +36,10 @@ async function handle(request: Request) {
         .from("orders")
         .update({ payment_status: "confirmed" })
         .eq("id", order.id);
+      // Auto-create delivery request on confirmation
+      await createDeliveryRequest({ orderId: order.id }).catch((e) =>
+        console.error("auto delivery create failed", e),
+      );
     }
     return new Response(JSON.stringify({ paid }), {
       headers: { "Content-Type": "application/json" },
