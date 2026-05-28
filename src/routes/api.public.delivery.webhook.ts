@@ -70,7 +70,7 @@ export const Route = createFileRoute("/api/public/delivery/webhook")({
         const payload = parsed.data;
 
         const ext = payload.external_order_id ?? null;
-        const intl = payload.internal_order_number ?? null;
+        const intl = payload.internal_order_number ?? payload.delivery_order_id ?? payload.tracking_code ?? null;
         if (!ext && !intl) {
           return new Response(
             JSON.stringify({ error: "Missing order identifier" }),
@@ -81,9 +81,18 @@ export const Route = createFileRoute("/api/public/delivery/webhook")({
           );
         }
 
-        // Find order
+        // Find order — OMH- prefix → direct id lookup, else by external_ref / delivery_order_id
         let order: any = null;
-        if (ext) {
+        if (ext && ext.startsWith(OMH_PREFIX)) {
+          const orderId = ext.slice(OMH_PREFIX.length);
+          const { data } = await supabaseAdmin
+            .from("orders")
+            .select("id,merchant_id,status,delivery_status")
+            .eq("id", orderId)
+            .maybeSingle();
+          order = data;
+        }
+        if (!order && ext) {
           const { data } = await supabaseAdmin
             .from("orders")
             .select("id,merchant_id,status,delivery_status")
@@ -106,22 +115,28 @@ export const Route = createFileRoute("/api/public/delivery/webhook")({
           );
         }
 
-        // Verify webhook secret (per-merchant)
+        // AuthN: Swift Delivery Hub-аас ирэх x-api-key, эсвэл legacy per-merchant secret
+        const incomingApiKey = request.headers.get("x-api-key");
         const incomingSecret = request.headers.get("x-webhook-secret") ?? "";
-        const { data: merchant } = await supabaseAdmin
-          .from("merchants")
-          .select("delivery_webhook_secret")
-          .eq("id", order.merchant_id)
-          .maybeSingle();
-        const expected = (merchant as any)?.delivery_webhook_secret ?? null;
-        if (expected && expected !== incomingSecret) {
+        const apiKeyOk = verifySwiftApiKey(incomingApiKey);
+        let secretOk = false;
+        if (!apiKeyOk) {
+          const { data: merchant } = await supabaseAdmin
+            .from("merchants")
+            .select("delivery_webhook_secret")
+            .eq("id", order.merchant_id)
+            .maybeSingle();
+          const expected = (merchant as any)?.delivery_webhook_secret ?? null;
+          secretOk = !!expected && expected === incomingSecret;
+        }
+        if (!apiKeyOk && !secretOk) {
           return new Response(
-            JSON.stringify({ error: "Invalid webhook secret" }),
+            JSON.stringify({ error: "Unauthorized" }),
             { status: 401, headers: { "Content-Type": "application/json", ...corsHeaders } },
           );
         }
 
-        const ff = (payload.fulfillment_status ?? "").toLowerCase();
+        const ff = (payload.fulfillment_status ?? payload.status ?? "").toLowerCase();
         const newStatus = STATUS_MAP[ff] ?? order.status;
 
         const patch: any = {
