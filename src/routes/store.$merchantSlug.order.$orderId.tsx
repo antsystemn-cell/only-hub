@@ -213,7 +213,53 @@ function OrderConfirmationPage() {
             </Link>
           </div>
         </Card>
+
+        {paid && <DeliveryTrackingCard orderId={orderId} />}
       </div>
     </div>
+  );
+}
+
+function DeliveryTrackingCard({ orderId }: { orderId: string }) {
+  const historyFn = useServerFn(getDeliveryHistoryByOrder);
+  const { data, refetch } = useQuery({
+    queryKey: ["delivery-history", orderId],
+    queryFn: () => historyFn({ data: { orderId } }),
+    refetchInterval: 15000,
+  });
+
+  useEffect(() => {
+    const ch = supabase
+      .channel(`delivery-${orderId}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "delivery_status_history" },
+        () => refetch(),
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [orderId, refetch]);
+
+  const dr: any = (data as any)?.deliveryRequest;
+  const history = ((data as any)?.history ?? []) as any[];
+
+  return (
+    <Card className="mt-6 rounded-2xl p-6">
+      <h2 className="text-lg font-semibold">Хүргэлтийн төлөв</h2>
+      {!dr ? (
+        <p className="mt-2 text-sm text-muted-foreground">
+          Хүргэлт үүсгэгдэхийг хүлээж байна...
+        </p>
+      ) : (
+        <div className="mt-4 space-y-4">
+          {dr.external_ref && (
+            <p className="text-sm">
+              Дугаар: <span className="font-mono font-semibold">{dr.external_ref}</span>
+            </p>
+          )}
+          <DeliveryTimeline items={history} />
+        </div>
+      )}
+    </Card>
   );
 }
