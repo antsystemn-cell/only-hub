@@ -9,6 +9,7 @@ import {
   createDeliveryRequest as createDr,
   updateDeliveryStatus as updateDr,
 } from "./delivery.service";
+import { swiftSyncStatus } from "./delivery.swift";
 import type { DeliveryStatus } from "./delivery.types";
 
 const STATUS_VALUES: DeliveryStatus[] = [
