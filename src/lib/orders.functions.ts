@@ -59,12 +59,10 @@ export const createOrder = createServerFn({ method: "POST" })
         return null;
       }
       const k = variantKey(i.color, i.size);
-      const stock =
-        k && p.variant_stock && (p.variant_stock as any)[k] != null
-          ? (p.variant_stock as any)[k]
-          : p.stock_quantity;
-      if (stock < i.quantity) {
-        issues.push(`"${p.name}" — үлдэгдэл ${stock}, та ${i.quantity}-г сонгосон`);
+      const vs = (p.variant_stock ?? {}) as Record<string, number>;
+      // Easyshop-style: only enforce stock when the chosen variant is explicitly tracked.
+      if (k && typeof vs[k] === "number" && vs[k] < i.quantity) {
+        issues.push(`"${p.name}" — үлдэгдэл ${vs[k]}, та ${i.quantity}-г сонгосон`);
       }
       const realPrice = Number(p.price);
       if (Math.abs(realPrice - i.price) > 0.01) {
