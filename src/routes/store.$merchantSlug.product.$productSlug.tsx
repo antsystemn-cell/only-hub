@@ -378,7 +378,7 @@ function ProductDetailPage() {
                 <Button variant="ghost" size="icon" aria-label="Нэмэх" onClick={() => setQty((q) => Math.min(stockForVariant || q + 1, q + 1))}><Plus className="h-4 w-4" /></Button>
               </div>
               <span className={`text-xs sm:text-sm ${outOfStock ? "font-medium text-red-500" : "text-muted-foreground"}`}>
-                {outOfStock ? "Нөөц дууссан" : `Үлдэгдэл: ${stockForVariant}`}
+                {outOfStock ? "Нөөц дууссан" : hasTrackedStock ? `Үлдэгдэл: ${stockForVariant}` : "Бэлэн байгаа"}
               </span>
             </div>
 
