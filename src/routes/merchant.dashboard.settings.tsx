@@ -453,8 +453,23 @@ function DeliveryApiCard() {
             </p>
           </div>
 
+          <div className="rounded-xl border bg-background p-4">
+            <Label className="text-sm font-medium">Хүргэлтийн горим</Label>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              Local — өөрийн жолоочоор хүргэнэ. Swift — гадаад API руу автоматаар илгээнэ.
+            </p>
+            <Select value={deliveryMode} onValueChange={(v) => setDeliveryMode(v as any)}>
+              <SelectTrigger className="mt-2 w-full md:w-64"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="local">Local (Өөрийн жолооч)</SelectItem>
+                <SelectItem value="swift">Swift / External API</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
           <div className="grid gap-3 md:grid-cols-2">
             <div>
+
               <Label>Хүргэлтийн API Key</Label>
               <div className="mt-1 flex gap-2">
                 <Input
