@@ -26,6 +26,7 @@ import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import { useServerFn } from "@tanstack/react-start";
 import { sendOrderToDelivery } from "@/lib/delivery.functions";
+import { bulkUpdateOrderStatus, bulkMarkPaid, bulkCreateDelivery } from "@/lib/orders-bulk.functions";
 
 export const DELIVERY_STATUS_LABELS: Record<string, string> = {
   submitted: "Илгээгдсэн",
@@ -68,6 +69,9 @@ function OrdersPage() {
   const [dateTo, setDateTo] = useState<string>("");
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [showManual, setShowManual] = useState(false);
+  const bulkStatusFn = useServerFn(bulkUpdateOrderStatus);
+  const bulkPaidFn = useServerFn(bulkMarkPaid);
+  const bulkDeliveryFn = useServerFn(bulkCreateDelivery);
 
   const { data: orders = [] } = useQuery({
     queryKey: ["orders", merchantId],
@@ -197,6 +201,29 @@ function OrdersPage() {
         </div>
         <div className="mb-4 flex flex-wrap items-center gap-2">
           <Badge variant="secondary">Сонгосон: {selected.size}</Badge>
+          {selected.size > 0 && (
+            <>
+              <Select onValueChange={async (s) => {
+                const ids = Array.from(selected);
+                try { await bulkStatusFn({ data: { ids, status: s as any } }); toast.success(`${ids.length} захиалга шинэчиллээ`); qc.invalidateQueries({ queryKey: ["orders", merchantId] }); setSelected(new Set()); }
+                catch (e: any) { toast.error(e?.message ?? "Алдаа"); }
+              }}>
+                <SelectTrigger className="h-8 w-[160px]"><SelectValue placeholder="Төлөв өөрчлөх" /></SelectTrigger>
+                <SelectContent>{STATUSES.map((s) => <SelectItem key={s} value={s}>{STATUS_LABELS[s] ?? s}</SelectItem>)}</SelectContent>
+              </Select>
+              <Button size="sm" variant="outline" onClick={async () => {
+                const ids = Array.from(selected);
+                try { const r = await bulkPaidFn({ data: { ids } }); toast.success(`${r.count} төлөгдсөн, ${r.deliveryCreated} хүргэлт үүсгэв`); qc.invalidateQueries({ queryKey: ["orders", merchantId] }); setSelected(new Set()); }
+                catch (e: any) { toast.error(e?.message ?? "Алдаа"); }
+              }}><CheckCircle className="mr-1 h-4 w-4" /> Төлсөн</Button>
+              <Button size="sm" variant="outline" onClick={async () => {
+                const ids = Array.from(selected);
+                try { const r = await bulkDeliveryFn({ data: { ids } }); toast.success(`${r.count} хүргэлт үүсгэв`); qc.invalidateQueries({ queryKey: ["orders", merchantId] }); setSelected(new Set()); }
+                catch (e: any) { toast.error(e?.message ?? "Алдаа"); }
+              }}><Truck className="mr-1 h-4 w-4" /> Хүргэлт үүсгэх</Button>
+              <Button size="sm" variant="ghost" onClick={() => setSelected(new Set())}><X className="mr-1 h-3 w-3" /> Цуцлах</Button>
+            </>
+          )}
           {(statusFilter !== "all" || paymentFilter !== "all" || dateFrom || dateTo || search) && (
             <Button size="sm" variant="ghost" onClick={() => { setStatusFilter("all"); setPaymentFilter("all"); setDateFrom(""); setDateTo(""); setSearch(""); }}>
               <X className="mr-1 h-3 w-3" /> Шүүлт цэвэрлэх

@@ -18,6 +18,9 @@ import {
 import { fmtMnt } from "@/lib/format";
 import { cart, useCart, type CartItem } from "@/lib/cart";
 import { validateCoupon } from "@/lib/coupons.functions";
+import { useShipping } from "@/lib/shipping/use-shipping";
+import { FreeShippingProgress } from "@/components/cart/FreeShippingProgress";
+import { StickyCheckoutBar } from "@/components/cart/StickyCheckoutBar";
 import { ArrowLeft, Minus, Plus, ShoppingBag, Tag, Trash2, X } from "lucide-react";
 
 export const Route = createFileRoute("/store/$merchantSlug/cart")({
@@ -101,6 +104,19 @@ function CartPage() {
   const subtotal = items.reduce((s, i) => s + lineFor(i) * i.quantity, 0);
   const totalQty = items.reduce((s, i) => s + i.quantity, 0);
   const discount = coupon?.discount ?? 0;
+
+  const shippingLines = useMemo(
+    () =>
+      items.map((i) => ({
+        productId: i.productId,
+        category: productMap.get(i.productId)?.category ?? null,
+        price: lineFor(i),
+        quantity: i.quantity,
+      })),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [items, products],
+  );
+  const shipping = useShipping({ merchantId: merchant?.id, lines: shippingLines });
   const total = Math.max(0, subtotal - discount);
 
   // Re-validate coupon when subtotal changes
@@ -332,6 +348,27 @@ function CartPage() {
             <Card className="h-fit rounded-2xl p-5 lg:sticky lg:top-20">
               <h3 className="mb-4 font-semibold">Захиалгын дүн</h3>
 
+              {shipping.freeThreshold != null && (
+                <div className="mb-4">
+                  <FreeShippingProgress
+                    freeThreshold={shipping.freeThreshold}
+                    subtotal={subtotal}
+                    amountToFree={shipping.amountToFreeShipping}
+                    reached={shipping.freeShippingReached}
+                  />
+                </div>
+              )}
+
+              {shipping.appliedCampaigns.length > 0 && (
+                <div className="mb-4 space-y-1">
+                  {shipping.appliedCampaigns.map((c) => (
+                    <div key={c.id} className="rounded-md bg-emerald-500/10 px-2 py-1 text-xs text-emerald-700 dark:text-emerald-400">
+                      🎁 {c.name}
+                    </div>
+                  ))}
+                </div>
+              )}
+
               {/* Coupon */}
               {coupon ? (
                 <div className="mb-4 flex items-center justify-between rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-3 text-sm">
@@ -369,19 +406,29 @@ function CartPage() {
                 )}
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Хүргэлт</span>
-                  <span className="text-muted-foreground">Дараагийн алхам</span>
+                  <span className={shipping.freeShippingReached ? "text-emerald-600 font-medium" : ""}>
+                    {shipping.freeShippingReached ? "Үнэгүй" : fmtMnt(shipping.deliveryFee)}
+                  </span>
                 </div>
               </div>
               <Separator className="my-4" />
               <div className="flex items-baseline justify-between">
                 <span className="font-medium">Нийт дүн</span>
-                <span className="text-2xl font-bold">{fmtMnt(total)}</span>
+                <span className="text-2xl font-bold">{fmtMnt(total + (shipping.freeShippingReached ? 0 : shipping.deliveryFee))}</span>
               </div>
-              <Button className="mt-4 w-full" size="lg" onClick={goCheckout}>Худалдан авах</Button>
+              <Button className="mt-4 hidden w-full lg:flex" size="lg" onClick={goCheckout}>Худалдан авах</Button>
             </Card>
           </div>
         )}
       </div>
+
+      <StickyCheckoutBar
+        total={total + (shipping.freeShippingReached ? 0 : shipping.deliveryFee)}
+        qty={totalQty}
+        label="Худалдан авах"
+        onClick={goCheckout}
+      />
+      {totalQty > 0 && <div className="h-20 lg:hidden" />}
     </div>
   );
 }

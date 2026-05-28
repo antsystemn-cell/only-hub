@@ -16,6 +16,9 @@ import { fmtMnt } from "@/lib/format";
 import { cart, useCart } from "@/lib/cart";
 import { validateCoupon } from "@/lib/coupons.functions";
 import { createOrder } from "@/lib/orders.functions";
+import { useShipping } from "@/lib/shipping/use-shipping";
+import { FreeShippingProgress } from "@/components/cart/FreeShippingProgress";
+import { StickyCheckoutBar } from "@/components/cart/StickyCheckoutBar";
 import { ArrowLeft, Loader2 } from "lucide-react";
 
 export const Route = createFileRoute("/store/$merchantSlug/checkout")({
@@ -105,7 +108,24 @@ function CheckoutPage() {
     const p = productMap.get(i.productId);
     return s + Number(p?.price ?? i.price) * i.quantity;
   }, 0);
-  const deliveryFee = Number(deliveryOptions.find((d: any) => d.id === deliveryOptionId)?.price ?? 0);
+  const selectedManualFee = deliveryOptions.find((d: any) => d.id === deliveryOptionId)?.price;
+  const shippingLines = useMemo(
+    () =>
+      items.map((i) => ({
+        productId: i.productId,
+        category: productMap.get(i.productId)?.category ?? null,
+        price: Number(productMap.get(i.productId)?.price ?? i.price),
+        quantity: i.quantity,
+      })),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [items, products],
+  );
+  const shipping = useShipping({
+    merchantId: merchant?.id,
+    lines: shippingLines,
+    selectedDeliveryFee: selectedManualFee != null ? Number(selectedManualFee) : null,
+  });
+  const deliveryFee = shipping.freeShippingReached ? 0 : shipping.deliveryFee;
   const discount = coupon?.discount ?? 0;
   const total = Math.max(0, subtotal - discount) + deliveryFee;
 
@@ -324,25 +344,59 @@ function CheckoutPage() {
               </div>
             )}
 
+            {shipping.freeThreshold != null && (
+              <div className="mb-3">
+                <FreeShippingProgress
+                  freeThreshold={shipping.freeThreshold}
+                  subtotal={subtotal}
+                  amountToFree={shipping.amountToFreeShipping}
+                  reached={shipping.freeShippingReached}
+                />
+              </div>
+            )}
+            {shipping.appliedCampaigns.length > 0 && (
+              <div className="mb-3 space-y-1">
+                {shipping.appliedCampaigns.map((c) => (
+                  <div key={c.id} className="rounded-md bg-emerald-500/10 px-2 py-1 text-xs text-emerald-700 dark:text-emerald-400">
+                    🎁 {c.name}
+                  </div>
+                ))}
+              </div>
+            )}
+
             <div className="space-y-2 text-sm">
               <div className="flex justify-between"><span className="text-muted-foreground">Дэд дүн</span><span>{fmtMnt(subtotal)}</span></div>
               {discount > 0 && (
                 <div className="flex justify-between text-emerald-600"><span>Купон ({coupon?.code})</span><span>-{fmtMnt(discount)}</span></div>
               )}
-              <div className="flex justify-between"><span className="text-muted-foreground">Хүргэлт</span><span>{fmtMnt(deliveryFee)}</span></div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Хүргэлт</span>
+                <span className={shipping.freeShippingReached ? "text-emerald-600 font-medium" : ""}>
+                  {shipping.freeShippingReached ? "Үнэгүй" : fmtMnt(deliveryFee)}
+                </span>
+              </div>
             </div>
             <Separator className="my-4" />
             <div className="flex items-baseline justify-between">
               <span className="font-medium">Нийт төлөх</span>
               <span className="text-2xl font-bold">{fmtMnt(total)}</span>
             </div>
-            <Button className="mt-4 w-full" size="lg" disabled={submitting} onClick={handleSubmit}>
+            <Button className="mt-4 hidden w-full lg:flex" size="lg" disabled={submitting} onClick={handleSubmit}>
               {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Захиалга баталгаажуулах
             </Button>
           </Card>
         </div>
       </div>
+
+      <StickyCheckoutBar
+        total={total}
+        qty={items.reduce((s, i) => s + i.quantity, 0)}
+        label={submitting ? "Илгээж байна..." : "Захиалга баталгаажуулах"}
+        disabled={submitting}
+        onClick={handleSubmit}
+      />
+      <div className="h-20 lg:hidden" />
     </div>
   );
 }
