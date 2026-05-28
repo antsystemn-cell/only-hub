@@ -69,6 +69,9 @@ function OrdersPage() {
   const [dateTo, setDateTo] = useState<string>("");
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [showManual, setShowManual] = useState(false);
+  const bulkStatusFn = useServerFn(bulkUpdateOrderStatus);
+  const bulkPaidFn = useServerFn(bulkMarkPaid);
+  const bulkDeliveryFn = useServerFn(bulkCreateDelivery);
 
   const { data: orders = [] } = useQuery({
     queryKey: ["orders", merchantId],
