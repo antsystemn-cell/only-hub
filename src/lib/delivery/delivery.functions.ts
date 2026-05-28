@@ -9,6 +9,7 @@ import {
   createDeliveryRequest as createDr,
   updateDeliveryStatus as updateDr,
 } from "./delivery.service";
+import { swiftSyncStatus } from "./delivery.swift";
 import type { DeliveryStatus } from "./delivery.types";
 
 const STATUS_VALUES: DeliveryStatus[] = [
@@ -156,3 +157,37 @@ export const getDeliveryHistoryByOrder = createServerFn({ method: "POST" })
       .order("created_at", { ascending: true });
     return { ok: true as const, deliveryRequest: dr, history: history ?? [] };
   });
+
+// Admin "Төлөв шинэчлэх / Цуцлах" → Swift Delivery Hub руу outbound sync
+export const syncDeliveryStatusToSwift = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) =>
+    z.object({
+      orderId: z.string().uuid(),
+      fulfillmentStatus: z.string().min(1).max(50),
+      paymentStatus: z.string().max(50).optional(),
+      note: z.string().max(500).optional().nullable(),
+    }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { userId } = context;
+    const { data: order } = await supabaseAdmin
+      .from("orders")
+      .select("merchant_id")
+      .eq("id", data.orderId)
+      .maybeSingle();
+    if (!order) return { ok: false as const, error: "Захиалга олдсонгүй" };
+    const { data: ok } = await supabaseAdmin.rpc("has_merchant_access", {
+      _user_id: userId,
+      _merchant_id: order.merchant_id,
+    });
+    if (!ok) return { ok: false as const, error: "Эрх хүрэхгүй" };
+
+    return swiftSyncStatus({
+      orderId: data.orderId,
+      fulfillmentStatus: data.fulfillmentStatus,
+      paymentStatus: data.paymentStatus,
+      note: data.note ?? null,
+    });
+  });
+
