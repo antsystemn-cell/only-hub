@@ -3,7 +3,7 @@ import { useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { LayoutDashboard, LogOut, ShieldCheck } from "lucide-react";
+import { LayoutDashboard, LogOut, ShieldCheck, Package } from "lucide-react";
 
 export const Route = createFileRoute("/account")({
   head: () => ({ meta: [{ title: "Миний бүртгэл — Only" }] }),
@@ -42,6 +42,14 @@ function AccountPage() {
               <p className="text-xs text-muted-foreground">Хэрэглэгчийн ID: {user.id.slice(0, 8)}…</p>
             </div>
           </div>
+        </Card>
+
+        <Card className="mt-4 rounded-2xl p-6">
+          <h2 className="font-semibold">Миний захиалгууд</h2>
+          <p className="mt-1 text-sm text-muted-foreground">Захиалгуудаа болон хүргэлтийн төлвөө хянах</p>
+          <Link to="/account/orders">
+            <Button variant="outline" className="mt-3"><Package className="mr-2 h-4 w-4" /> Захиалгууд үзэх</Button>
+          </Link>
         </Card>
 
         {(primaryMerchantId || isPlatformAdmin) && (

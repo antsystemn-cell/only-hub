@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as StoresRouteImport } from './routes/stores'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as DriverRouteImport } from './routes/driver'
 import { Route as BlogRouteImport } from './routes/blog'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AccountRouteImport } from './routes/account'
@@ -25,9 +26,11 @@ import { Route as BlogSlugRouteImport } from './routes/blog.$slug'
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
 import { Route as AdminOrdersRouteImport } from './routes/admin.orders'
 import { Route as AdminMerchantsRouteImport } from './routes/admin.merchants'
+import { Route as AdminDeliveryRouteImport } from './routes/admin.delivery'
 import { Route as AdminBlogRouteImport } from './routes/admin.blog'
 import { Route as AdminBannersRouteImport } from './routes/admin.banners'
 import { Route as AdminAnalyticsRouteImport } from './routes/admin.analytics'
+import { Route as AccountOrdersRouteImport } from './routes/account.orders'
 import { Route as MerchantDashboardIndexRouteImport } from './routes/merchant.dashboard.index'
 import { Route as StoreMerchantSlugCheckoutRouteImport } from './routes/store.$merchantSlug.checkout'
 import { Route as StoreMerchantSlugCartRouteImport } from './routes/store.$merchantSlug.cart'
@@ -36,6 +39,7 @@ import { Route as MerchantDashboardStaffRouteImport } from './routes/merchant.da
 import { Route as MerchantDashboardSettingsRouteImport } from './routes/merchant.dashboard.settings'
 import { Route as MerchantDashboardProductsRouteImport } from './routes/merchant.dashboard.products'
 import { Route as MerchantDashboardOrdersRouteImport } from './routes/merchant.dashboard.orders'
+import { Route as MerchantDashboardDeliveryRouteImport } from './routes/merchant.dashboard.delivery'
 import { Route as MerchantDashboardChatbotRouteImport } from './routes/merchant.dashboard.chatbot'
 import { Route as AdminBlogNewRouteImport } from './routes/admin.blog.new'
 import { Route as AdminBlogIdRouteImport } from './routes/admin.blog.$id'
@@ -57,6 +61,11 @@ const RegisterRoute = RegisterRouteImport.update({
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DriverRoute = DriverRouteImport.update({
+  id: '/driver',
+  path: '/driver',
   getParentRoute: () => rootRouteImport,
 } as any)
 const BlogRoute = BlogRouteImport.update({
@@ -124,6 +133,11 @@ const AdminMerchantsRoute = AdminMerchantsRouteImport.update({
   path: '/merchants',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminDeliveryRoute = AdminDeliveryRouteImport.update({
+  id: '/delivery',
+  path: '/delivery',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminBlogRoute = AdminBlogRouteImport.update({
   id: '/blog',
   path: '/blog',
@@ -138,6 +152,11 @@ const AdminAnalyticsRoute = AdminAnalyticsRouteImport.update({
   id: '/analytics',
   path: '/analytics',
   getParentRoute: () => AdminRoute,
+} as any)
+const AccountOrdersRoute = AccountOrdersRouteImport.update({
+  id: '/orders',
+  path: '/orders',
+  getParentRoute: () => AccountRoute,
 } as any)
 const MerchantDashboardIndexRoute = MerchantDashboardIndexRouteImport.update({
   id: '/',
@@ -182,6 +201,12 @@ const MerchantDashboardOrdersRoute = MerchantDashboardOrdersRouteImport.update({
   path: '/orders',
   getParentRoute: () => MerchantDashboardRoute,
 } as any)
+const MerchantDashboardDeliveryRoute =
+  MerchantDashboardDeliveryRouteImport.update({
+    id: '/delivery',
+    path: '/delivery',
+    getParentRoute: () => MerchantDashboardRoute,
+  } as any)
 const MerchantDashboardChatbotRoute =
   MerchantDashboardChatbotRouteImport.update({
     id: '/chatbot',
@@ -224,15 +249,18 @@ const ApiPublicDeliveryWebhookRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/account': typeof AccountRoute
+  '/account': typeof AccountRouteWithChildren
   '/admin': typeof AdminRouteWithChildren
   '/blog': typeof BlogRouteWithChildren
+  '/driver': typeof DriverRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/stores': typeof StoresRoute
+  '/account/orders': typeof AccountOrdersRoute
   '/admin/analytics': typeof AdminAnalyticsRoute
   '/admin/banners': typeof AdminBannersRoute
   '/admin/blog': typeof AdminBlogRouteWithChildren
+  '/admin/delivery': typeof AdminDeliveryRoute
   '/admin/merchants': typeof AdminMerchantsRoute
   '/admin/orders': typeof AdminOrdersRoute
   '/admin/users': typeof AdminUsersRoute
@@ -245,6 +273,7 @@ export interface FileRoutesByFullPath {
   '/admin/blog/$id': typeof AdminBlogIdRoute
   '/admin/blog/new': typeof AdminBlogNewRoute
   '/merchant/dashboard/chatbot': typeof MerchantDashboardChatbotRoute
+  '/merchant/dashboard/delivery': typeof MerchantDashboardDeliveryRoute
   '/merchant/dashboard/orders': typeof MerchantDashboardOrdersRoute
   '/merchant/dashboard/products': typeof MerchantDashboardProductsRoute
   '/merchant/dashboard/settings': typeof MerchantDashboardSettingsRoute
@@ -260,14 +289,17 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/account': typeof AccountRoute
+  '/account': typeof AccountRouteWithChildren
   '/blog': typeof BlogRouteWithChildren
+  '/driver': typeof DriverRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/stores': typeof StoresRoute
+  '/account/orders': typeof AccountOrdersRoute
   '/admin/analytics': typeof AdminAnalyticsRoute
   '/admin/banners': typeof AdminBannersRoute
   '/admin/blog': typeof AdminBlogRouteWithChildren
+  '/admin/delivery': typeof AdminDeliveryRoute
   '/admin/merchants': typeof AdminMerchantsRoute
   '/admin/orders': typeof AdminOrdersRoute
   '/admin/users': typeof AdminUsersRoute
@@ -279,6 +311,7 @@ export interface FileRoutesByTo {
   '/admin/blog/$id': typeof AdminBlogIdRoute
   '/admin/blog/new': typeof AdminBlogNewRoute
   '/merchant/dashboard/chatbot': typeof MerchantDashboardChatbotRoute
+  '/merchant/dashboard/delivery': typeof MerchantDashboardDeliveryRoute
   '/merchant/dashboard/orders': typeof MerchantDashboardOrdersRoute
   '/merchant/dashboard/products': typeof MerchantDashboardProductsRoute
   '/merchant/dashboard/settings': typeof MerchantDashboardSettingsRoute
@@ -295,15 +328,18 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/account': typeof AccountRoute
+  '/account': typeof AccountRouteWithChildren
   '/admin': typeof AdminRouteWithChildren
   '/blog': typeof BlogRouteWithChildren
+  '/driver': typeof DriverRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/stores': typeof StoresRoute
+  '/account/orders': typeof AccountOrdersRoute
   '/admin/analytics': typeof AdminAnalyticsRoute
   '/admin/banners': typeof AdminBannersRoute
   '/admin/blog': typeof AdminBlogRouteWithChildren
+  '/admin/delivery': typeof AdminDeliveryRoute
   '/admin/merchants': typeof AdminMerchantsRoute
   '/admin/orders': typeof AdminOrdersRoute
   '/admin/users': typeof AdminUsersRoute
@@ -316,6 +352,7 @@ export interface FileRoutesById {
   '/admin/blog/$id': typeof AdminBlogIdRoute
   '/admin/blog/new': typeof AdminBlogNewRoute
   '/merchant/dashboard/chatbot': typeof MerchantDashboardChatbotRoute
+  '/merchant/dashboard/delivery': typeof MerchantDashboardDeliveryRoute
   '/merchant/dashboard/orders': typeof MerchantDashboardOrdersRoute
   '/merchant/dashboard/products': typeof MerchantDashboardProductsRoute
   '/merchant/dashboard/settings': typeof MerchantDashboardSettingsRoute
@@ -336,12 +373,15 @@ export interface FileRouteTypes {
     | '/account'
     | '/admin'
     | '/blog'
+    | '/driver'
     | '/login'
     | '/register'
     | '/stores'
+    | '/account/orders'
     | '/admin/analytics'
     | '/admin/banners'
     | '/admin/blog'
+    | '/admin/delivery'
     | '/admin/merchants'
     | '/admin/orders'
     | '/admin/users'
@@ -354,6 +394,7 @@ export interface FileRouteTypes {
     | '/admin/blog/$id'
     | '/admin/blog/new'
     | '/merchant/dashboard/chatbot'
+    | '/merchant/dashboard/delivery'
     | '/merchant/dashboard/orders'
     | '/merchant/dashboard/products'
     | '/merchant/dashboard/settings'
@@ -371,12 +412,15 @@ export interface FileRouteTypes {
     | '/'
     | '/account'
     | '/blog'
+    | '/driver'
     | '/login'
     | '/register'
     | '/stores'
+    | '/account/orders'
     | '/admin/analytics'
     | '/admin/banners'
     | '/admin/blog'
+    | '/admin/delivery'
     | '/admin/merchants'
     | '/admin/orders'
     | '/admin/users'
@@ -388,6 +432,7 @@ export interface FileRouteTypes {
     | '/admin/blog/$id'
     | '/admin/blog/new'
     | '/merchant/dashboard/chatbot'
+    | '/merchant/dashboard/delivery'
     | '/merchant/dashboard/orders'
     | '/merchant/dashboard/products'
     | '/merchant/dashboard/settings'
@@ -406,12 +451,15 @@ export interface FileRouteTypes {
     | '/account'
     | '/admin'
     | '/blog'
+    | '/driver'
     | '/login'
     | '/register'
     | '/stores'
+    | '/account/orders'
     | '/admin/analytics'
     | '/admin/banners'
     | '/admin/blog'
+    | '/admin/delivery'
     | '/admin/merchants'
     | '/admin/orders'
     | '/admin/users'
@@ -424,6 +472,7 @@ export interface FileRouteTypes {
     | '/admin/blog/$id'
     | '/admin/blog/new'
     | '/merchant/dashboard/chatbot'
+    | '/merchant/dashboard/delivery'
     | '/merchant/dashboard/orders'
     | '/merchant/dashboard/products'
     | '/merchant/dashboard/settings'
@@ -440,9 +489,10 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  AccountRoute: typeof AccountRoute
+  AccountRoute: typeof AccountRouteWithChildren
   AdminRoute: typeof AdminRouteWithChildren
   BlogRoute: typeof BlogRouteWithChildren
+  DriverRoute: typeof DriverRoute
   LoginRoute: typeof LoginRoute
   RegisterRoute: typeof RegisterRoute
   StoresRoute: typeof StoresRoute
@@ -475,6 +525,13 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/driver': {
+      id: '/driver'
+      path: '/driver'
+      fullPath: '/driver'
+      preLoaderRoute: typeof DriverRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/blog': {
@@ -568,6 +625,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminMerchantsRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/delivery': {
+      id: '/admin/delivery'
+      path: '/delivery'
+      fullPath: '/admin/delivery'
+      preLoaderRoute: typeof AdminDeliveryRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/blog': {
       id: '/admin/blog'
       path: '/blog'
@@ -588,6 +652,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/analytics'
       preLoaderRoute: typeof AdminAnalyticsRouteImport
       parentRoute: typeof AdminRoute
+    }
+    '/account/orders': {
+      id: '/account/orders'
+      path: '/orders'
+      fullPath: '/account/orders'
+      preLoaderRoute: typeof AccountOrdersRouteImport
+      parentRoute: typeof AccountRoute
     }
     '/merchant/dashboard/': {
       id: '/merchant/dashboard/'
@@ -645,6 +716,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MerchantDashboardOrdersRouteImport
       parentRoute: typeof MerchantDashboardRoute
     }
+    '/merchant/dashboard/delivery': {
+      id: '/merchant/dashboard/delivery'
+      path: '/delivery'
+      fullPath: '/merchant/dashboard/delivery'
+      preLoaderRoute: typeof MerchantDashboardDeliveryRouteImport
+      parentRoute: typeof MerchantDashboardRoute
+    }
     '/merchant/dashboard/chatbot': {
       id: '/merchant/dashboard/chatbot'
       path: '/chatbot'
@@ -697,6 +775,17 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AccountRouteChildren {
+  AccountOrdersRoute: typeof AccountOrdersRoute
+}
+
+const AccountRouteChildren: AccountRouteChildren = {
+  AccountOrdersRoute: AccountOrdersRoute,
+}
+
+const AccountRouteWithChildren =
+  AccountRoute._addFileChildren(AccountRouteChildren)
+
 interface AdminBlogRouteChildren {
   AdminBlogIdRoute: typeof AdminBlogIdRoute
   AdminBlogNewRoute: typeof AdminBlogNewRoute
@@ -715,6 +804,7 @@ interface AdminRouteChildren {
   AdminAnalyticsRoute: typeof AdminAnalyticsRoute
   AdminBannersRoute: typeof AdminBannersRoute
   AdminBlogRoute: typeof AdminBlogRouteWithChildren
+  AdminDeliveryRoute: typeof AdminDeliveryRoute
   AdminMerchantsRoute: typeof AdminMerchantsRoute
   AdminOrdersRoute: typeof AdminOrdersRoute
   AdminUsersRoute: typeof AdminUsersRoute
@@ -725,6 +815,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminAnalyticsRoute: AdminAnalyticsRoute,
   AdminBannersRoute: AdminBannersRoute,
   AdminBlogRoute: AdminBlogRouteWithChildren,
+  AdminDeliveryRoute: AdminDeliveryRoute,
   AdminMerchantsRoute: AdminMerchantsRoute,
   AdminOrdersRoute: AdminOrdersRoute,
   AdminUsersRoute: AdminUsersRoute,
@@ -745,6 +836,7 @@ const BlogRouteWithChildren = BlogRoute._addFileChildren(BlogRouteChildren)
 
 interface MerchantDashboardRouteChildren {
   MerchantDashboardChatbotRoute: typeof MerchantDashboardChatbotRoute
+  MerchantDashboardDeliveryRoute: typeof MerchantDashboardDeliveryRoute
   MerchantDashboardOrdersRoute: typeof MerchantDashboardOrdersRoute
   MerchantDashboardProductsRoute: typeof MerchantDashboardProductsRoute
   MerchantDashboardSettingsRoute: typeof MerchantDashboardSettingsRoute
@@ -755,6 +847,7 @@ interface MerchantDashboardRouteChildren {
 
 const MerchantDashboardRouteChildren: MerchantDashboardRouteChildren = {
   MerchantDashboardChatbotRoute: MerchantDashboardChatbotRoute,
+  MerchantDashboardDeliveryRoute: MerchantDashboardDeliveryRoute,
   MerchantDashboardOrdersRoute: MerchantDashboardOrdersRoute,
   MerchantDashboardProductsRoute: MerchantDashboardProductsRoute,
   MerchantDashboardSettingsRoute: MerchantDashboardSettingsRoute,
@@ -786,9 +879,10 @@ const StoreMerchantSlugRouteWithChildren =
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  AccountRoute: AccountRoute,
+  AccountRoute: AccountRouteWithChildren,
   AdminRoute: AdminRouteWithChildren,
   BlogRoute: BlogRouteWithChildren,
+  DriverRoute: DriverRoute,
   LoginRoute: LoginRoute,
   RegisterRoute: RegisterRoute,
   StoresRoute: StoresRoute,
@@ -802,13 +896,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

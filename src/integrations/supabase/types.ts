@@ -282,9 +282,123 @@ export type Database = {
           },
         ]
       }
+      delivery_requests: {
+        Row: {
+          assigned_at: string | null
+          cancelled_at: string | null
+          created_at: string
+          delivered_at: string | null
+          driver_id: string | null
+          dropoff_address: string | null
+          external_ref: string | null
+          fee: number
+          id: string
+          last_error: string | null
+          merchant_id: string
+          mode: string
+          note: string | null
+          order_id: string
+          package_info: Json
+          picked_up_at: string | null
+          pickup_address: string | null
+          provider: string | null
+          recipient_name: string | null
+          recipient_phone: string | null
+          requested_at: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_at?: string | null
+          cancelled_at?: string | null
+          created_at?: string
+          delivered_at?: string | null
+          driver_id?: string | null
+          dropoff_address?: string | null
+          external_ref?: string | null
+          fee?: number
+          id?: string
+          last_error?: string | null
+          merchant_id: string
+          mode?: string
+          note?: string | null
+          order_id: string
+          package_info?: Json
+          picked_up_at?: string | null
+          pickup_address?: string | null
+          provider?: string | null
+          recipient_name?: string | null
+          recipient_phone?: string | null
+          requested_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_at?: string | null
+          cancelled_at?: string | null
+          created_at?: string
+          delivered_at?: string | null
+          driver_id?: string | null
+          dropoff_address?: string | null
+          external_ref?: string | null
+          fee?: number
+          id?: string
+          last_error?: string | null
+          merchant_id?: string
+          mode?: string
+          note?: string | null
+          order_id?: string
+          package_info?: Json
+          picked_up_at?: string | null
+          pickup_address?: string | null
+          provider?: string | null
+          recipient_name?: string | null
+          recipient_phone?: string | null
+          requested_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      delivery_status_history: {
+        Row: {
+          changed_by: string | null
+          created_at: string
+          delivery_request_id: string
+          id: string
+          note: string | null
+          status: string
+        }
+        Insert: {
+          changed_by?: string | null
+          created_at?: string
+          delivery_request_id: string
+          id?: string
+          note?: string | null
+          status: string
+        }
+        Update: {
+          changed_by?: string | null
+          created_at?: string
+          delivery_request_id?: string
+          id?: string
+          note?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "delivery_status_history_delivery_request_id_fkey"
+            columns: ["delivery_request_id"]
+            isOneToOne: false
+            referencedRelation: "delivery_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       delivery_webhooks: {
         Row: {
           created_at: string
+          delivery_request_id: string | null
           event: string | null
           fulfillment_status: string | null
           id: string
@@ -294,6 +408,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          delivery_request_id?: string | null
           event?: string | null
           fulfillment_status?: string | null
           id?: string
@@ -303,6 +418,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          delivery_request_id?: string | null
           event?: string | null
           fulfillment_status?: string | null
           id?: string
@@ -310,7 +426,15 @@ export type Database = {
           order_id?: string | null
           payload?: Json
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "delivery_webhooks_delivery_request_id_fkey"
+            columns: ["delivery_request_id"]
+            isOneToOne: false
+            referencedRelation: "delivery_requests"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       merchant_users: {
         Row: {
@@ -356,6 +480,7 @@ export type Database = {
           created_at: string
           delivery_api_key: string | null
           delivery_endpoint: string | null
+          delivery_mode: string
           delivery_webhook_secret: string | null
           description: string | null
           id: string
@@ -382,6 +507,7 @@ export type Database = {
           created_at?: string
           delivery_api_key?: string | null
           delivery_endpoint?: string | null
+          delivery_mode?: string
           delivery_webhook_secret?: string | null
           description?: string | null
           id?: string
@@ -408,6 +534,7 @@ export type Database = {
           created_at?: string
           delivery_api_key?: string | null
           delivery_endpoint?: string | null
+          delivery_mode?: string
           delivery_webhook_secret?: string | null
           description?: string | null
           id?: string
@@ -440,6 +567,7 @@ export type Database = {
           id: string
           is_guest: boolean
           items: Json
+          legacy_metadata: Json
           merchant_id: string
           note: string | null
           payment_error: string | null
@@ -457,6 +585,8 @@ export type Database = {
           shipping_address: string | null
           source: string
           source_note: string | null
+          source_order_id: string | null
+          source_system: string
           status: string
           total: number
           updated_at: string
@@ -476,6 +606,7 @@ export type Database = {
           id?: string
           is_guest?: boolean
           items: Json
+          legacy_metadata?: Json
           merchant_id: string
           note?: string | null
           payment_error?: string | null
@@ -493,6 +624,8 @@ export type Database = {
           shipping_address?: string | null
           source?: string
           source_note?: string | null
+          source_order_id?: string | null
+          source_system?: string
           status?: string
           total: number
           updated_at?: string
@@ -512,6 +645,7 @@ export type Database = {
           id?: string
           is_guest?: boolean
           items?: Json
+          legacy_metadata?: Json
           merchant_id?: string
           note?: string | null
           payment_error?: string | null
@@ -529,6 +663,8 @@ export type Database = {
           shipping_address?: string | null
           source?: string
           source_note?: string | null
+          source_order_id?: string | null
+          source_system?: string
           status?: string
           total?: number
           updated_at?: string
@@ -653,6 +789,27 @@ export type Database = {
         }
         Relationships: []
       }
+      platform_settings: {
+        Row: {
+          key: string
+          updated_at: string
+          updated_by: string | null
+          value: Json
+        }
+        Insert: {
+          key: string
+          updated_at?: string
+          updated_by?: string | null
+          value?: Json
+        }
+        Update: {
+          key?: string
+          updated_at?: string
+          updated_by?: string | null
+          value?: Json
+        }
+        Relationships: []
+      }
       platform_transactions: {
         Row: {
           commission_amount: number
@@ -717,6 +874,7 @@ export type Database = {
           is_bogo: boolean
           is_new: boolean
           is_on_sale: boolean
+          legacy_metadata: Json
           merchant_id: string
           name: string
           original_price: number | null
@@ -725,6 +883,8 @@ export type Database = {
           sales: number
           sizes: Json
           slug: string | null
+          source_product_id: string | null
+          source_system: string
           specifications: Json
           stock_quantity: number
           thumbnail_url: string | null
@@ -746,6 +906,7 @@ export type Database = {
           is_bogo?: boolean
           is_new?: boolean
           is_on_sale?: boolean
+          legacy_metadata?: Json
           merchant_id: string
           name: string
           original_price?: number | null
@@ -754,6 +915,8 @@ export type Database = {
           sales?: number
           sizes?: Json
           slug?: string | null
+          source_product_id?: string | null
+          source_system?: string
           specifications?: Json
           stock_quantity?: number
           thumbnail_url?: string | null
@@ -775,6 +938,7 @@ export type Database = {
           is_bogo?: boolean
           is_new?: boolean
           is_on_sale?: boolean
+          legacy_metadata?: Json
           merchant_id?: string
           name?: string
           original_price?: number | null
@@ -783,6 +947,8 @@ export type Database = {
           sales?: number
           sizes?: Json
           slug?: string | null
+          source_product_id?: string | null
+          source_system?: string
           specifications?: Json
           stock_quantity?: number
           thumbnail_url?: string | null

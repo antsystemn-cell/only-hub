@@ -122,13 +122,36 @@ export const Route = createFileRoute("/api/public/delivery/webhook")({
 
         await supabaseAdmin.from("orders").update(patch).eq("id", order.id);
 
+        // Хэрэв delivery_request бүртгэлтэй бол түүнийг ч мөн sync хийнэ
+        let drId: string | null = null;
+        {
+          const { data: dr } = await supabaseAdmin
+            .from("delivery_requests")
+            .select("id,status")
+            .eq("order_id", order.id)
+            .maybeSingle();
+          if (dr) {
+            drId = dr.id;
+            const { syncDeliveryStatusFromExternal } = await import(
+              "@/lib/delivery/delivery.service"
+            );
+            await syncDeliveryStatusFromExternal({
+              deliveryRequestId: dr.id,
+              fulfillmentStatus: ff,
+              externalRef: intl,
+            });
+          }
+        }
+
         await supabaseAdmin.from("delivery_webhooks").insert({
           order_id: order.id,
           merchant_id: order.merchant_id,
+          delivery_request_id: drId,
           event: payload.event ?? "order.status_changed",
           fulfillment_status: ff || null,
           payload: raw,
         });
+
 
         return new Response(
           JSON.stringify({ ok: true, order_id: order.id, status: newStatus }),
