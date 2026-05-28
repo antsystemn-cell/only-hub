@@ -231,9 +231,9 @@ function CartPage() {
                 const sizes = extractOptions(product?.sizes);
                 const variantStock: Record<string, number> = product?.variant_stock ?? {};
                 const variantKey = item.color && item.size ? `${item.color}|${item.size}` : item.color || item.size || "";
-                const stock = variantKey && variantStock[variantKey] != null
+                const stock = variantKey && typeof variantStock[variantKey] === "number"
                   ? variantStock[variantKey]
-                  : product?.stock_quantity ?? 99;
+                  : 999;
                 const livePrice = lineFor(item);
                 const priceChanged = product && Number(product.price) !== item.price;
 
