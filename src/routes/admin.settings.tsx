@@ -218,7 +218,61 @@ function AdminSettingsPage() {
       </div>
 
       <SwiftTestOrderCard />
+      <EasyshopImportCard />
     </div>
+  );
+}
+
+function EasyshopImportCard() {
+  const importFn = useServerFn(importEasyshopProducts);
+  const [result, setResult] = useState<any>(null);
+  const mut = useMutation({
+    mutationFn: async () => importFn({ data: { onlyDiscounted: true } }),
+    onSuccess: (res: any) => {
+      setResult(res);
+      if (res?.ok) toast.success(`Импорт амжилттай: ${res.upserted}/${res.fetched}`);
+      else toast.error(res?.error ?? "Алдаа");
+    },
+    onError: (e: any) => { setResult({ ok: false, error: e?.message }); toast.error(e?.message ?? "Алдаа"); },
+  });
+  const mutAll = useMutation({
+    mutationFn: async () => importFn({ data: { onlyDiscounted: false } }),
+    onSuccess: (res: any) => {
+      setResult(res);
+      if (res?.ok) toast.success(`Импорт амжилттай: ${res.upserted}/${res.fetched}`);
+      else toast.error(res?.error ?? "Алдаа");
+    },
+    onError: (e: any) => { setResult({ ok: false, error: e?.message }); toast.error(e?.message ?? "Алдаа"); },
+  });
+
+  return (
+    <Card className="mt-4 rounded-2xl p-6">
+      <div className="flex items-center gap-2">
+        <Download className="h-5 w-5" />
+        <h2 className="text-lg font-semibold">Easyshop импорт</h2>
+      </div>
+      <p className="mt-1 text-xs text-muted-foreground">
+        Easyshop (Homestore Mongolia) дэлгүүрээс шинэ болон хямдралтай бүтээгдэхүүнүүдийг
+        татаж <code className="font-mono">easyshop</code> мерчант руу нэмнэ. Давхцал үүсэхгүй —
+        ижил бүтээгдэхүүнийг дахин дарж шинэчилнэ. Үлдэгдлийг Easyshop-той ижил утгаар тохируулна.
+      </p>
+      <div className="mt-4 flex flex-wrap gap-2">
+        <Button onClick={() => mut.mutate()} disabled={mut.isPending || mutAll.isPending} variant="secondary">
+          <Download className="mr-2 h-4 w-4" />
+          {mut.isPending ? "Татаж байна..." : "Шинэ + хямдралтай импорт"}
+        </Button>
+        <Button onClick={() => mutAll.mutate()} disabled={mut.isPending || mutAll.isPending} variant="outline">
+          {mutAll.isPending ? "Татаж байна..." : "Бүх идэвхтэй импорт"}
+        </Button>
+      </div>
+      {result && (
+        <div className="mt-4 rounded-lg border p-3 text-xs">
+          <div className={result.ok ? "font-semibold text-green-600" : "font-semibold text-destructive"}>
+            {result.ok ? `Амжилттай: татсан ${result.fetched}, шинэчилсэн ${result.upserted}` : `Алдаа: ${result.error}`}
+          </div>
+        </div>
+      )}
+    </Card>
   );
 }
 
