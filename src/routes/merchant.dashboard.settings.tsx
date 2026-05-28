@@ -372,19 +372,21 @@ function DeliveryApiCard() {
   const [apiKey, setApiKey] = useState("");
   const [endpoint, setEndpoint] = useState("");
   const [webhookSecret, setWebhookSecret] = useState("");
+  const [deliveryMode, setDeliveryMode] = useState<"local" | "swift">("local");
 
   const { data: merchant } = useQuery({
     queryKey: ["merchant-delivery", merchantId],
     queryFn: async () => {
       const { data } = await (supabase as any)
         .from("merchants")
-        .select("id,delivery_api_key,delivery_endpoint,delivery_webhook_secret")
+        .select("id,delivery_api_key,delivery_endpoint,delivery_webhook_secret,delivery_mode")
         .eq("id", merchantId)
         .maybeSingle();
       if (data) {
         setApiKey(data.delivery_api_key ?? "");
         setEndpoint(data.delivery_endpoint ?? "");
         setWebhookSecret(data.delivery_webhook_secret ?? "");
+        setDeliveryMode((data.delivery_mode as any) ?? "local");
       }
       return data;
     },
@@ -403,6 +405,7 @@ function DeliveryApiCard() {
           delivery_api_key: apiKey.trim() || null,
           delivery_endpoint: endpoint.trim() || null,
           delivery_webhook_secret: webhookSecret.trim() || null,
+          delivery_mode: deliveryMode,
         })
         .eq("id", merchantId);
       if (error) throw error;
@@ -413,6 +416,7 @@ function DeliveryApiCard() {
     },
     onError: (e: any) => toast.error(e.message),
   });
+
 
   const generateSecret = () => {
     const arr = new Uint8Array(24);
