@@ -104,6 +104,19 @@ function CartPage() {
   const subtotal = items.reduce((s, i) => s + lineFor(i) * i.quantity, 0);
   const totalQty = items.reduce((s, i) => s + i.quantity, 0);
   const discount = coupon?.discount ?? 0;
+
+  const shippingLines = useMemo(
+    () =>
+      items.map((i) => ({
+        productId: i.productId,
+        category: productMap.get(i.productId)?.category ?? null,
+        price: lineFor(i),
+        quantity: i.quantity,
+      })),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [items, products],
+  );
+  const shipping = useShipping({ merchantId: merchant?.id, lines: shippingLines });
   const total = Math.max(0, subtotal - discount);
 
   // Re-validate coupon when subtotal changes
