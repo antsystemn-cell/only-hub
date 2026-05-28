@@ -421,6 +421,14 @@ function CartPage() {
           </div>
         )}
       </div>
+
+      <StickyCheckoutBar
+        total={total + (shipping.freeShippingReached ? 0 : shipping.deliveryFee)}
+        qty={totalQty}
+        label="Худалдан авах"
+        onClick={goCheckout}
+      />
+      {totalQty > 0 && <div className="h-20 lg:hidden" />}
     </div>
   );
 }
