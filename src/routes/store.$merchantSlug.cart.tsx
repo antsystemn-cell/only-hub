@@ -18,6 +18,9 @@ import {
 import { fmtMnt } from "@/lib/format";
 import { cart, useCart, type CartItem } from "@/lib/cart";
 import { validateCoupon } from "@/lib/coupons.functions";
+import { useShipping } from "@/lib/shipping/use-shipping";
+import { FreeShippingProgress } from "@/components/cart/FreeShippingProgress";
+import { StickyCheckoutBar } from "@/components/cart/StickyCheckoutBar";
 import { ArrowLeft, Minus, Plus, ShoppingBag, Tag, Trash2, X } from "lucide-react";
 
 export const Route = createFileRoute("/store/$merchantSlug/cart")({
