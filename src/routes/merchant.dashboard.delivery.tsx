@@ -64,7 +64,7 @@ function MerchantDeliveryPage() {
       const { data } = await supabase
         .from("user_roles")
         .select("user_id")
-        .eq("merchant_id", primaryMerchantId)
+        .eq("merchant_id", primaryMerchantId!)
         .eq("role", "merchant_driver");
       return data ?? [];
     },
