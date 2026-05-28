@@ -49,6 +49,79 @@ const savePlatformSetting = createServerFn({ method: "POST" })
     if (error) return { ok: false as const, error: error.message };
     return { ok: true as const };
   });
+const sendSwiftTestOrder = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) =>
+    z.object({
+      customerName: z.string().min(1).max(100).optional(),
+      phone: z.string().min(6).max(20).optional(),
+      address: z.string().min(3).max(300).optional(),
+      note: z.string().max(300).optional(),
+    }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { userId } = context;
+    const { data: isAdmin } = await supabaseAdmin.rpc("is_platform_admin", { _user_id: userId });
+    if (!isAdmin) return { ok: false as const, error: "Эрх хүрэхгүй" };
+
+    const API_URL = (process.env.SWIFT_DELIVERY_API_URL || "").replace(/\/$/, "");
+    const API_KEY = process.env.SWIFT_DELIVERY_API_KEY || "";
+    if (!API_URL || !API_KEY) {
+      return { ok: false as const, error: "SWIFT_DELIVERY_API_URL эсвэл SWIFT_DELIVERY_API_KEY тохируулаагүй байна" };
+    }
+
+    const testId = `TEST-${Date.now()}`;
+    const payload = {
+      external_order_id: `OMH-${testId}`,
+      source_system: "only_merchants_hub",
+      merchant_name: "Only Hub Test Merchant",
+      customer_name: data.customerName || "Тест Хэрэглэгч",
+      phone: data.phone || "99999999",
+      district: "Тест дүүрэг",
+      address_text: data.address || "Тест хаяг, Улаанбаатар",
+      delivery_note: data.note || "Энэ бол admin тохиргооноос илгээсэн тест захиалга",
+      payment_method: "cash",
+      payment_status: "unpaid",
+      items: [
+        { product_name: "Тест бараа", quantity: 1, unit_price: 10000, sku: "TEST-SKU" },
+      ],
+      subtotal: 10000,
+      total_amount: 15000,
+      delivery_fee: 5000,
+    };
+
+    const startedAt = Date.now();
+    try {
+      const resp = await fetch(`${API_URL}/order-intake`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-api-key": API_KEY },
+        body: JSON.stringify(payload),
+      });
+      const raw = await resp.json().catch(() => ({}));
+      const elapsedMs = Date.now() - startedAt;
+      if (!resp.ok) {
+        return {
+          ok: false as const,
+          error: (raw as any)?.error ?? (raw as any)?.message ?? `HTTP ${resp.status}`,
+          status: resp.status,
+          elapsedMs,
+          payload,
+          raw,
+        };
+      }
+      return {
+        ok: true as const,
+        status: resp.status,
+        elapsedMs,
+        externalOrderId: payload.external_order_id,
+        payload,
+        raw,
+      };
+    } catch (e: any) {
+      return { ok: false as const, error: e?.message ?? "Холбогдох үед алдаа гарлаа", payload };
+    }
+  });
+
 
 export const Route = createFileRoute("/admin/settings")({
   head: () => ({ meta: [{ title: "Платформ тохиргоо — Admin" }] }),
