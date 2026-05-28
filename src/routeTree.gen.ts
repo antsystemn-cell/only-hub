@@ -24,6 +24,7 @@ import { Route as MerchantLoginRouteImport } from './routes/merchant.login'
 import { Route as MerchantDashboardRouteImport } from './routes/merchant.dashboard'
 import { Route as BlogSlugRouteImport } from './routes/blog.$slug'
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
+import { Route as AdminSettingsRouteImport } from './routes/admin.settings'
 import { Route as AdminOrdersRouteImport } from './routes/admin.orders'
 import { Route as AdminMerchantsRouteImport } from './routes/admin.merchants'
 import { Route as AdminDeliveryRouteImport } from './routes/admin.delivery'
@@ -121,6 +122,11 @@ const BlogSlugRoute = BlogSlugRouteImport.update({
 const AdminUsersRoute = AdminUsersRouteImport.update({
   id: '/users',
   path: '/users',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminSettingsRoute = AdminSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminOrdersRoute = AdminOrdersRouteImport.update({
@@ -263,6 +269,7 @@ export interface FileRoutesByFullPath {
   '/admin/delivery': typeof AdminDeliveryRoute
   '/admin/merchants': typeof AdminMerchantsRoute
   '/admin/orders': typeof AdminOrdersRoute
+  '/admin/settings': typeof AdminSettingsRoute
   '/admin/users': typeof AdminUsersRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/merchant/dashboard': typeof MerchantDashboardRouteWithChildren
@@ -302,6 +309,7 @@ export interface FileRoutesByTo {
   '/admin/delivery': typeof AdminDeliveryRoute
   '/admin/merchants': typeof AdminMerchantsRoute
   '/admin/orders': typeof AdminOrdersRoute
+  '/admin/settings': typeof AdminSettingsRoute
   '/admin/users': typeof AdminUsersRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/merchant/login': typeof MerchantLoginRoute
@@ -342,6 +350,7 @@ export interface FileRoutesById {
   '/admin/delivery': typeof AdminDeliveryRoute
   '/admin/merchants': typeof AdminMerchantsRoute
   '/admin/orders': typeof AdminOrdersRoute
+  '/admin/settings': typeof AdminSettingsRoute
   '/admin/users': typeof AdminUsersRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/merchant/dashboard': typeof MerchantDashboardRouteWithChildren
@@ -384,6 +393,7 @@ export interface FileRouteTypes {
     | '/admin/delivery'
     | '/admin/merchants'
     | '/admin/orders'
+    | '/admin/settings'
     | '/admin/users'
     | '/blog/$slug'
     | '/merchant/dashboard'
@@ -423,6 +433,7 @@ export interface FileRouteTypes {
     | '/admin/delivery'
     | '/admin/merchants'
     | '/admin/orders'
+    | '/admin/settings'
     | '/admin/users'
     | '/blog/$slug'
     | '/merchant/login'
@@ -462,6 +473,7 @@ export interface FileRouteTypes {
     | '/admin/delivery'
     | '/admin/merchants'
     | '/admin/orders'
+    | '/admin/settings'
     | '/admin/users'
     | '/blog/$slug'
     | '/merchant/dashboard'
@@ -609,6 +621,13 @@ declare module '@tanstack/react-router' {
       path: '/users'
       fullPath: '/admin/users'
       preLoaderRoute: typeof AdminUsersRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/settings': {
+      id: '/admin/settings'
+      path: '/settings'
+      fullPath: '/admin/settings'
+      preLoaderRoute: typeof AdminSettingsRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/orders': {
@@ -807,6 +826,7 @@ interface AdminRouteChildren {
   AdminDeliveryRoute: typeof AdminDeliveryRoute
   AdminMerchantsRoute: typeof AdminMerchantsRoute
   AdminOrdersRoute: typeof AdminOrdersRoute
+  AdminSettingsRoute: typeof AdminSettingsRoute
   AdminUsersRoute: typeof AdminUsersRoute
   AdminIndexRoute: typeof AdminIndexRoute
 }
@@ -818,6 +838,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminDeliveryRoute: AdminDeliveryRoute,
   AdminMerchantsRoute: AdminMerchantsRoute,
   AdminOrdersRoute: AdminOrdersRoute,
+  AdminSettingsRoute: AdminSettingsRoute,
   AdminUsersRoute: AdminUsersRoute,
   AdminIndexRoute: AdminIndexRoute,
 }
