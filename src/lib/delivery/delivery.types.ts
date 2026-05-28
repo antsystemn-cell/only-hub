@@ -11,14 +11,14 @@ export type DeliveryStatus =
 export type DeliveryMode = "local" | "external";
 
 export const DELIVERY_STATUS_LABELS: Record<DeliveryStatus, string> = {
-  pending: "Хүлээгдэж буй",
-  requested: "Хүсэлт илгээсэн",
-  assigned: "Жолоочид оноосон",
-  picked_up: "Барааг авсан",
-  in_transit: "Замдаа",
+  pending: "Шинэ",
+  requested: "Баталгаажсан",
+  assigned: "Бэлтгэгдэж байна",
+  picked_up: "Ачигдсан",
+  in_transit: "Хүргэлтэнд явж байна",
   delivered: "Хүргэгдсэн",
-  failed: "Амжилтгүй",
-  cancelled: "Цуцалсан",
+  failed: "Алдаа гарсан",
+  cancelled: "Цуцлагдсан",
 };
 
 export const DELIVERY_STATUS_TONE: Record<DeliveryStatus, string> = {
