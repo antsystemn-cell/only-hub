@@ -170,8 +170,11 @@ function CartPage() {
       const p = productMap.get(i.productId);
       if (!p) continue;
       const k = i.color && i.size ? `${i.color}|${i.size}` : i.color || i.size || "";
-      const stock = k && p.variant_stock?.[k] != null ? p.variant_stock[k] : p.stock_quantity;
-      if (stock < i.quantity) return `"${p.name}" — үлдэгдэл ${stock}, та ${i.quantity}-г сонгосон`;
+      const vs = (p.variant_stock ?? {}) as Record<string, number>;
+      // Only enforce stock when this specific variant is explicitly tracked (Easyshop-style).
+      if (k && typeof vs[k] === "number" && vs[k] < i.quantity) {
+        return `"${p.name}" — үлдэгдэл ${vs[k]}, та ${i.quantity}-г сонгосон`;
+      }
     }
     return null;
   }
