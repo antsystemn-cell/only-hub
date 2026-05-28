@@ -1,32 +1,43 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { OMH_PREFIX, verifySwiftApiKey } from "@/lib/delivery/delivery.swift";
 
-// Map external delivery system fulfillment_status → Only.mn order.status
+// Swift fulfillment_status → Only Hub order.status
 const STATUS_MAP: Record<string, string> = {
+  new: "pending",
   confirmed: "confirmed",
   phone_confirmed: "phone_confirmed",
+  assigned: "preparing",
   preparing: "preparing",
+  picked_up: "delivering",
   out_for_delivery: "delivering",
+  in_transit: "delivering",
   delivering: "delivering",
   delivered: "completed",
   completed: "completed",
   cancelled: "cancelled",
+  failed: "cancelled",
 };
 
 const PayloadSchema = z.object({
-  event: z.string().optional(),
-  external_order_id: z.string().optional().nullable(),
-  internal_order_number: z.string().optional().nullable(),
-  fulfillment_status: z.string().optional().nullable(),
-  delivery_note: z.string().optional().nullable(),
-  updated_at: z.string().optional().nullable(),
+  event: z.string().max(100).optional(),
+  external_order_id: z.string().max(200).optional().nullable(),
+  internal_order_number: z.string().max(200).optional().nullable(),
+  delivery_order_id: z.string().max(200).optional().nullable(),
+  tracking_code: z.string().max(200).optional().nullable(),
+  status: z.string().max(50).optional().nullable(),
+  fulfillment_status: z.string().max(50).optional().nullable(),
+  payment_status: z.string().max(50).optional().nullable(),
+  note: z.string().max(1000).optional().nullable(),
+  delivery_note: z.string().max(1000).optional().nullable(),
+  updated_at: z.string().max(50).optional().nullable(),
 });
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
-  "Access-Control-Allow-Headers": "content-type, x-webhook-secret",
+  "Access-Control-Allow-Headers": "content-type, x-webhook-secret, x-api-key",
 };
 
 export const Route = createFileRoute("/api/public/delivery/webhook")({
