@@ -108,7 +108,24 @@ function CheckoutPage() {
     const p = productMap.get(i.productId);
     return s + Number(p?.price ?? i.price) * i.quantity;
   }, 0);
-  const deliveryFee = Number(deliveryOptions.find((d: any) => d.id === deliveryOptionId)?.price ?? 0);
+  const selectedManualFee = deliveryOptions.find((d: any) => d.id === deliveryOptionId)?.price;
+  const shippingLines = useMemo(
+    () =>
+      items.map((i) => ({
+        productId: i.productId,
+        category: productMap.get(i.productId)?.category ?? null,
+        price: Number(productMap.get(i.productId)?.price ?? i.price),
+        quantity: i.quantity,
+      })),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [items, products],
+  );
+  const shipping = useShipping({
+    merchantId: merchant?.id,
+    lines: shippingLines,
+    selectedDeliveryFee: selectedManualFee != null ? Number(selectedManualFee) : null,
+  });
+  const deliveryFee = shipping.freeShippingReached ? 0 : shipping.deliveryFee;
   const discount = coupon?.discount ?? 0;
   const total = Math.max(0, subtotal - discount) + deliveryFee;
 
