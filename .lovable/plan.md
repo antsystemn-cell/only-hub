@@ -1,130 +1,129 @@
-# Only Hub — Marketplace + Delivery интеграцийн төлөвлөгөө
+# Only Hub → Easyshop-style Commerce Upgrade
 
-Энэ бол том хүсэлт. Бүгдийг нэг дор хийвэл одоо ажиллаж байгаа auth, RLS, захиалга, төлбөр, мерчант dashboard эвдэрнэ. Тиймээс **үе шаттайгаар, одоо байгаа бүтцийг дээд зэргээр ашиглаж** хийе.
+## Scope rules
+- Reuse existing routes/components/Supabase tables. No replatforming.
+- Mongolian UI strings, mobile-first, no extra animations.
+- Keep current auth, RLS, admin, delivery integration intact.
 
-## Одоо байгаа зүйлс (давхар хийхгүйн тулд)
+## 1. Shipping & bundle engine (new shared module)
 
-Шалгалтын дүнд **их хэсэг нь аль хэдийн бэлэн**:
+Add `src/lib/shipping/shipping.engine.ts` — pure functions, no I/O:
+- `calculateCartShipping(cart, merchantsMap, rules, campaigns)` returns per-merchant `{ subtotal, deliveryFee, freeShippingThreshold, amountToFree, appliedRule, appliedCampaigns[] }`.
+- Inputs come from existing tables + two new ones:
+  - `shipping_rules` (per-merchant): `merchant_id`, `base_fee`, `free_threshold`, `express_fee`, `express_threshold`, `weekend_free`, `is_active`.
+  - `bundle_campaigns` (per-merchant or platform): `id`, `merchant_id` (nullable = platform), `name`, `type` (`free_shipping_qty` | `free_shipping_amount` | `percent_discount` | `weekend_free`), `min_qty`, `min_amount`, `discount_percent`, `starts_at`, `ends_at`, `product_ids jsonb`, `category` text, `is_active`.
+- Migration: create both tables with GRANT + RLS (public read active; merchant staff manage own; platform admin manage all). Seed sensible defaults via `platform_settings` already present (`default_delivery_fee`, `delivery_fee_rules`) as fallback when no row exists — no new defaults required.
 
-- `merchants` (= stores), `user_roles` (owner/admin/moderator/driver), `merchant_users`
-- `products` (variant_stock, sizes, colors, gallery), `categories`, `brands`
-- `orders` (items jsonb-ээр, payment_status, status, delivery_status, delivery_order_id, commission, qpay, external_ref)
-- `platform_transactions` (commission tracking, trigger-тэй)
-- `coupons`, `delivery_options`, `payment_providers`, `chatbot_settings`, `platform_banners`, `blog_posts`
-- `delivery_webhooks` (event log), merchants дээр `delivery_api_key/endpoint/webhook_secret`
-- Server functions: `delivery.functions.ts` (sendOrderToDelivery), `api.public.delivery.webhook.ts`, qpay webhook, orders, payments, staff, admin-merchant, admin-users
-- UI: stores, store/$slug, cart, checkout, order confirmation, merchant dashboard (orders/products/settings/staff/users/chatbot), admin (merchants/orders/users/banners/blog/analytics), login/register, account
-- RLS: бүх хүснэгтэд тохируулсан, role-based has_merchant_access / is_platform_admin
+## 2. Smart cart (`src/lib/cart.ts` + UI)
 
-Тэгэхээр **шинээр `stores`, `store_members`, `order_items`, `payments`, `delivery_requests`, `seller_payouts` хүснэгт үүсгэх шаардлагагүй** — нэр өөр ч ижил функцтэй хүснэгтүүд аль хэдийн байна. Шинэ давхарлалт нэмбэл RLS, type, одоогийн UI бүгд эвдэрнэ.
+Extend (don't rewrite) `src/lib/cart.ts`:
+- Keep current localStorage shape; add `groupByMerchant(items)` and `useCartSummary()` hook that calls `shipping.engine` against cached merchants/rules (React Query, 5 min stale).
+- New `src/components/cart/StickyCartBar.tsx` — fixed-bottom mobile bar shown on store, product, cart pages: total + "Сагсанд (N)" + free-shipping progress (`Үнэгүй хүргэлт хүртэл 15,000₮`).
+- New `src/components/cart/FreeShippingProgress.tsx` — progress bar; reused in cart page and sticky bar.
+- Update `store.$merchantSlug.cart.tsx`:
+  - Group items by merchant when multi-store (single-store stays as today).
+  - Per-group: subtotal, delivery fee preview, free-shipping progress, applied campaign chip.
+  - Quantity stepper buttons sized for thumb (h-10 w-10), optimistic updates.
+- Update product page: "Сагсанд нэмэх" remains; add small "+{amount}₮ нэмбэл үнэгүй хүргэлт" hint when within threshold.
 
-## Юу үнэхээр дутуу байна
+## 3. Checkout — 3 mobile steps (replace current single-form)
 
-1. **`delivery_requests` + `delivery_status_history`** — одоо `orders.delivery_status` талбар л байна, түүх хадгалдаггүй (зөвхөн `delivery_webhooks` raw log). Lifecycle (`pending → requested → assigned → picked_up → in_transit → delivered → failed/cancelled`) дүрсэлсэн status table хэрэгтэй.
-2. **Local delivery mode** — одоо зөвхөн external Swift API руу POST хийдэг. `VITE_DELIVERY_MODE=local` үед өөрийн систем дотроо driver-аар явуулдаг flow байхгүй.
-3. **Customer-д захиалгын tracking хуудас** — `/store/$slug/order/$id` бий ч timeline (status history) харуулдаггүй.
-4. **Хэрэглэгчийн "Миний захиалгууд"** — `account.tsx` дээр захиалгын жагсаалт байхгүй.
-5. **Admin delivery harах/гар удирдах** — admin-д бүх delivery request-ийн жагсаалт, status гараар солих UI байхгүй.
-6. **Driver role** — `merchant_driver` enum бий ч driver-д зориулсан UI/route байхгүй.
-7. **Excel export** — admin orders дээр байхгүй.
-8. **Migration талбарууд** — `source_system`, `source_order_id`, `source_product_id`, `legacy_metadata` талбар байхгүй.
-9. **Delivery fee rules** — одоо merchant болгон `delivery_options` дотроо тогтсон үнэтэй. Платформ түвшний дүрэм байхгүй.
+Rewrite `store.$merchantSlug.checkout.tsx` as stepper:
+1. **Хүлээн авагч**: name, phone, district (select: дүүрэг), address, note.
+2. **Хүргэлт**: radio cards (Энгийн / Шуурхай / Авч очих — pickup disabled-stub), uses rule-engine fee; show free-shipping applied badge.
+3. **Төлбөр**: QPay (default), StorePay, Pocket, Cash on delivery — render existing payment_providers + COD toggle from merchant setting.
+4. Confirm screen reuses existing `order.$orderId` route.
 
-## Үе шаттай хэрэгжүүлэлт
+UX: sticky bottom "Үргэлжлүүлэх" button, persistent compact order summary collapsible at top, large inputs (h-12), `inputMode="tel"` for phone, autocomplete attrs. Validate with zod; show inline errors in Mongolian.
 
-### Phase 1 — Schema-ийн нэмэлт (нэг migration)
+## 4. Multi-store checkout
 
-`orders`-ыг **хадгалж**, дараах зүйлсийг **нэмж** оруулна:
+If cart spans merchants, split into **one order per merchant** at submit (loop existing `createOrder` server fn). Show "Танай захиалга 2 дэлгүүрт хуваагдана" notice. Each gets its own QPay invoice; confirmation page lists all created orders.
 
-- `delivery_requests` хүснэгт: `id, order_id, merchant_id, mode ('local'|'external'), provider, external_ref, status, driver_id, pickup_address, dropoff_address, recipient_name, recipient_phone, fee, package_info jsonb, requested_at, picked_up_at, delivered_at, cancelled_at, last_error, created_at, updated_at` + RLS (staff: merchant_access, customer: own order, driver: assigned, admin: all) + GRANTs
-- `delivery_status_history`: `id, delivery_request_id, status, note, changed_by, created_at` + RLS + GRANTs
-- `orders`-д нэмэх: `source_system text default 'native'`, `source_order_id text`, `legacy_metadata jsonb default '{}'`
-- `products`-д нэмэх: `source_system, source_product_id, legacy_metadata`
-- `platform_settings` (хэрэв байхгүй бол): `key text primary key, value jsonb, updated_at` — delivery fee rules, default commission г.м. (admin only)
-- `delivery_webhooks` дээр `delivery_request_id` FK нэмэх
+## 5. Admin order management upgrades
 
-Trigger: delivery_request status солигдоход `delivery_status_history`-д бичих + `orders.delivery_status`-ийг sync хийх.
+In `admin.orders.tsx` and `merchant.dashboard.orders.tsx`:
+- Add row checkboxes + bulk-action bar: **Төлөв өөрчлөх**, **Хүргэлт үүсгэх**, **Төлсөн гэж тэмдэглэх**, **Excel татах**.
+- Quick status dropdown inline on each row (no modal).
+- Quick "Хүргэгч оноох" select for `merchant_driver` users.
+- "Залгах" button → `tel:`, "Мессеж" → SMS link with prefilled Mongolian text.
+- Reuse existing CSV export; add proper Excel via `xlsx` (already needed). `bun add xlsx`.
+- Print-label view: new route `/merchant/dashboard/orders/print?ids=...` — A6 label HTML, browser print.
 
-### Phase 2 — Delivery service модуль
+New server fns in `src/lib/orders.functions.ts`:
+- `bulkUpdateOrderStatus({ ids, status })`
+- `bulkMarkPaid({ ids })`
+- `bulkCreateDelivery({ ids })`
+- `bulkAssignDriver({ ids, driverId })`
 
-`src/lib/delivery/` дотор:
-- `delivery.service.ts` — нэгдсэн API: `createDeliveryRequest`, `calculateDeliveryFee`, `updateDeliveryStatus`, `syncDeliveryStatus`, `cancelDeliveryRequest`
-- `delivery.local.ts` — local mode: merchant_driver role-той user-уудад dispatch хийдэг, status-ыг гараар updateдэг
-- `delivery.swift.ts` — external mode: одоо байгаа `sendOrderToDelivery` логикийг шилжүүлж, webhook дээр `delivery_request_id`-аар match хийдэг болгох
-- Mode сонголт: merchant settings → `delivery_mode` ('local'|'swift'), эсвэл fallback `VITE_DELIVERY_MODE`
+## 6. Delivery auto-hand-off (already partial)
 
-Одоо байгаа `delivery.functions.ts` болон `api.public.delivery.webhook.ts`-ийг **wrapper болгож** хадгална (backward compatible).
+- Confirm QPay webhook already calls `createDeliveryRequest` ✓.
+- Add same call to: admin "Төлсөн гэж тэмдэглэх" bulk action, and on order status → `confirmed` (server-side trigger in `bulkUpdateOrderStatus`).
+- Statuses mapping kept as in current trigger `tg_delivery_request_history`.
 
-### Phase 3 — UI нэмэлтүүд
+## 7. Merchant shipping/campaign settings UI
 
-- **Merchant dashboard → Delivery tab** (`merchant.dashboard.delivery.tsx`): delivery_request-үүдийн жагсаалт, status update, driver assign (local mode), Swift mode-д tracking ref
-- **Merchant orders дээр** delivery timeline бяцхан виджет
-- **Admin → Delivery** (`admin.delivery.tsx`): бүх delivery_request, гараар status өөрчлөх, filter (merchant, status, огноо), Excel export
-- **Admin → Orders** дээр Excel export товч (xlsx эсвэл CSV)
-- **Admin → Settings** (`admin.settings.tsx`): platform commission default, delivery fee rules (жинг/зайнаас, бүсчилсэн үнэ)
-- **Customer order tracking** (`store.$slug.order.$id` шинэчилнэ): timeline (Захиалга үүсэв → Төлбөр → Бэлдэж байна → Хүргэлт хүсэв → Авлаа → Замдаа → Хүргэгдсэн) — `delivery_status_history`-аас уншиж realtime subscribe
-- **Account → Миний захиалгууд** (`account.orders.tsx`): нэвтэрсэн user-ийн захиалгын жагсаалт + tracking руу холбоос
-- **Driver dashboard** (`driver.tsx`): merchant_driver role-той user-д зориулж assigned delivery, status солих (Авсан / Хүргэсэн / Амжилтгүй)
+New tab in `merchant.dashboard.settings.tsx` → "Хүргэлт ба урамшуулал":
+- Free-shipping threshold, base fee, express fee (writes `shipping_rules`).
+- List of bundle_campaigns with create/edit dialog (type, min_qty/amount, dates, product picker).
+- Weekend free shipping toggle.
 
-### Phase 4 — RLS audit + Security
+Platform admin gets same UI under `admin.settings.tsx` for platform-wide campaigns (merchant_id null).
 
-- Шинэ хүснэгтүүдэд RLS бичих (дээрх migration-д орсон)
-- `delivery_requests`-д customer (`order.user_id = auth.uid()`) болон driver (`driver_id = auth.uid()`) read policy
-- Service role key зөвхөн server function/route дотор ашиглагдаж байгааг шалгах (одоо зөв байгаа, дахин audit)
+## 8. Performance
 
-### Phase 5 — Чанарын шалгалт
+- React Query everywhere; `staleTime: 60_000` for products/merchants/rules.
+- Skeleton loaders on cart, checkout, orders list (use existing `Skeleton` from ui).
+- Debounce search inputs 250ms (already lodash-free — write inline `useDebounce`).
+- Image `loading="lazy" decoding="async"` audit on product cards.
 
-- Build TypeScript шалгалт (харагдсан алдаа байвал засна)
-- Manual smoke: захиалга үүсгэх → төлөх → delivery request үүсэх → status шинэчлэгдэх → customer-д харагдах
-- RLS тест: customer өөр merchant-ийн delivery харахгүй, driver зөвхөн assigned-ыг харна
+## 9. Validation checklist (manual, after build)
+- [ ] Add to cart from product + quick view
+- [ ] Free-shipping progress updates live
+- [ ] Multi-store cart splits orders on submit
+- [ ] 3-step checkout on 411px viewport (current device)
+- [ ] QPay flow → order → auto delivery_request created
+- [ ] Admin bulk status + bulk delivery
+- [ ] Excel export opens in Excel
+- [ ] Driver dashboard receives assignment
 
-## Технологи дэлгэрэнгүй
+## Files to create
+```
+src/lib/shipping/shipping.engine.ts
+src/lib/shipping/shipping.functions.ts
+src/lib/shipping/shipping.types.ts
+src/components/cart/StickyCartBar.tsx
+src/components/cart/FreeShippingProgress.tsx
+src/components/cart/CartGroup.tsx
+src/components/checkout/CheckoutStepper.tsx
+src/components/checkout/StepCustomer.tsx
+src/components/checkout/StepDelivery.tsx
+src/components/checkout/StepPayment.tsx
+src/components/admin/BulkActionBar.tsx
+src/components/admin/CampaignDialog.tsx
+src/routes/merchant.dashboard.orders.print.tsx
+supabase/migrations/<ts>_shipping_rules_and_campaigns.sql
+```
 
-- TanStack server functions ашиглана (Edge Function нэмэхгүй) — `src/lib/delivery/*.functions.ts`
-- Realtime: `delivery_requests` болон `delivery_status_history` хүснэгтийг `supabase_realtime` publication-д нэмнэ → customer tracking хуудас live update
-- Excel export: `xlsx` package-аар (bun add)
-- Бүх UI Mongolian, mobile-first (одоогийн style ашиглана)
-- Color/token: `src/styles.css` semantic token-уудыг ашиглана, шинэ hex нэмэхгүй
+## Files to edit
+```
+src/lib/cart.ts                       (add grouping + hook)
+src/lib/orders.functions.ts           (bulk fns + multi-store create)
+src/routes/store.$merchantSlug.cart.tsx
+src/routes/store.$merchantSlug.checkout.tsx
+src/routes/store.$merchantSlug.product.$productSlug.tsx
+src/routes/store.$merchantSlug.tsx    (sticky bar slot)
+src/routes/admin.orders.tsx
+src/routes/merchant.dashboard.orders.tsx
+src/routes/merchant.dashboard.settings.tsx
+src/routes/admin.settings.tsx
+```
 
-## Хамрахгүй зүйлс (одоогоор)
+## Out of scope (explicit)
+- Pickup point logic (UI stub only, disabled).
+- Real SMS / call-center integration.
+- New design system / animations.
+- Loyalty points, wallet, reviews.
 
-- Easyshop / Homestore real data migration script — зөвхөн **талбар бэлдэх** (source_*, legacy_metadata). Бодит import-ыг тусдаа task болгож хийнэ.
-- Swift Delivery Hub өөр project-ийн API key/endpoint — VITE env name-ыг бэлдэх, бодит холболтыг та API key өгөхөд хийнэ.
-- Payout (`seller_payouts`) бүрэн UI — `platform_transactions` аль хэдийн commission tracking хийж байгаа. Payout UI дараагийн phase-д.
-
-## Файлын жагсаалт (Phase 1-3-т хийгдэх)
-
-**Migration (1):** `supabase/migrations/..._marketplace_delivery_core.sql`
-
-**Server functions:**
-- `src/lib/delivery/delivery.service.ts`
-- `src/lib/delivery/delivery.local.ts`
-- `src/lib/delivery/delivery.swift.ts`
-- `src/lib/delivery/delivery.functions.ts` (createServerFn wrapper-ууд)
-- `src/lib/admin-delivery.functions.ts`
-- `src/lib/account-orders.functions.ts`
-- `src/lib/driver.functions.ts`
-- `src/lib/admin-settings.functions.ts`
-- `src/lib/export.functions.ts` (xlsx generator)
-
-**Routes:**
-- `src/routes/merchant.dashboard.delivery.tsx`
-- `src/routes/admin.delivery.tsx`
-- `src/routes/admin.settings.tsx`
-- `src/routes/account.orders.tsx`
-- `src/routes/driver.tsx`
-- засагдах: `src/routes/store.$merchantSlug.order.$orderId.tsx` (timeline), `src/routes/account.tsx` (захиалгын линк), `src/routes/admin.orders.tsx` (export), `src/routes/admin.tsx` & `merchant.dashboard.tsx` (nav-д шинэ link), одоогийн `delivery.functions.ts` & webhook (wrapper болгох)
-
-**Components:**
-- `src/components/DeliveryTimeline.tsx`
-- `src/components/DeliveryStatusBadge.tsx`
-
-## Дараах асуулт — тантай тохирох
-
-Энэ маш том ажил. **3-4 turn** болгож хувааж хийсэн нь зөв:
-
-- **Turn 1 (одоо):** Phase 1 migration + Phase 2 delivery service модуль (local + swift mode)
-- **Turn 2:** Phase 3 — merchant/admin/customer/driver UI
-- **Turn 3:** Excel export, platform_settings UI, RLS audit, smoke test
-
-Хэрэв зөвшөөрвөл **Turn 1**-ээс эхэлж migration-ийг та зөвшөөрсний дараа код руу орно. Та "ok" гэж бичсэн л бол үргэлжлүүлнэ. Эсвэл өөр scope-той хүсэлт байвал хэлээрэй (ж.нь "delivery_requests хүснэгт хэрэггүй, орон зайг нь `orders` дотор үлдээ", "Excel оронд CSV хангалттай", "driver dashboard хэрэггүй" гэх мэт).
+Approve to start; I'll execute in this order: migration → engine → cart UI → checkout → admin bulk → settings → validation.
