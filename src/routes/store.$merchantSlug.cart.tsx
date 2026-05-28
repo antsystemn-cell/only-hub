@@ -348,6 +348,27 @@ function CartPage() {
             <Card className="h-fit rounded-2xl p-5 lg:sticky lg:top-20">
               <h3 className="mb-4 font-semibold">Захиалгын дүн</h3>
 
+              {shipping.freeThreshold != null && (
+                <div className="mb-4">
+                  <FreeShippingProgress
+                    freeThreshold={shipping.freeThreshold}
+                    subtotal={subtotal}
+                    amountToFree={shipping.amountToFreeShipping}
+                    reached={shipping.freeShippingReached}
+                  />
+                </div>
+              )}
+
+              {shipping.appliedCampaigns.length > 0 && (
+                <div className="mb-4 space-y-1">
+                  {shipping.appliedCampaigns.map((c) => (
+                    <div key={c.id} className="rounded-md bg-emerald-500/10 px-2 py-1 text-xs text-emerald-700 dark:text-emerald-400">
+                      🎁 {c.name}
+                    </div>
+                  ))}
+                </div>
+              )}
+
               {/* Coupon */}
               {coupon ? (
                 <div className="mb-4 flex items-center justify-between rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-3 text-sm">
@@ -385,15 +406,17 @@ function CartPage() {
                 )}
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Хүргэлт</span>
-                  <span className="text-muted-foreground">Дараагийн алхам</span>
+                  <span className={shipping.freeShippingReached ? "text-emerald-600 font-medium" : ""}>
+                    {shipping.freeShippingReached ? "Үнэгүй" : fmtMnt(shipping.deliveryFee)}
+                  </span>
                 </div>
               </div>
               <Separator className="my-4" />
               <div className="flex items-baseline justify-between">
                 <span className="font-medium">Нийт дүн</span>
-                <span className="text-2xl font-bold">{fmtMnt(total)}</span>
+                <span className="text-2xl font-bold">{fmtMnt(total + (shipping.freeShippingReached ? 0 : shipping.deliveryFee))}</span>
               </div>
-              <Button className="mt-4 w-full" size="lg" onClick={goCheckout}>Худалдан авах</Button>
+              <Button className="mt-4 hidden w-full lg:flex" size="lg" onClick={goCheckout}>Худалдан авах</Button>
             </Card>
           </div>
         )}
