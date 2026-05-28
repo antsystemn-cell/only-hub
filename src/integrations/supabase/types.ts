@@ -94,6 +94,57 @@ export type Database = {
           },
         ]
       }
+      bundle_campaigns: {
+        Row: {
+          category: string | null
+          created_at: string
+          discount_percent: number | null
+          ends_at: string | null
+          id: string
+          is_active: boolean
+          merchant_id: string | null
+          min_amount: number | null
+          min_qty: number | null
+          name: string
+          product_ids: Json
+          starts_at: string | null
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          discount_percent?: number | null
+          ends_at?: string | null
+          id?: string
+          is_active?: boolean
+          merchant_id?: string | null
+          min_amount?: number | null
+          min_qty?: number | null
+          name: string
+          product_ids?: Json
+          starts_at?: string | null
+          type: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          discount_percent?: number | null
+          ends_at?: string | null
+          id?: string
+          is_active?: boolean
+          merchant_id?: string | null
+          min_amount?: number | null
+          min_qty?: number | null
+          name?: string
+          product_ids?: Json
+          starts_at?: string | null
+          type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       categories: {
         Row: {
           created_at: string
@@ -1018,6 +1069,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      shipping_rules: {
+        Row: {
+          base_fee: number
+          created_at: string
+          express_available: boolean
+          express_fee: number
+          free_threshold: number | null
+          id: string
+          is_active: boolean
+          merchant_id: string
+          updated_at: string
+          weekend_free: boolean
+        }
+        Insert: {
+          base_fee?: number
+          created_at?: string
+          express_available?: boolean
+          express_fee?: number
+          free_threshold?: number | null
+          id?: string
+          is_active?: boolean
+          merchant_id: string
+          updated_at?: string
+          weekend_free?: boolean
+        }
+        Update: {
+          base_fee?: number
+          created_at?: string
+          express_available?: boolean
+          express_fee?: number
+          free_threshold?: number | null
+          id?: string
+          is_active?: boolean
+          merchant_id?: string
+          updated_at?: string
+          weekend_free?: boolean
+        }
+        Relationships: []
       }
       user_roles: {
         Row: {
