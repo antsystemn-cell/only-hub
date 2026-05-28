@@ -92,10 +92,12 @@ function ProductDetailPage() {
   useEffect(() => { setActiveImg(0); setColor(null); setSize(null); setQty(1); }, [product?.id]);
 
   const variantKey = color && size ? `${color}|${size}` : color || size || "";
-  const stockForVariant = variantKey && variantStock[variantKey] != null ? variantStock[variantKey] : product?.stock_quantity ?? 0;
+  // Easyshop-style: only enforce stock if this specific variant has a tracked number.
+  const hasTrackedStock = !!variantKey && typeof variantStock[variantKey] === "number";
+  const stockForVariant = hasTrackedStock ? variantStock[variantKey] : Number.MAX_SAFE_INTEGER;
   const needsColor = colors.length > 0 && !color;
   const needsSize = sizes.length > 0 && !size;
-  const outOfStock = stockForVariant <= 0;
+  const outOfStock = hasTrackedStock && stockForVariant <= 0;
 
   if (isLoading || !merchant) {
     return (
@@ -376,7 +378,7 @@ function ProductDetailPage() {
                 <Button variant="ghost" size="icon" aria-label="Нэмэх" onClick={() => setQty((q) => Math.min(stockForVariant || q + 1, q + 1))}><Plus className="h-4 w-4" /></Button>
               </div>
               <span className={`text-xs sm:text-sm ${outOfStock ? "font-medium text-red-500" : "text-muted-foreground"}`}>
-                {outOfStock ? "Нөөц дууссан" : `Үлдэгдэл: ${stockForVariant}`}
+                {outOfStock ? "Нөөц дууссан" : hasTrackedStock ? `Үлдэгдэл: ${stockForVariant}` : "Бэлэн байгаа"}
               </span>
             </div>
 

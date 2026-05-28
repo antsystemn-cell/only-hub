@@ -170,8 +170,11 @@ function CartPage() {
       const p = productMap.get(i.productId);
       if (!p) continue;
       const k = i.color && i.size ? `${i.color}|${i.size}` : i.color || i.size || "";
-      const stock = k && p.variant_stock?.[k] != null ? p.variant_stock[k] : p.stock_quantity;
-      if (stock < i.quantity) return `"${p.name}" — үлдэгдэл ${stock}, та ${i.quantity}-г сонгосон`;
+      const vs = (p.variant_stock ?? {}) as Record<string, number>;
+      // Only enforce stock when this specific variant is explicitly tracked (Easyshop-style).
+      if (k && typeof vs[k] === "number" && vs[k] < i.quantity) {
+        return `"${p.name}" — үлдэгдэл ${vs[k]}, та ${i.quantity}-г сонгосон`;
+      }
     }
     return null;
   }
@@ -228,9 +231,9 @@ function CartPage() {
                 const sizes = extractOptions(product?.sizes);
                 const variantStock: Record<string, number> = product?.variant_stock ?? {};
                 const variantKey = item.color && item.size ? `${item.color}|${item.size}` : item.color || item.size || "";
-                const stock = variantKey && variantStock[variantKey] != null
+                const stock = variantKey && typeof variantStock[variantKey] === "number"
                   ? variantStock[variantKey]
-                  : product?.stock_quantity ?? 99;
+                  : 999;
                 const livePrice = lineFor(item);
                 const priceChanged = product && Number(product.price) !== item.price;
 
