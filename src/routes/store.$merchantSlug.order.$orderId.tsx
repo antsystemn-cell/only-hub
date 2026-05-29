@@ -174,6 +174,20 @@ function OrderConfirmationPage() {
             </div>
           )}
 
+          {!paid && paymentReq?.payment_provider === "bank_transfer" && paymentReq?.bank_account && (
+            <div className="mt-6 rounded-xl border bg-card p-5 text-left text-sm">
+              <div className="mb-3 flex items-center gap-2 font-semibold">
+                <Banknote className="h-4 w-4 text-emerald-600" /> Банкаар төлөх
+              </div>
+              <div className="space-y-1.5 text-sm">
+                <div className="flex justify-between"><span className="text-muted-foreground">Банк:</span><span className="font-medium">{paymentReq.bank_account.bank ?? "—"}</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">Дансны дугаар:</span><span className="font-mono font-semibold">{paymentReq.bank_account.account_number ?? "—"}</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">Хүлээн авагч:</span><span className="font-medium">{paymentReq.bank_account.account_name ?? "Only Hub"}</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">Гүйлгээний утга:</span><span className="font-mono font-semibold">{order.external_ref ?? order.id.slice(0, 8)}</span></div>
+              </div>
+            </div>
+          )}
+
           {!paid && order.payment_error && (
             <div className="mt-6 rounded-lg border border-destructive/40 bg-destructive/10 p-4 text-left text-sm">
               <div className="flex items-center gap-2 font-medium text-destructive">
