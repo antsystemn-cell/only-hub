@@ -167,6 +167,46 @@ function DriverPage() {
           </div>
         )}
       </div>
+
+      <AlertDialog open={!!askCash} onOpenChange={(o) => !o && setAskCash(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <Banknote className="h-5 w-5 text-emerald-600" />
+              Төлбөр газар дээрээ авсан уу?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Тийм бол захиалга шууд "Төлөгдсөн" болно. Үгүй бол хэрэглэгч рүү
+              QPay/банкны мэдээлэлтэй SMS автоматаар илгээгдэнэ.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex flex-col gap-2 sm:flex-row">
+            <AlertDialogCancel>Болих</AlertDialogCancel>
+            <Button
+              variant="outline"
+              onClick={() => {
+                if (askCash) {
+                  updateMut.mutate({ id: askCash.id, status: "delivered", collectedInCash: false });
+                  setAskCash(null);
+                }
+              }}
+            >
+              Үгүй — SMS илгээ
+            </Button>
+            <AlertDialogAction
+              className="bg-emerald-600 hover:bg-emerald-700"
+              onClick={() => {
+                if (askCash) {
+                  updateMut.mutate({ id: askCash.id, status: "delivered", collectedInCash: true });
+                  setAskCash(null);
+                }
+              }}
+            >
+              Тийм — авсан
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
