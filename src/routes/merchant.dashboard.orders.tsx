@@ -26,7 +26,7 @@ import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import { useServerFn } from "@tanstack/react-start";
 import { sendOrderToDelivery } from "@/lib/delivery.functions";
-import { bulkUpdateOrderStatus, bulkMarkPaid, bulkCreateDelivery } from "@/lib/orders-bulk.functions";
+import { bulkUpdateOrderStatus, bulkMarkPaid, bulkCreateDelivery, bulkDeleteOrders } from "@/lib/orders-bulk.functions";
 
 export const DELIVERY_STATUS_LABELS: Record<string, string> = {
   submitted: "Илгээгдсэн",
