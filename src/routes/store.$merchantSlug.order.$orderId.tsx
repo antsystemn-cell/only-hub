@@ -10,8 +10,9 @@ import { Badge } from "@/components/ui/badge";
 import { fmtMnt, PAYMENT_STATUS_LABELS, STATUS_LABELS, STATUS_TONE } from "@/lib/format";
 import { getOrderStatus, retryQpayInvoice } from "@/lib/orders.functions";
 import { getDeliveryHistoryByOrder } from "@/lib/delivery/delivery.functions";
+import { getPaymentRequestByOrderFn } from "@/lib/payment-collection/collection.functions";
 import { DeliveryTimeline } from "@/components/DeliveryTimeline";
-import { AlertTriangle, CheckCircle2, Clock, Loader2, RefreshCw } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Clock, Loader2, RefreshCw, Banknote } from "lucide-react";
 
 export const Route = createFileRoute("/store/$merchantSlug/order/$orderId")({
   component: OrderConfirmationPage,
