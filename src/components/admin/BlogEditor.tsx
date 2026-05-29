@@ -13,6 +13,8 @@ import { ArrowLeft, Save, Globe, Eye, Upload } from "lucide-react";
 import { RichMarkdownEditor, MarkdownPreview } from "@/components/admin/RichMarkdownEditor";
 import { uploadOptimized } from "@/lib/image";
 
+type Props = { mode: "new" | "edit"; postId?: string };
+
 const EMPTY_POST = {
   title: "", slug: "", excerpt: "", content: "", cover_image: "",
   tags: "", status: "draft" as const,
