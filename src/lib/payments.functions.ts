@@ -1,22 +1,47 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 type QpayCreds = { username?: string; client_id?: string; password?: string; client_secret?: string; invoice_code?: string; base_url?: string };
 
 const clean = (value?: string) => value?.trim() ?? "";
+
+async function assertMerchantAccess(userId: string, merchantId: string) {
+  const { data } = await supabaseAdmin.rpc("has_merchant_access", {
+    _user_id: userId,
+    _merchant_id: merchantId,
+  });
+  if (!data) throw new Error("Зөвшөөрөлгүй");
+}
+
+export const getPaymentProviderCredentials = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { providerId: string }) => d)
+  .handler(async ({ data, context }) => {
+    const { userId } = context;
+    const { data: provider, error } = await supabaseAdmin
+      .from("payment_providers")
+      .select("merchant_id,credentials")
+      .eq("id", data.providerId)
+      .maybeSingle();
+    if (error || !provider) return { ok: false as const, message: "Үйлчилгээ олдсонгүй" };
+    await assertMerchantAccess(userId, provider.merchant_id as string);
+    return { ok: true as const, credentials: (provider.credentials ?? {}) as Record<string, string> };
+  });
 
 export const testPaymentConnection = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { providerId: string }) => d)
   .handler(async ({ data, context }) => {
     try {
-      const { supabase } = context;
-      const { data: provider, error } = await supabase
+      const { userId } = context;
+      const { data: provider, error } = await supabaseAdmin
         .from("payment_providers")
         .select("provider_type,credentials,merchant_id")
         .eq("id", data.providerId)
         .maybeSingle();
       if (error || !provider) return { ok: false, message: "Үйлчилгээ олдсонгүй" };
+      await assertMerchantAccess(userId, provider.merchant_id as string);
 
       if (provider.provider_type !== "qpay") {
         return { ok: true, message: "Тохиргоо хадгалагдсан (бодит шалгалт удахгүй)" };
