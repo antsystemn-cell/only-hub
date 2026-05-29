@@ -15,7 +15,8 @@ import { toast } from "sonner";
 import { Trash2, Plus, Eye, EyeOff, Pencil, X, Truck, Copy, CheckCircle, RefreshCw } from "lucide-react";
 import { fmtMnt, slugify } from "@/lib/format";
 import { useServerFn } from "@tanstack/react-start";
-import { testPaymentConnection } from "@/lib/payments.functions";
+import { testPaymentConnection, getPaymentProviderCredentials } from "@/lib/payments.functions";
+import { getMerchantDeliveryConfig, updateMerchantDeliveryConfig } from "@/lib/merchant-delivery.functions";
 
 export const Route = createFileRoute("/merchant/dashboard/settings")({ component: SettingsPage });
 
@@ -230,9 +231,11 @@ function PaymentsTab() {
   const [editId, setEditId] = useState<string | null>(null);
   const [showSecret, setShowSecret] = useState(false);
 
+  const loadCreds = useServerFn(getPaymentProviderCredentials);
+
   const { data: items = [] } = useQuery({
     queryKey: ["payment_providers", merchantId],
-    queryFn: async () => (await supabase.from("payment_providers").select("*").eq("merchant_id", merchantId)).data ?? [],
+    queryFn: async () => (await supabase.from("payment_providers").select("id,merchant_id,provider_type,name,icon,description,is_active,position,logo_url,created_at,updated_at").eq("merchant_id", merchantId)).data ?? [],
   });
 
   const resetForm = () => { setForm(emptyForm); setEditId(null); };
@@ -252,14 +255,19 @@ function PaymentsTab() {
     onError: (e: any) => toast.error(e.message),
   });
 
-  const startEdit = (p: any) => {
+  const startEdit = async (p: any) => {
     setEditId(p.id);
+    let creds: Record<string, string> = {};
+    try {
+      const res = await loadCreds({ data: { providerId: p.id } });
+      if (res.ok) creds = res.credentials ?? {};
+    } catch {}
     setForm({
       provider_type: p.provider_type,
       name: p.name,
       icon: p.icon ?? "💳",
       is_active: !!p.is_active,
-      credentials: p.credentials ?? {},
+      credentials: creds,
       description: p.description ?? "",
     });
     if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
@@ -336,7 +344,7 @@ function PaymentsTab() {
 function ProviderRow({ provider: p, onEdit, onDelete }: { provider: any; onEdit: () => void; onDelete: () => void }) {
   const test = useServerFn(testPaymentConnection);
   const [pending, setPending] = useState(false);
-  const hasCreds = p.credentials && Object.keys(p.credentials).length > 0;
+  const hasCreds = p.provider_type !== "cash";
   const runTest = async () => {
     setPending(true);
     try {
@@ -374,19 +382,18 @@ function DeliveryApiCard() {
   const [webhookSecret, setWebhookSecret] = useState("");
   const [deliveryMode, setDeliveryMode] = useState<"local" | "swift">("local");
 
+  const loadDelivery = useServerFn(getMerchantDeliveryConfig);
+  const saveDelivery = useServerFn(updateMerchantDeliveryConfig);
+
   const { data: merchant } = useQuery({
     queryKey: ["merchant-delivery", merchantId],
     queryFn: async () => {
-      const { data } = await (supabase as any)
-        .from("merchants")
-        .select("id,delivery_api_key,delivery_endpoint,delivery_webhook_secret,delivery_mode")
-        .eq("id", merchantId)
-        .maybeSingle();
-      if (data) {
-        setApiKey(data.delivery_api_key ?? "");
-        setEndpoint(data.delivery_endpoint ?? "");
-        setWebhookSecret(data.delivery_webhook_secret ?? "");
-        setDeliveryMode((data.delivery_mode as any) ?? "local");
+      const data = await loadDelivery({ data: { merchantId } });
+      if (data?.ok) {
+        setApiKey(data.delivery_api_key);
+        setEndpoint(data.delivery_endpoint);
+        setWebhookSecret(data.delivery_webhook_secret);
+        setDeliveryMode(data.delivery_mode);
       }
       return data;
     },
@@ -399,16 +406,15 @@ function DeliveryApiCard() {
 
   const save = useMutation({
     mutationFn: async () => {
-      const { error } = await (supabase as any)
-        .from("merchants")
-        .update({
-          delivery_api_key: apiKey.trim() || null,
-          delivery_endpoint: endpoint.trim() || null,
-          delivery_webhook_secret: webhookSecret.trim() || null,
+      await saveDelivery({
+        data: {
+          merchantId,
+          delivery_api_key: apiKey,
+          delivery_endpoint: endpoint,
+          delivery_webhook_secret: webhookSecret,
           delivery_mode: deliveryMode,
-        })
-        .eq("id", merchantId);
-      if (error) throw error;
+        },
+      });
     },
     onSuccess: () => {
       toast.success("Хүргэлтийн тохиргоо хадгалагдлаа");
@@ -430,7 +436,7 @@ function DeliveryApiCard() {
     toast.success(`${label} хуулагдлаа`);
   };
 
-  const connected = !!merchant?.delivery_api_key;
+  const connected = !!(merchant && (merchant as any).delivery_api_key);
 
   return (
     <Card className="rounded-2xl border-violet-200/60 bg-violet-50/30 p-5 dark:border-violet-800/30 dark:bg-violet-950/10">

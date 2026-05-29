@@ -1,21 +1,31 @@
 import { createServerFn } from "@tanstack/react-start";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 type ChatMsg = { role: "user" | "assistant"; content: string };
 
 export const chatbotPreview = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
   .inputValidator((d: { merchantId: string; messages: ChatMsg[] }) => d)
-  .handler(async ({ data, context }) => {
-    const { supabase } = context;
+  .handler(async ({ data }) => {
+    if (!data?.merchantId || !Array.isArray(data.messages)) {
+      return { ok: false, message: "Буруу хүсэлт" };
+    }
+    if (data.messages.length > 50) {
+      return { ok: false, message: "Хэт олон мессеж" };
+    }
 
-    const { data: settings } = await supabase
+    // Use service-role client: chatbot widget runs for anonymous storefront visitors
+    // and chatbot_settings is no longer publicly readable.
+    const { data: settings } = await supabaseAdmin
       .from("chatbot_settings")
-      .select("system_prompt,knowledge,greeting_message")
+      .select("system_prompt,knowledge,greeting_message,is_enabled")
       .eq("merchant_id", data.merchantId)
       .maybeSingle();
 
-    const { data: products } = await supabase
+    if (!settings?.is_enabled) {
+      return { ok: false, message: "Туслах идэвхгүй байна" };
+    }
+
+    const { data: products } = await supabaseAdmin
       .from("products")
       .select("name,price,description,category")
       .eq("merchant_id", data.merchantId)
@@ -42,7 +52,7 @@ export const chatbotPreview = createServerFn({ method: "POST" })
           model: "google/gemini-2.5-flash",
           messages: [
             { role: "system", content: system },
-            ...data.messages.map((m) => ({ role: m.role, content: m.content })),
+            ...data.messages.map((m) => ({ role: m.role, content: String(m.content ?? "").slice(0, 2000) })),
           ],
         }),
       });
