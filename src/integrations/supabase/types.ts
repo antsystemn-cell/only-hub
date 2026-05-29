@@ -798,6 +798,75 @@ export type Database = {
           },
         ]
       }
+      payment_requests: {
+        Row: {
+          amount: number
+          bank_account: Json | null
+          created_at: string
+          customer_phone: string | null
+          expires_at: string | null
+          id: string
+          invoice_id: string | null
+          invoice_url: string | null
+          last_error: string | null
+          last_sms_error: string | null
+          merchant_id: string
+          order_id: string
+          paid_at: string | null
+          payment_provider: string
+          qr_image: string | null
+          qr_text: string | null
+          sms_attempts: number
+          sms_sent_at: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          amount?: number
+          bank_account?: Json | null
+          created_at?: string
+          customer_phone?: string | null
+          expires_at?: string | null
+          id?: string
+          invoice_id?: string | null
+          invoice_url?: string | null
+          last_error?: string | null
+          last_sms_error?: string | null
+          merchant_id: string
+          order_id: string
+          paid_at?: string | null
+          payment_provider?: string
+          qr_image?: string | null
+          qr_text?: string | null
+          sms_attempts?: number
+          sms_sent_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          bank_account?: Json | null
+          created_at?: string
+          customer_phone?: string | null
+          expires_at?: string | null
+          id?: string
+          invoice_id?: string | null
+          invoice_url?: string | null
+          last_error?: string | null
+          last_sms_error?: string | null
+          merchant_id?: string
+          order_id?: string
+          paid_at?: string | null
+          payment_provider?: string
+          qr_image?: string | null
+          qr_text?: string | null
+          sms_attempts?: number
+          sms_sent_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       platform_banners: {
         Row: {
           banner_image: string | null
