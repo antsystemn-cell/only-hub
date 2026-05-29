@@ -231,9 +231,11 @@ function PaymentsTab() {
   const [editId, setEditId] = useState<string | null>(null);
   const [showSecret, setShowSecret] = useState(false);
 
+  const loadCreds = useServerFn(getPaymentProviderCredentials);
+
   const { data: items = [] } = useQuery({
     queryKey: ["payment_providers", merchantId],
-    queryFn: async () => (await supabase.from("payment_providers").select("*").eq("merchant_id", merchantId)).data ?? [],
+    queryFn: async () => (await supabase.from("payment_providers").select("id,merchant_id,provider_type,name,icon,description,is_active,position,logo_url,created_at,updated_at").eq("merchant_id", merchantId)).data ?? [],
   });
 
   const resetForm = () => { setForm(emptyForm); setEditId(null); };
