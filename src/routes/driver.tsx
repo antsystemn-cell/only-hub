@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { createServerFn } from "@tanstack/react-start";
@@ -9,8 +9,18 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { useAuth } from "@/hooks/use-auth";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { Truck, LogOut } from "lucide-react";
+import { Truck, LogOut, Banknote } from "lucide-react";
 import { DeliveryStatusBadge } from "@/components/DeliveryTimeline";
 import { updateDeliveryStatusFn } from "@/lib/delivery/delivery.functions";
 import type { DeliveryStatus } from "@/lib/delivery/delivery.types";
