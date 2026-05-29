@@ -28,11 +28,11 @@ import { Route as AdminSettingsRouteImport } from './routes/admin.settings'
 import { Route as AdminOrdersRouteImport } from './routes/admin.orders'
 import { Route as AdminMerchantsRouteImport } from './routes/admin.merchants'
 import { Route as AdminDeliveryRouteImport } from './routes/admin.delivery'
-import { Route as AdminBlogRouteImport } from './routes/admin.blog'
 import { Route as AdminBannersRouteImport } from './routes/admin.banners'
 import { Route as AdminAnalyticsRouteImport } from './routes/admin.analytics'
 import { Route as AccountOrdersRouteImport } from './routes/account.orders'
 import { Route as MerchantDashboardIndexRouteImport } from './routes/merchant.dashboard.index'
+import { Route as AdminBlogIndexRouteImport } from './routes/admin.blog.index'
 import { Route as StoreMerchantSlugCheckoutRouteImport } from './routes/store.$merchantSlug.checkout'
 import { Route as StoreMerchantSlugCartRouteImport } from './routes/store.$merchantSlug.cart'
 import { Route as MerchantDashboardUsersRouteImport } from './routes/merchant.dashboard.users'
@@ -144,11 +144,6 @@ const AdminDeliveryRoute = AdminDeliveryRouteImport.update({
   path: '/delivery',
   getParentRoute: () => AdminRoute,
 } as any)
-const AdminBlogRoute = AdminBlogRouteImport.update({
-  id: '/blog',
-  path: '/blog',
-  getParentRoute: () => AdminRoute,
-} as any)
 const AdminBannersRoute = AdminBannersRouteImport.update({
   id: '/banners',
   path: '/banners',
@@ -168,6 +163,11 @@ const MerchantDashboardIndexRoute = MerchantDashboardIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => MerchantDashboardRoute,
+} as any)
+const AdminBlogIndexRoute = AdminBlogIndexRouteImport.update({
+  id: '/blog/',
+  path: '/blog/',
+  getParentRoute: () => AdminRoute,
 } as any)
 const StoreMerchantSlugCheckoutRoute =
   StoreMerchantSlugCheckoutRouteImport.update({
@@ -220,14 +220,14 @@ const MerchantDashboardChatbotRoute =
     getParentRoute: () => MerchantDashboardRoute,
   } as any)
 const AdminBlogNewRoute = AdminBlogNewRouteImport.update({
-  id: '/new',
-  path: '/new',
-  getParentRoute: () => AdminBlogRoute,
+  id: '/blog/new',
+  path: '/blog/new',
+  getParentRoute: () => AdminRoute,
 } as any)
 const AdminBlogIdRoute = AdminBlogIdRouteImport.update({
-  id: '/$id',
-  path: '/$id',
-  getParentRoute: () => AdminBlogRoute,
+  id: '/blog/$id',
+  path: '/blog/$id',
+  getParentRoute: () => AdminRoute,
 } as any)
 const StoreMerchantSlugProductProductSlugRoute =
   StoreMerchantSlugProductProductSlugRouteImport.update({
@@ -265,7 +265,6 @@ export interface FileRoutesByFullPath {
   '/account/orders': typeof AccountOrdersRoute
   '/admin/analytics': typeof AdminAnalyticsRoute
   '/admin/banners': typeof AdminBannersRoute
-  '/admin/blog': typeof AdminBlogRouteWithChildren
   '/admin/delivery': typeof AdminDeliveryRoute
   '/admin/merchants': typeof AdminMerchantsRoute
   '/admin/orders': typeof AdminOrdersRoute
@@ -288,6 +287,7 @@ export interface FileRoutesByFullPath {
   '/merchant/dashboard/users': typeof MerchantDashboardUsersRoute
   '/store/$merchantSlug/cart': typeof StoreMerchantSlugCartRoute
   '/store/$merchantSlug/checkout': typeof StoreMerchantSlugCheckoutRoute
+  '/admin/blog/': typeof AdminBlogIndexRoute
   '/merchant/dashboard/': typeof MerchantDashboardIndexRoute
   '/api/public/delivery/webhook': typeof ApiPublicDeliveryWebhookRoute
   '/api/public/qpay/webhook': typeof ApiPublicQpayWebhookRoute
@@ -305,7 +305,6 @@ export interface FileRoutesByTo {
   '/account/orders': typeof AccountOrdersRoute
   '/admin/analytics': typeof AdminAnalyticsRoute
   '/admin/banners': typeof AdminBannersRoute
-  '/admin/blog': typeof AdminBlogRouteWithChildren
   '/admin/delivery': typeof AdminDeliveryRoute
   '/admin/merchants': typeof AdminMerchantsRoute
   '/admin/orders': typeof AdminOrdersRoute
@@ -327,6 +326,7 @@ export interface FileRoutesByTo {
   '/merchant/dashboard/users': typeof MerchantDashboardUsersRoute
   '/store/$merchantSlug/cart': typeof StoreMerchantSlugCartRoute
   '/store/$merchantSlug/checkout': typeof StoreMerchantSlugCheckoutRoute
+  '/admin/blog': typeof AdminBlogIndexRoute
   '/merchant/dashboard': typeof MerchantDashboardIndexRoute
   '/api/public/delivery/webhook': typeof ApiPublicDeliveryWebhookRoute
   '/api/public/qpay/webhook': typeof ApiPublicQpayWebhookRoute
@@ -346,7 +346,6 @@ export interface FileRoutesById {
   '/account/orders': typeof AccountOrdersRoute
   '/admin/analytics': typeof AdminAnalyticsRoute
   '/admin/banners': typeof AdminBannersRoute
-  '/admin/blog': typeof AdminBlogRouteWithChildren
   '/admin/delivery': typeof AdminDeliveryRoute
   '/admin/merchants': typeof AdminMerchantsRoute
   '/admin/orders': typeof AdminOrdersRoute
@@ -369,6 +368,7 @@ export interface FileRoutesById {
   '/merchant/dashboard/users': typeof MerchantDashboardUsersRoute
   '/store/$merchantSlug/cart': typeof StoreMerchantSlugCartRoute
   '/store/$merchantSlug/checkout': typeof StoreMerchantSlugCheckoutRoute
+  '/admin/blog/': typeof AdminBlogIndexRoute
   '/merchant/dashboard/': typeof MerchantDashboardIndexRoute
   '/api/public/delivery/webhook': typeof ApiPublicDeliveryWebhookRoute
   '/api/public/qpay/webhook': typeof ApiPublicQpayWebhookRoute
@@ -389,7 +389,6 @@ export interface FileRouteTypes {
     | '/account/orders'
     | '/admin/analytics'
     | '/admin/banners'
-    | '/admin/blog'
     | '/admin/delivery'
     | '/admin/merchants'
     | '/admin/orders'
@@ -412,6 +411,7 @@ export interface FileRouteTypes {
     | '/merchant/dashboard/users'
     | '/store/$merchantSlug/cart'
     | '/store/$merchantSlug/checkout'
+    | '/admin/blog/'
     | '/merchant/dashboard/'
     | '/api/public/delivery/webhook'
     | '/api/public/qpay/webhook'
@@ -429,7 +429,6 @@ export interface FileRouteTypes {
     | '/account/orders'
     | '/admin/analytics'
     | '/admin/banners'
-    | '/admin/blog'
     | '/admin/delivery'
     | '/admin/merchants'
     | '/admin/orders'
@@ -451,6 +450,7 @@ export interface FileRouteTypes {
     | '/merchant/dashboard/users'
     | '/store/$merchantSlug/cart'
     | '/store/$merchantSlug/checkout'
+    | '/admin/blog'
     | '/merchant/dashboard'
     | '/api/public/delivery/webhook'
     | '/api/public/qpay/webhook'
@@ -469,7 +469,6 @@ export interface FileRouteTypes {
     | '/account/orders'
     | '/admin/analytics'
     | '/admin/banners'
-    | '/admin/blog'
     | '/admin/delivery'
     | '/admin/merchants'
     | '/admin/orders'
@@ -492,6 +491,7 @@ export interface FileRouteTypes {
     | '/merchant/dashboard/users'
     | '/store/$merchantSlug/cart'
     | '/store/$merchantSlug/checkout'
+    | '/admin/blog/'
     | '/merchant/dashboard/'
     | '/api/public/delivery/webhook'
     | '/api/public/qpay/webhook'
@@ -651,13 +651,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminDeliveryRouteImport
       parentRoute: typeof AdminRoute
     }
-    '/admin/blog': {
-      id: '/admin/blog'
-      path: '/blog'
-      fullPath: '/admin/blog'
-      preLoaderRoute: typeof AdminBlogRouteImport
-      parentRoute: typeof AdminRoute
-    }
     '/admin/banners': {
       id: '/admin/banners'
       path: '/banners'
@@ -685,6 +678,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/merchant/dashboard/'
       preLoaderRoute: typeof MerchantDashboardIndexRouteImport
       parentRoute: typeof MerchantDashboardRoute
+    }
+    '/admin/blog/': {
+      id: '/admin/blog/'
+      path: '/blog'
+      fullPath: '/admin/blog/'
+      preLoaderRoute: typeof AdminBlogIndexRouteImport
+      parentRoute: typeof AdminRoute
     }
     '/store/$merchantSlug/checkout': {
       id: '/store/$merchantSlug/checkout'
@@ -751,17 +751,17 @@ declare module '@tanstack/react-router' {
     }
     '/admin/blog/new': {
       id: '/admin/blog/new'
-      path: '/new'
+      path: '/blog/new'
       fullPath: '/admin/blog/new'
       preLoaderRoute: typeof AdminBlogNewRouteImport
-      parentRoute: typeof AdminBlogRoute
+      parentRoute: typeof AdminRoute
     }
     '/admin/blog/$id': {
       id: '/admin/blog/$id'
-      path: '/$id'
+      path: '/blog/$id'
       fullPath: '/admin/blog/$id'
       preLoaderRoute: typeof AdminBlogIdRouteImport
-      parentRoute: typeof AdminBlogRoute
+      parentRoute: typeof AdminRoute
     }
     '/store/$merchantSlug/product/$productSlug': {
       id: '/store/$merchantSlug/product/$productSlug'
@@ -805,42 +805,32 @@ const AccountRouteChildren: AccountRouteChildren = {
 const AccountRouteWithChildren =
   AccountRoute._addFileChildren(AccountRouteChildren)
 
-interface AdminBlogRouteChildren {
-  AdminBlogIdRoute: typeof AdminBlogIdRoute
-  AdminBlogNewRoute: typeof AdminBlogNewRoute
-}
-
-const AdminBlogRouteChildren: AdminBlogRouteChildren = {
-  AdminBlogIdRoute: AdminBlogIdRoute,
-  AdminBlogNewRoute: AdminBlogNewRoute,
-}
-
-const AdminBlogRouteWithChildren = AdminBlogRoute._addFileChildren(
-  AdminBlogRouteChildren,
-)
-
 interface AdminRouteChildren {
   AdminAnalyticsRoute: typeof AdminAnalyticsRoute
   AdminBannersRoute: typeof AdminBannersRoute
-  AdminBlogRoute: typeof AdminBlogRouteWithChildren
   AdminDeliveryRoute: typeof AdminDeliveryRoute
   AdminMerchantsRoute: typeof AdminMerchantsRoute
   AdminOrdersRoute: typeof AdminOrdersRoute
   AdminSettingsRoute: typeof AdminSettingsRoute
   AdminUsersRoute: typeof AdminUsersRoute
   AdminIndexRoute: typeof AdminIndexRoute
+  AdminBlogIdRoute: typeof AdminBlogIdRoute
+  AdminBlogNewRoute: typeof AdminBlogNewRoute
+  AdminBlogIndexRoute: typeof AdminBlogIndexRoute
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
   AdminAnalyticsRoute: AdminAnalyticsRoute,
   AdminBannersRoute: AdminBannersRoute,
-  AdminBlogRoute: AdminBlogRouteWithChildren,
   AdminDeliveryRoute: AdminDeliveryRoute,
   AdminMerchantsRoute: AdminMerchantsRoute,
   AdminOrdersRoute: AdminOrdersRoute,
   AdminSettingsRoute: AdminSettingsRoute,
   AdminUsersRoute: AdminUsersRoute,
   AdminIndexRoute: AdminIndexRoute,
+  AdminBlogIdRoute: AdminBlogIdRoute,
+  AdminBlogNewRoute: AdminBlogNewRoute,
+  AdminBlogIndexRoute: AdminBlogIndexRoute,
 }
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
