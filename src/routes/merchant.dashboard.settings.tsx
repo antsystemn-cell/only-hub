@@ -375,19 +375,18 @@ function DeliveryApiCard() {
   const [webhookSecret, setWebhookSecret] = useState("");
   const [deliveryMode, setDeliveryMode] = useState<"local" | "swift">("local");
 
+  const loadDelivery = useServerFn(getMerchantDeliveryConfig);
+  const saveDelivery = useServerFn(updateMerchantDeliveryConfig);
+
   const { data: merchant } = useQuery({
     queryKey: ["merchant-delivery", merchantId],
     queryFn: async () => {
-      const { data } = await (supabase as any)
-        .from("merchants")
-        .select("id,delivery_api_key,delivery_endpoint,delivery_webhook_secret,delivery_mode")
-        .eq("id", merchantId)
-        .maybeSingle();
-      if (data) {
-        setApiKey(data.delivery_api_key ?? "");
-        setEndpoint(data.delivery_endpoint ?? "");
-        setWebhookSecret(data.delivery_webhook_secret ?? "");
-        setDeliveryMode((data.delivery_mode as any) ?? "local");
+      const data = await loadDelivery({ data: { merchantId } });
+      if (data?.ok) {
+        setApiKey(data.delivery_api_key);
+        setEndpoint(data.delivery_endpoint);
+        setWebhookSecret(data.delivery_webhook_secret);
+        setDeliveryMode(data.delivery_mode);
       }
       return data;
     },
@@ -400,16 +399,15 @@ function DeliveryApiCard() {
 
   const save = useMutation({
     mutationFn: async () => {
-      const { error } = await (supabase as any)
-        .from("merchants")
-        .update({
-          delivery_api_key: apiKey.trim() || null,
-          delivery_endpoint: endpoint.trim() || null,
-          delivery_webhook_secret: webhookSecret.trim() || null,
+      await saveDelivery({
+        data: {
+          merchantId,
+          delivery_api_key: apiKey,
+          delivery_endpoint: endpoint,
+          delivery_webhook_secret: webhookSecret,
           delivery_mode: deliveryMode,
-        })
-        .eq("id", merchantId);
-      if (error) throw error;
+        },
+      });
     },
     onSuccess: () => {
       toast.success("Хүргэлтийн тохиргоо хадгалагдлаа");
