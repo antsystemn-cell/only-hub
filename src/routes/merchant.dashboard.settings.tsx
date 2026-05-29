@@ -429,7 +429,7 @@ function DeliveryApiCard() {
     toast.success(`${label} хуулагдлаа`);
   };
 
-  const connected = !!merchant?.delivery_api_key;
+  const connected = !!(merchant && (merchant as any).delivery_api_key);
 
   return (
     <Card className="rounded-2xl border-violet-200/60 bg-violet-50/30 p-5 dark:border-violet-800/30 dark:bg-violet-950/10">
