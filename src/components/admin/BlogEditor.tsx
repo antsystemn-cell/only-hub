@@ -117,11 +117,13 @@ export function BlogEditor({ mode, postId }: Props) {
       </div>
 
       {preview ? (
-        <Card className="prose prose-sm max-w-none rounded-2xl p-8">
+        <Card className="rounded-2xl p-8">
           {form.cover_image && <img src={form.cover_image} className="mb-6 h-64 w-full rounded-xl object-cover" alt={form.title} />}
           <h1 className="text-3xl font-bold">{form.title || "Гарчиг"}</h1>
-          {form.excerpt && <p className="text-lg text-muted-foreground">{form.excerpt}</p>}
-          <div className="mt-6 whitespace-pre-wrap text-sm leading-relaxed">{form.content || "Агуулга байхгүй"}</div>
+          {form.excerpt && <p className="mt-2 text-lg text-muted-foreground">{form.excerpt}</p>}
+          <div className="mt-6">
+            <MarkdownPreview value={form.content} />
+          </div>
         </Card>
       ) : (
         <div className="grid gap-5">
@@ -137,8 +139,27 @@ export function BlogEditor({ mode, postId }: Props) {
                 <p className="mt-0.5 text-xs text-muted-foreground">/blog/{form.slug || "..."}</p>
               </div>
               <div>
-                <Label>Нүүрний зурагны URL</Label>
-                <Input value={form.cover_image} onChange={(e) => setForm({ ...form, cover_image: e.target.value })} placeholder="https://..." className="mt-1" />
+                <Label>Нүүрний зураг</Label>
+                <div className="mt-1 flex gap-2">
+                  <Input value={form.cover_image} onChange={(e) => setForm({ ...form, cover_image: e.target.value })} placeholder="https://..." />
+                  <Button type="button" variant="outline" size="icon" asChild>
+                    <label className="cursor-pointer">
+                      <Upload className="h-4 w-4" />
+                      <input
+                        type="file" accept="image/*" className="hidden"
+                        onChange={async (e) => {
+                          const f = e.target.files?.[0]; if (!f) return;
+                          try {
+                            const { url } = await uploadOptimized(f, "banners", "blog/cover");
+                            setForm((s) => ({ ...s, cover_image: url }));
+                            toast.success("Нүүр зураг орууллаа");
+                          } catch (err: any) { toast.error(err.message); }
+                        }}
+                      />
+                    </label>
+                  </Button>
+                </div>
+                {form.cover_image && <img src={form.cover_image} alt="" className="mt-2 h-20 w-full rounded-lg object-cover" />}
               </div>
             </div>
             <div>
@@ -151,16 +172,13 @@ export function BlogEditor({ mode, postId }: Props) {
             </div>
           </Card>
 
-          <Card className="rounded-2xl p-6">
-            <Label>Агуулга *</Label>
-            <Textarea
+          <Card className="rounded-2xl p-4 md:p-6">
+            <Label className="mb-2 block">Агуулга *</Label>
+            <RichMarkdownEditor
               value={form.content}
-              onChange={(e) => setForm({ ...form, content: e.target.value })}
-              placeholder="Нийтлэлийн агуулгыг энд бичнэ үү..."
-              rows={20}
-              className="mt-2 resize-none font-mono text-sm leading-relaxed"
+              onChange={(v) => setForm({ ...form, content: v })}
             />
-            <p className="mt-1 text-xs text-muted-foreground">{form.content.length} тэмдэгт</p>
+            <p className="mt-2 text-xs text-muted-foreground">{form.content.length} тэмдэгт · Markdown дэмжинэ</p>
           </Card>
         </div>
       )}
