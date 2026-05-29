@@ -184,7 +184,7 @@ export function RichMarkdownEditor({ value, onChange, minHeight = 480 }: Props) 
 export function MarkdownPreview({ value }: { value: string }) {
   if (!value.trim()) return <p className="text-sm text-muted-foreground">Хоосон...</p>;
   return (
-    <div className="prose prose-sm max-w-none dark:prose-invert prose-headings:font-bold prose-img:rounded-xl prose-a:text-primary">
+    <div className="md-body">
       <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>{value}</ReactMarkdown>
     </div>
   );
