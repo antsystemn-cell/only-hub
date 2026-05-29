@@ -70,7 +70,7 @@ export async function createDeliveryRequest(args: CreateDeliveryRequestArgs) {
 
   const { data: merchant } = await supabaseAdmin
     .from("merchants")
-    .select("id,name,delivery_api_key,delivery_endpoint,delivery_mode")
+    .select("id,name,slug,delivery_api_key,delivery_endpoint,delivery_mode")
     .eq("id", order.merchant_id)
     .maybeSingle();
   if (!merchant) return { ok: false as const, error: "Дэлгүүр олдсонгүй" };

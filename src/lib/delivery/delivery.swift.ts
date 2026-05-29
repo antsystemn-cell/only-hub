@@ -43,7 +43,10 @@ export async function swiftSendOrder(args: SwiftSendArgs): Promise<SwiftSendResu
   const payload = {
     external_order_id: buildExternalOrderId(String(order.id)),
     source_system: "only_merchants_hub",
+    merchant_code: merchant?.id ?? merchant?.slug ?? null,
     merchant_name: merchant?.name ?? null,
+    shop_code: merchant?.id ?? merchant?.slug ?? null,
+    shop_name: merchant?.name ?? null,
     customer_name: order.guest_name ?? "Хэрэглэгч",
     phone: order.phone,
     district: order.branch ?? null,
