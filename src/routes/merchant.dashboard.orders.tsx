@@ -72,6 +72,7 @@ function OrdersPage() {
   const bulkStatusFn = useServerFn(bulkUpdateOrderStatus);
   const bulkPaidFn = useServerFn(bulkMarkPaid);
   const bulkDeliveryFn = useServerFn(bulkCreateDelivery);
+  const bulkDeleteFn = useServerFn(bulkDeleteOrders);
 
   const { data: orders = [] } = useQuery({
     queryKey: ["orders", merchantId],
