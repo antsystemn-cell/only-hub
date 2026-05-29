@@ -215,10 +215,11 @@ export async function syncDeliveryStatusFromExternal(args: {
 }) {
   const { data: current } = await supabaseAdmin
     .from("delivery_requests")
-    .select("status")
+    .select("status, order_id")
     .eq("id", args.deliveryRequestId)
     .maybeSingle();
-  const next = mapSwiftStatus(args.fulfillmentStatus, current?.status ?? "requested") as DeliveryStatus;
+  const prev = current?.status ?? "requested";
+  const next = mapSwiftStatus(args.fulfillmentStatus, prev) as DeliveryStatus;
   const patch: any = { status: next };
   if (args.externalRef) patch.external_ref = args.externalRef;
   if (next === "picked_up") patch.picked_up_at = new Date().toISOString();
@@ -229,5 +230,19 @@ export async function syncDeliveryStatusFromExternal(args: {
     .from("delivery_requests")
     .update(patch)
     .eq("id", args.deliveryRequestId);
+
+  // Хүргэгдсэн төлөв шинээр орж ирвэл автомат төлбөрийн SMS-ийг асаана.
+  if (next === "delivered" && prev !== "delivered" && current?.order_id) {
+    try {
+      const { onDeliveryCompleted } = await import(
+        "@/lib/payment-collection/collection.service"
+      );
+      await onDeliveryCompleted({ orderId: current.order_id });
+    } catch (e) {
+      console.error("[delivery] onDeliveryCompleted (webhook) failed", e);
+    }
+  }
+
   return { ok: true as const, status: next };
 }
+
