@@ -15,7 +15,8 @@ import { toast } from "sonner";
 import { Trash2, Plus, Eye, EyeOff, Pencil, X, Truck, Copy, CheckCircle, RefreshCw } from "lucide-react";
 import { fmtMnt, slugify } from "@/lib/format";
 import { useServerFn } from "@tanstack/react-start";
-import { testPaymentConnection } from "@/lib/payments.functions";
+import { testPaymentConnection, getPaymentProviderCredentials } from "@/lib/payments.functions";
+import { getMerchantDeliveryConfig, updateMerchantDeliveryConfig } from "@/lib/merchant-delivery.functions";
 
 export const Route = createFileRoute("/merchant/dashboard/settings")({ component: SettingsPage });
 
