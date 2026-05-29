@@ -344,7 +344,7 @@ function PaymentsTab() {
 function ProviderRow({ provider: p, onEdit, onDelete }: { provider: any; onEdit: () => void; onDelete: () => void }) {
   const test = useServerFn(testPaymentConnection);
   const [pending, setPending] = useState(false);
-  const hasCreds = p.credentials && Object.keys(p.credentials).length > 0;
+  const hasCreds = p.provider_type !== "cash";
   const runTest = async () => {
     setPending(true);
     try {
