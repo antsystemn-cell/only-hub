@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { MarkdownPreview } from "@/components/admin/RichMarkdownEditor";
+import { TiptapViewer } from "@/components/admin/TiptapEditor";
 
 export const Route = createFileRoute("/blog/$slug")({ component: BlogPostPage });
 
@@ -60,7 +60,7 @@ function BlogPostPage() {
           {post.published_at ? new Date(post.published_at).toLocaleDateString("mn-MN", { year: "numeric", month: "long", day: "numeric" }) : ""}
           {post.view_count > 0 && ` · 👁 ${post.view_count} үзсэн`}
         </p>
-        <div className="mt-8"><MarkdownPreview value={post.content ?? ""} /></div>
+        <div className="mt-8"><TiptapViewer html={post.content ?? ""} /></div>
       </article>
     </div>
   );

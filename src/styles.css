@@ -165,3 +165,19 @@
 .md-body th { background: var(--color-muted); font-weight: 600; }
 .md-body iframe { border-radius: 0.75rem; max-width: 100%; margin: 1rem 0; }
 .md-body input[type="checkbox"] { margin-right: 0.5rem; }
+
+/* Tiptap editor */
+.tiptap:focus { outline: none; }
+.tiptap p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  color: var(--color-muted-foreground);
+  float: left; height: 0; pointer-events: none;
+}
+.tiptap ul[data-type="taskList"] { list-style: none; margin-left: 0; padding-left: 0; }
+.tiptap ul[data-type="taskList"] li { display: flex; align-items: flex-start; gap: 0.5rem; }
+.tiptap ul[data-type="taskList"] li > label { margin-top: 0.35rem; }
+.tiptap ul[data-type="taskList"] li > div { flex: 1; }
+.tiptap mark { background: color-mix(in oklab, var(--color-primary) 25%, transparent); padding: 0 0.15rem; border-radius: 0.2rem; }
+.tiptap .selectedCell:after { background: color-mix(in oklab, var(--color-primary) 15%, transparent); content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 2; }
+.tiptap table { position: relative; }
+.tiptap td, .tiptap th { position: relative; }

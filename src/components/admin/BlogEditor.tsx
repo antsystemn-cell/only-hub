@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { ArrowLeft, Save, Globe, Eye, Upload } from "lucide-react";
-import { RichMarkdownEditor, MarkdownPreview } from "@/components/admin/RichMarkdownEditor";
+import { TiptapEditor, TiptapViewer } from "@/components/admin/TiptapEditor";
 import { uploadOptimized } from "@/lib/image";
 
 type Props = { mode: "new" | "edit"; postId?: string };
@@ -122,7 +122,7 @@ export function BlogEditor({ mode, postId }: Props) {
           <h1 className="text-3xl font-bold">{form.title || "Гарчиг"}</h1>
           {form.excerpt && <p className="mt-2 text-lg text-muted-foreground">{form.excerpt}</p>}
           <div className="mt-6">
-            <MarkdownPreview value={form.content} />
+            <TiptapViewer html={form.content} />
           </div>
         </Card>
       ) : (
@@ -174,11 +174,11 @@ export function BlogEditor({ mode, postId }: Props) {
 
           <Card className="rounded-2xl p-4 md:p-6">
             <Label className="mb-2 block">Агуулга *</Label>
-            <RichMarkdownEditor
+            <TiptapEditor
               value={form.content}
-              onChange={(v) => setForm({ ...form, content: v })}
+              onChange={(v: string) => setForm({ ...form, content: v })}
             />
-            <p className="mt-2 text-xs text-muted-foreground">{form.content.length} тэмдэгт · Markdown дэмжинэ</p>
+            <p className="mt-2 text-xs text-muted-foreground">WYSIWYG — яг харагдах байдлаар нь бичээрэй</p>
           </Card>
         </div>
       )}
