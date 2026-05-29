@@ -75,11 +75,17 @@ export async function createDeliveryRequest(args: CreateDeliveryRequestArgs) {
     .maybeSingle();
   if (!merchant) return { ok: false as const, error: "Дэлгүүр олдсонгүй" };
 
+  // Платформын Swift Delivery Hub глобал тохиргоо байгаа эсэх
+  const swiftConfigured = !!(process.env.SWIFT_DELIVERY_API_URL && process.env.SWIFT_DELIVERY_API_KEY);
+  const merchantMode = (merchant as any).delivery_mode as string | null;
+  // Default: Swift тохируулсан бол external, мерчант "local" гэж тусгайлан сонгосон үед л local үлдээнэ
   const mode: DeliveryMode =
     modeOverride ??
-    ((merchant as any).delivery_mode === "swift" || (merchant as any).delivery_mode === "external"
-      ? "external"
-      : "local");
+    (merchantMode === "local"
+      ? "local"
+      : merchantMode === "swift" || merchantMode === "external" || swiftConfigured
+        ? "external"
+        : "local");
 
   const { data: created, error: insErr } = await supabaseAdmin
     .from("delivery_requests")
