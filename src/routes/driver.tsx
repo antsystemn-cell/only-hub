@@ -149,7 +149,11 @@ function DriverPage() {
                   )}
                   {["assigned", "picked_up", "in_transit"].includes(dr.status) && (
                     <>
-                      <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700" onClick={() => updateMut.mutate({ id: dr.id, status: "delivered" })}>
+                      <Button
+                        size="sm"
+                        className="bg-emerald-600 hover:bg-emerald-700"
+                        onClick={() => setAskCash({ id: dr.id })}
+                      >
                         Хүргэсэн
                       </Button>
                       <Button size="sm" variant="destructive" onClick={() => updateMut.mutate({ id: dr.id, status: "failed" })}>
