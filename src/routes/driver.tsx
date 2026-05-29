@@ -63,13 +63,33 @@ function DriverPage() {
   const items = (data?.items ?? []) as any[];
 
   const updateMut = useMutation({
-    mutationFn: (args: { id: string; status: DeliveryStatus }) =>
-      updateFn({ data: { deliveryRequestId: args.id, status: args.status } }),
-    onSuccess: (r: any) => {
-      if (r?.ok) { toast.success("Шинэчлэв"); refetch(); }
-      else toast.error(r?.error ?? "Алдаа");
+    mutationFn: (args: { id: string; status: DeliveryStatus; collectedInCash?: boolean }) =>
+      updateFn({
+        data: {
+          deliveryRequestId: args.id,
+          status: args.status,
+          collectedInCash: args.collectedInCash,
+        },
+      }),
+    onSuccess: (r: any, vars) => {
+      if (r?.ok) {
+        if (vars.status === "delivered") {
+          toast.success(
+            vars.collectedInCash
+              ? "Хүргэгдсэн, төлбөр газар дээр авлаа"
+              : "Хүргэгдсэн. Хэрэглэгч рүү төлбөрийн SMS илгээгдлээ.",
+          );
+        } else {
+          toast.success("Шинэчлэв");
+        }
+        refetch();
+      } else {
+        toast.error(r?.error ?? "Алдаа");
+      }
     },
   });
+
+  const [askCash, setAskCash] = useState<{ id: string } | null>(null);
 
   if (loading || !user) {
     return <div className="flex min-h-screen items-center justify-center text-muted-foreground">Уншиж байна...</div>;
