@@ -26,7 +26,7 @@ import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import { useServerFn } from "@tanstack/react-start";
 import { sendOrderToDelivery } from "@/lib/delivery.functions";
-import { bulkUpdateOrderStatus, bulkMarkPaid, bulkCreateDelivery } from "@/lib/orders-bulk.functions";
+import { bulkUpdateOrderStatus, bulkMarkPaid, bulkCreateDelivery, bulkDeleteOrders } from "@/lib/orders-bulk.functions";
 
 export const DELIVERY_STATUS_LABELS: Record<string, string> = {
   submitted: "Илгээгдсэн",
@@ -72,6 +72,7 @@ function OrdersPage() {
   const bulkStatusFn = useServerFn(bulkUpdateOrderStatus);
   const bulkPaidFn = useServerFn(bulkMarkPaid);
   const bulkDeliveryFn = useServerFn(bulkCreateDelivery);
+  const bulkDeleteFn = useServerFn(bulkDeleteOrders);
 
   const { data: orders = [] } = useQuery({
     queryKey: ["orders", merchantId],
@@ -221,6 +222,25 @@ function OrdersPage() {
                 try { const r = await bulkDeliveryFn({ data: { ids } }); toast.success(`${r.count} хүргэлт үүсгэв`); qc.invalidateQueries({ queryKey: ["orders", merchantId] }); setSelected(new Set()); }
                 catch (e: any) { toast.error(e?.message ?? "Алдаа"); }
               }}><Truck className="mr-1 h-4 w-4" /> Хүргэлт үүсгэх</Button>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button size="sm" variant="outline" className="text-destructive hover:text-destructive"><Trash2 className="mr-1 h-4 w-4" /> Устгах</Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Сонгосон {selected.size} захиалгыг устгах уу?</AlertDialogTitle>
+                    <AlertDialogDescription>Энэ үйлдлийг буцаах боломжгүй. Холбогдох хүргэлт, төлбөрийн хүсэлтүүд хамт устана.</AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Болих</AlertDialogCancel>
+                    <AlertDialogAction onClick={async () => {
+                      const ids = Array.from(selected);
+                      try { const r = await bulkDeleteFn({ data: { ids } }); toast.success(`${r.count} захиалга устгалаа`); qc.invalidateQueries({ queryKey: ["orders", merchantId] }); setSelected(new Set()); }
+                      catch (e: any) { toast.error(e?.message ?? "Алдаа"); }
+                    }}>Устгах</AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
               <Button size="sm" variant="ghost" onClick={() => setSelected(new Set())}><X className="mr-1 h-3 w-3" /> Цуцлах</Button>
             </>
           )}

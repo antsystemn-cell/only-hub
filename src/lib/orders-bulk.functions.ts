@@ -83,3 +83,26 @@ export const bulkCreateDelivery = createServerFn({ method: "POST" })
     }
     return { ok: true as const, count: ok, errors };
   });
+
+export const bulkDeleteOrders = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => Ids.parse(d))
+  .handler(async ({ data, context }) => {
+    await assertMerchantAccess(context.userId, data.ids);
+    // Clean up dependent rows first to avoid FK constraint failures
+    const { data: drs } = await supabaseAdmin
+      .from("delivery_requests")
+      .select("id")
+      .in("order_id", data.ids);
+    const drIds = (drs ?? []).map((r) => r.id);
+    if (drIds.length) {
+      await supabaseAdmin.from("delivery_status_history").delete().in("delivery_request_id", drIds);
+      await supabaseAdmin.from("delivery_webhooks").delete().in("delivery_request_id", drIds);
+      await supabaseAdmin.from("delivery_requests").delete().in("id", drIds);
+    }
+    await supabaseAdmin.from("payment_requests").delete().in("order_id", data.ids);
+    await supabaseAdmin.from("platform_transactions").delete().in("order_id", data.ids);
+    const { error } = await supabaseAdmin.from("orders").delete().in("id", data.ids);
+    if (error) throw new Error(error.message);
+    return { ok: true as const, count: data.ids.length };
+  });
