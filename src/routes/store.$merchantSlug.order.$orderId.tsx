@@ -55,6 +55,14 @@ function OrderConfirmationPage() {
       (await supabase.from("orders").select("*").eq("id", orderId).maybeSingle()).data,
   });
 
+  const getPaymentReqFn = useServerFn(getPaymentRequestByOrderFn);
+  const { data: prRes } = useQuery({
+    queryKey: ["payment-request", orderId],
+    queryFn: () => getPaymentReqFn({ data: { orderId } }),
+    refetchInterval: (q) => ((q.state.data as any)?.request?.status === "paid" ? false : 6000),
+  });
+  const paymentReq: any = (prRes as any)?.request;
+
   if (!order) {
     return (
       <div className="flex min-h-screen items-center justify-center">
