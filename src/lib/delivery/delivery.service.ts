@@ -148,8 +148,9 @@ export async function updateDeliveryStatus(args: {
   status: DeliveryStatus;
   note?: string | null;
   driverId?: string | null;
+  collectedInCash?: boolean;
 }) {
-  const { deliveryRequestId, status, note, driverId } = args;
+  const { deliveryRequestId, status, note, driverId, collectedInCash } = args;
   const patch: any = { status, last_error: status === "failed" ? note : null };
   if (driverId !== undefined) patch.driver_id = driverId;
   if (status === "assigned") patch.assigned_at = new Date().toISOString();
@@ -170,6 +171,22 @@ export async function updateDeliveryStatus(args: {
       .from("delivery_status_history")
       .insert({ delivery_request_id: deliveryRequestId, status, note });
   }
+
+  // Хүргэлт амжилттай төгсөхөд автомат төлбөр цуглуулалт асаана.
+  if (status === "delivered" && data?.order_id) {
+    try {
+      const { onDeliveryCompleted } = await import(
+        "@/lib/payment-collection/collection.service"
+      );
+      await onDeliveryCompleted({
+        orderId: data.order_id,
+        collectedInCash: !!collectedInCash,
+      });
+    } catch (e) {
+      console.error("[delivery] onDeliveryCompleted failed", e);
+    }
+  }
+
   return { ok: true as const, deliveryRequest: data };
 }
 

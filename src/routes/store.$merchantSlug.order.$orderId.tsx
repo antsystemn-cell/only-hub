@@ -10,8 +10,9 @@ import { Badge } from "@/components/ui/badge";
 import { fmtMnt, PAYMENT_STATUS_LABELS, STATUS_LABELS, STATUS_TONE } from "@/lib/format";
 import { getOrderStatus, retryQpayInvoice } from "@/lib/orders.functions";
 import { getDeliveryHistoryByOrder } from "@/lib/delivery/delivery.functions";
+import { getPaymentRequestByOrderFn } from "@/lib/payment-collection/collection.functions";
 import { DeliveryTimeline } from "@/components/DeliveryTimeline";
-import { AlertTriangle, CheckCircle2, Clock, Loader2, RefreshCw } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Clock, Loader2, RefreshCw, Banknote } from "lucide-react";
 
 export const Route = createFileRoute("/store/$merchantSlug/order/$orderId")({
   component: OrderConfirmationPage,
@@ -53,6 +54,14 @@ function OrderConfirmationPage() {
     queryFn: async () =>
       (await supabase.from("orders").select("*").eq("id", orderId).maybeSingle()).data,
   });
+
+  const getPaymentReqFn = useServerFn(getPaymentRequestByOrderFn);
+  const { data: prRes } = useQuery({
+    queryKey: ["payment-request", orderId],
+    queryFn: () => getPaymentReqFn({ data: { orderId } }),
+    refetchInterval: (q) => ((q.state.data as any)?.request?.status === "paid" ? false : 6000),
+  });
+  const paymentReq: any = (prRes as any)?.request;
 
   if (!order) {
     return (
@@ -162,6 +171,20 @@ function OrderConfirmationPage() {
               <p className="text-xs text-muted-foreground">
                 Төлбөр төлөгдмөгц энэ хуудас автоматаар шинэчлэгдэнэ.
               </p>
+            </div>
+          )}
+
+          {!paid && paymentReq?.payment_provider === "bank_transfer" && paymentReq?.bank_account && (
+            <div className="mt-6 rounded-xl border bg-card p-5 text-left text-sm">
+              <div className="mb-3 flex items-center gap-2 font-semibold">
+                <Banknote className="h-4 w-4 text-emerald-600" /> Банкаар төлөх
+              </div>
+              <div className="space-y-1.5 text-sm">
+                <div className="flex justify-between"><span className="text-muted-foreground">Банк:</span><span className="font-medium">{paymentReq.bank_account.bank ?? "—"}</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">Дансны дугаар:</span><span className="font-mono font-semibold">{paymentReq.bank_account.account_number ?? "—"}</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">Хүлээн авагч:</span><span className="font-medium">{paymentReq.bank_account.account_name ?? "Only Hub"}</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">Гүйлгээний утга:</span><span className="font-mono font-semibold">{order.external_ref ?? order.id.slice(0, 8)}</span></div>
+              </div>
             </div>
           )}
 

@@ -66,6 +66,7 @@ export const updateDeliveryStatusFn = createServerFn({ method: "POST" })
         status: z.enum(STATUS_VALUES as [string, ...string[]]),
         note: z.string().max(500).optional().nullable(),
         driverId: z.string().uuid().optional().nullable(),
+        collectedInCash: z.boolean().optional(),
       })
       .parse(d),
   )
@@ -73,7 +74,6 @@ export const updateDeliveryStatusFn = createServerFn({ method: "POST" })
     const { userId } = context;
     const { allowed, isDriver } = await assertStaffOfDeliveryRequest(userId, data.deliveryRequestId);
     if (!allowed) return { ok: false as const, error: "Эрх хүрэхгүй" };
-    // Driver зөвхөн picked_up / in_transit / delivered / failed-ийг өөрчилнө
     if (
       isDriver &&
       !["picked_up", "in_transit", "delivered", "failed"].includes(data.status)
@@ -85,6 +85,7 @@ export const updateDeliveryStatusFn = createServerFn({ method: "POST" })
       status: data.status as DeliveryStatus,
       note: data.note ?? null,
       driverId: data.driverId ?? undefined,
+      collectedInCash: data.collectedInCash,
     });
   });
 

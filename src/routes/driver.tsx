@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { createServerFn } from "@tanstack/react-start";
@@ -9,8 +9,18 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { useAuth } from "@/hooks/use-auth";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { Truck, LogOut } from "lucide-react";
+import { Truck, LogOut, Banknote } from "lucide-react";
 import { DeliveryStatusBadge } from "@/components/DeliveryTimeline";
 import { updateDeliveryStatusFn } from "@/lib/delivery/delivery.functions";
 import type { DeliveryStatus } from "@/lib/delivery/delivery.types";
@@ -53,13 +63,33 @@ function DriverPage() {
   const items = (data?.items ?? []) as any[];
 
   const updateMut = useMutation({
-    mutationFn: (args: { id: string; status: DeliveryStatus }) =>
-      updateFn({ data: { deliveryRequestId: args.id, status: args.status } }),
-    onSuccess: (r: any) => {
-      if (r?.ok) { toast.success("Шинэчлэв"); refetch(); }
-      else toast.error(r?.error ?? "Алдаа");
+    mutationFn: (args: { id: string; status: DeliveryStatus; collectedInCash?: boolean }) =>
+      updateFn({
+        data: {
+          deliveryRequestId: args.id,
+          status: args.status,
+          collectedInCash: args.collectedInCash,
+        },
+      }),
+    onSuccess: (r: any, vars) => {
+      if (r?.ok) {
+        if (vars.status === "delivered") {
+          toast.success(
+            vars.collectedInCash
+              ? "Хүргэгдсэн, төлбөр газар дээр авлаа"
+              : "Хүргэгдсэн. Хэрэглэгч рүү төлбөрийн SMS илгээгдлээ.",
+          );
+        } else {
+          toast.success("Шинэчлэв");
+        }
+        refetch();
+      } else {
+        toast.error(r?.error ?? "Алдаа");
+      }
     },
   });
+
+  const [askCash, setAskCash] = useState<{ id: string } | null>(null);
 
   if (loading || !user) {
     return <div className="flex min-h-screen items-center justify-center text-muted-foreground">Уншиж байна...</div>;
@@ -119,7 +149,11 @@ function DriverPage() {
                   )}
                   {["assigned", "picked_up", "in_transit"].includes(dr.status) && (
                     <>
-                      <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700" onClick={() => updateMut.mutate({ id: dr.id, status: "delivered" })}>
+                      <Button
+                        size="sm"
+                        className="bg-emerald-600 hover:bg-emerald-700"
+                        onClick={() => setAskCash({ id: dr.id })}
+                      >
                         Хүргэсэн
                       </Button>
                       <Button size="sm" variant="destructive" onClick={() => updateMut.mutate({ id: dr.id, status: "failed" })}>
@@ -133,6 +167,46 @@ function DriverPage() {
           </div>
         )}
       </div>
+
+      <AlertDialog open={!!askCash} onOpenChange={(o) => !o && setAskCash(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <Banknote className="h-5 w-5 text-emerald-600" />
+              Төлбөр газар дээрээ авсан уу?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Тийм бол захиалга шууд "Төлөгдсөн" болно. Үгүй бол хэрэглэгч рүү
+              QPay/банкны мэдээлэлтэй SMS автоматаар илгээгдэнэ.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex flex-col gap-2 sm:flex-row">
+            <AlertDialogCancel>Болих</AlertDialogCancel>
+            <Button
+              variant="outline"
+              onClick={() => {
+                if (askCash) {
+                  updateMut.mutate({ id: askCash.id, status: "delivered", collectedInCash: false });
+                  setAskCash(null);
+                }
+              }}
+            >
+              Үгүй — SMS илгээ
+            </Button>
+            <AlertDialogAction
+              className="bg-emerald-600 hover:bg-emerald-700"
+              onClick={() => {
+                if (askCash) {
+                  updateMut.mutate({ id: askCash.id, status: "delivered", collectedInCash: true });
+                  setAskCash(null);
+                }
+              }}
+            >
+              Тийм — авсан
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

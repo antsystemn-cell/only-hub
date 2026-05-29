@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import {
   LayoutDashboard, Store, BarChart3, ShoppingCart,
-  Users, Image as ImageIcon, FileText, LogOut, Truck, Settings2,
+  Users, Image as ImageIcon, FileText, LogOut, Truck, Settings2, Wallet,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
@@ -19,6 +19,7 @@ const NAV: NavItem[] = [
   { to: "/admin/analytics", label: "Аналитик", icon: BarChart3 },
   { to: "/admin/orders", label: "Захиалга", icon: ShoppingCart },
   { to: "/admin/delivery", label: "Хүргэлт", icon: Truck },
+  { to: "/admin/payments", label: "Төлбөр цуглуулалт", icon: Wallet },
   { to: "/admin/users", label: "Хэрэглэгч", icon: Users },
   { to: "/admin/banners", label: "Баннер", icon: ImageIcon },
   { to: "/admin/blog", label: "Блог", icon: FileText },
