@@ -15,7 +15,7 @@ import {
 import { toast } from "sonner";
 import { Plus, Pencil, Trash2, Eye, Globe, FileText } from "lucide-react";
 
-export const Route = createFileRoute("/admin/blog")({ component: AdminBlogPage });
+export const Route = createFileRoute("/admin/blog/")({ component: AdminBlogPage });
 
 function AdminBlogPage() {
   const { isPlatformAdmin } = useAuth();
