@@ -9,9 +9,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { ArrowLeft, Save, Globe, Eye } from "lucide-react";
-
-type Props = { mode: "new" | "edit"; postId?: string };
+import { ArrowLeft, Save, Globe, Eye, Upload } from "lucide-react";
+import { RichMarkdownEditor, MarkdownPreview } from "@/components/admin/RichMarkdownEditor";
+import { uploadOptimized } from "@/lib/image";
 
 const EMPTY_POST = {
   title: "", slug: "", excerpt: "", content: "", cover_image: "",
