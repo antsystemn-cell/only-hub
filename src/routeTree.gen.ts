@@ -13,10 +13,10 @@ import { Route as StoresRouteImport } from './routes/stores'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as DriverRouteImport } from './routes/driver'
-import { Route as BlogRouteImport } from './routes/blog'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AccountRouteImport } from './routes/account'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as BlogIndexRouteImport } from './routes/blog.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as StoreMerchantSlugRouteImport } from './routes/store.$merchantSlug'
 import { Route as MerchantRegisterRouteImport } from './routes/merchant.register'
@@ -69,11 +69,6 @@ const DriverRoute = DriverRouteImport.update({
   path: '/driver',
   getParentRoute: () => rootRouteImport,
 } as any)
-const BlogRoute = BlogRouteImport.update({
-  id: '/blog',
-  path: '/blog',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const AdminRoute = AdminRouteImport.update({
   id: '/admin',
   path: '/admin',
@@ -87,6 +82,11 @@ const AccountRoute = AccountRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BlogIndexRoute = BlogIndexRouteImport.update({
+  id: '/blog/',
+  path: '/blog/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminIndexRoute = AdminIndexRouteImport.update({
@@ -115,9 +115,9 @@ const MerchantDashboardRoute = MerchantDashboardRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any)
 const BlogSlugRoute = BlogSlugRouteImport.update({
-  id: '/$slug',
-  path: '/$slug',
-  getParentRoute: () => BlogRoute,
+  id: '/blog/$slug',
+  path: '/blog/$slug',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AdminUsersRoute = AdminUsersRouteImport.update({
   id: '/users',
@@ -257,7 +257,6 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/account': typeof AccountRouteWithChildren
   '/admin': typeof AdminRouteWithChildren
-  '/blog': typeof BlogRouteWithChildren
   '/driver': typeof DriverRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
@@ -276,6 +275,7 @@ export interface FileRoutesByFullPath {
   '/merchant/register': typeof MerchantRegisterRoute
   '/store/$merchantSlug': typeof StoreMerchantSlugRouteWithChildren
   '/admin/': typeof AdminIndexRoute
+  '/blog/': typeof BlogIndexRoute
   '/admin/blog/$id': typeof AdminBlogIdRoute
   '/admin/blog/new': typeof AdminBlogNewRoute
   '/merchant/dashboard/chatbot': typeof MerchantDashboardChatbotRoute
@@ -297,7 +297,6 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/account': typeof AccountRouteWithChildren
-  '/blog': typeof BlogRouteWithChildren
   '/driver': typeof DriverRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
@@ -315,6 +314,7 @@ export interface FileRoutesByTo {
   '/merchant/register': typeof MerchantRegisterRoute
   '/store/$merchantSlug': typeof StoreMerchantSlugRouteWithChildren
   '/admin': typeof AdminIndexRoute
+  '/blog': typeof BlogIndexRoute
   '/admin/blog/$id': typeof AdminBlogIdRoute
   '/admin/blog/new': typeof AdminBlogNewRoute
   '/merchant/dashboard/chatbot': typeof MerchantDashboardChatbotRoute
@@ -338,7 +338,6 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/account': typeof AccountRouteWithChildren
   '/admin': typeof AdminRouteWithChildren
-  '/blog': typeof BlogRouteWithChildren
   '/driver': typeof DriverRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
@@ -357,6 +356,7 @@ export interface FileRoutesById {
   '/merchant/register': typeof MerchantRegisterRoute
   '/store/$merchantSlug': typeof StoreMerchantSlugRouteWithChildren
   '/admin/': typeof AdminIndexRoute
+  '/blog/': typeof BlogIndexRoute
   '/admin/blog/$id': typeof AdminBlogIdRoute
   '/admin/blog/new': typeof AdminBlogNewRoute
   '/merchant/dashboard/chatbot': typeof MerchantDashboardChatbotRoute
@@ -381,7 +381,6 @@ export interface FileRouteTypes {
     | '/'
     | '/account'
     | '/admin'
-    | '/blog'
     | '/driver'
     | '/login'
     | '/register'
@@ -400,6 +399,7 @@ export interface FileRouteTypes {
     | '/merchant/register'
     | '/store/$merchantSlug'
     | '/admin/'
+    | '/blog/'
     | '/admin/blog/$id'
     | '/admin/blog/new'
     | '/merchant/dashboard/chatbot'
@@ -421,7 +421,6 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/account'
-    | '/blog'
     | '/driver'
     | '/login'
     | '/register'
@@ -439,6 +438,7 @@ export interface FileRouteTypes {
     | '/merchant/register'
     | '/store/$merchantSlug'
     | '/admin'
+    | '/blog'
     | '/admin/blog/$id'
     | '/admin/blog/new'
     | '/merchant/dashboard/chatbot'
@@ -461,7 +461,6 @@ export interface FileRouteTypes {
     | '/'
     | '/account'
     | '/admin'
-    | '/blog'
     | '/driver'
     | '/login'
     | '/register'
@@ -480,6 +479,7 @@ export interface FileRouteTypes {
     | '/merchant/register'
     | '/store/$merchantSlug'
     | '/admin/'
+    | '/blog/'
     | '/admin/blog/$id'
     | '/admin/blog/new'
     | '/merchant/dashboard/chatbot'
@@ -503,15 +503,16 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AccountRoute: typeof AccountRouteWithChildren
   AdminRoute: typeof AdminRouteWithChildren
-  BlogRoute: typeof BlogRouteWithChildren
   DriverRoute: typeof DriverRoute
   LoginRoute: typeof LoginRoute
   RegisterRoute: typeof RegisterRoute
   StoresRoute: typeof StoresRoute
+  BlogSlugRoute: typeof BlogSlugRoute
   MerchantDashboardRoute: typeof MerchantDashboardRouteWithChildren
   MerchantLoginRoute: typeof MerchantLoginRoute
   MerchantRegisterRoute: typeof MerchantRegisterRoute
   StoreMerchantSlugRoute: typeof StoreMerchantSlugRouteWithChildren
+  BlogIndexRoute: typeof BlogIndexRoute
   ApiPublicDeliveryWebhookRoute: typeof ApiPublicDeliveryWebhookRoute
   ApiPublicQpayWebhookRoute: typeof ApiPublicQpayWebhookRoute
 }
@@ -546,13 +547,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DriverRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/blog': {
-      id: '/blog'
-      path: '/blog'
-      fullPath: '/blog'
-      preLoaderRoute: typeof BlogRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/admin': {
       id: '/admin'
       path: '/admin'
@@ -572,6 +566,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/blog/': {
+      id: '/blog/'
+      path: '/blog'
+      fullPath: '/blog/'
+      preLoaderRoute: typeof BlogIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/': {
@@ -611,10 +612,10 @@ declare module '@tanstack/react-router' {
     }
     '/blog/$slug': {
       id: '/blog/$slug'
-      path: '/$slug'
+      path: '/blog/$slug'
       fullPath: '/blog/$slug'
       preLoaderRoute: typeof BlogSlugRouteImport
-      parentRoute: typeof BlogRoute
+      parentRoute: typeof rootRouteImport
     }
     '/admin/users': {
       id: '/admin/users'
@@ -835,16 +836,6 @@ const AdminRouteChildren: AdminRouteChildren = {
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
-interface BlogRouteChildren {
-  BlogSlugRoute: typeof BlogSlugRoute
-}
-
-const BlogRouteChildren: BlogRouteChildren = {
-  BlogSlugRoute: BlogSlugRoute,
-}
-
-const BlogRouteWithChildren = BlogRoute._addFileChildren(BlogRouteChildren)
-
 interface MerchantDashboardRouteChildren {
   MerchantDashboardChatbotRoute: typeof MerchantDashboardChatbotRoute
   MerchantDashboardDeliveryRoute: typeof MerchantDashboardDeliveryRoute
@@ -892,18 +883,29 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AccountRoute: AccountRouteWithChildren,
   AdminRoute: AdminRouteWithChildren,
-  BlogRoute: BlogRouteWithChildren,
   DriverRoute: DriverRoute,
   LoginRoute: LoginRoute,
   RegisterRoute: RegisterRoute,
   StoresRoute: StoresRoute,
+  BlogSlugRoute: BlogSlugRoute,
   MerchantDashboardRoute: MerchantDashboardRouteWithChildren,
   MerchantLoginRoute: MerchantLoginRoute,
   MerchantRegisterRoute: MerchantRegisterRoute,
   StoreMerchantSlugRoute: StoreMerchantSlugRouteWithChildren,
+  BlogIndexRoute: BlogIndexRoute,
   ApiPublicDeliveryWebhookRoute: ApiPublicDeliveryWebhookRoute,
   ApiPublicQpayWebhookRoute: ApiPublicQpayWebhookRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
