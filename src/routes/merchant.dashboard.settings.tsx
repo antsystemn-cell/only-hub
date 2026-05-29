@@ -255,14 +255,19 @@ function PaymentsTab() {
     onError: (e: any) => toast.error(e.message),
   });
 
-  const startEdit = (p: any) => {
+  const startEdit = async (p: any) => {
     setEditId(p.id);
+    let creds: Record<string, string> = {};
+    try {
+      const res = await loadCreds({ data: { providerId: p.id } });
+      if (res.ok) creds = res.credentials ?? {};
+    } catch {}
     setForm({
       provider_type: p.provider_type,
       name: p.name,
       icon: p.icon ?? "💳",
       is_active: !!p.is_active,
-      credentials: p.credentials ?? {},
+      credentials: creds,
       description: p.description ?? "",
     });
     if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
