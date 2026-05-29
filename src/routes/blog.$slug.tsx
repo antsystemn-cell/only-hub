@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { MarkdownPreview } from "@/components/admin/RichMarkdownEditor";
+import { TiptapViewer } from "@/components/admin/TiptapEditor";
 
 export const Route = createFileRoute("/blog/$slug")({ component: BlogPostPage });
 

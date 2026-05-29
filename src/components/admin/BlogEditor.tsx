@@ -174,11 +174,11 @@ export function BlogEditor({ mode, postId }: Props) {
 
           <Card className="rounded-2xl p-4 md:p-6">
             <Label className="mb-2 block">Агуулга *</Label>
-            <RichMarkdownEditor
+            <TiptapEditor
               value={form.content}
-              onChange={(v) => setForm({ ...form, content: v })}
+              onChange={(v: string) => setForm({ ...form, content: v })}
             />
-            <p className="mt-2 text-xs text-muted-foreground">{form.content.length} тэмдэгт · Markdown дэмжинэ</p>
+            <p className="mt-2 text-xs text-muted-foreground">WYSIWYG — яг харагдах байдлаар нь бичээрэй</p>
           </Card>
         </div>
       )}
