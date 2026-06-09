@@ -244,10 +244,14 @@ export async function onDeliveryCompleted(args: {
   }
 
   const auto = await loadAutoSettings();
-  if (!auto.enabled) return { ok: true as const, disabled: true };
+  if (!auto.enabled) {
+    console.log("[collection] disabled by platform_settings", orderId);
+    return { ok: true as const, disabled: true };
+  }
 
   const found = await findOrCreateRequest(orderId);
   if (!found.ok || !found.request || !found.order) {
+    console.error("[collection] findOrCreateRequest failed", orderId, found.error);
     return { ok: false as const, error: found.error ?? "payment_request үүсэхгүй" };
   }
   let req = found.request;
@@ -255,11 +259,22 @@ export async function onDeliveryCompleted(args: {
 
   // Generate invoice if missing
   if (!req.invoice_id && req.payment_provider !== "bank_transfer") {
-    req = await generateInvoiceFor(req, order);
+    try {
+      req = await generateInvoiceFor(req, order);
+    } catch (e) {
+      console.error("[collection] generateInvoiceFor failed", orderId, e);
+    }
   }
 
-  // Send SMS (idempotent)
-  await sendRequestSms(req, order, { force: false });
+  // Send SMS (idempotent). Хэрэв өмнө явсан бол алгасна. Алдаа гарвал лог үлдээнэ.
+  const smsRes = await sendRequestSms(req, order, { force: false });
+  if (!smsRes.ok) {
+    console.error("[collection] SMS failed", orderId, smsRes.error);
+  } else if (smsRes.skipped) {
+    console.log("[collection] SMS already sent (skipped)", orderId);
+  } else {
+    console.log("[collection] SMS sent", orderId, order.phone);
+  }
 
   // Update order delivery_status hint
   await supabaseAdmin
@@ -268,8 +283,16 @@ export async function onDeliveryCompleted(args: {
     .eq("id", orderId)
     .neq("payment_status", "confirmed");
 
-  return { ok: true as const, paymentRequestId: req.id };
+  return {
+    ok: true as const,
+    paymentRequestId: req.id,
+    smsSent: !!smsRes.ok && !smsRes.skipped,
+    smsSkipped: !!smsRes.skipped,
+    smsError: smsRes.ok ? null : smsRes.error ?? null,
+    provider: req.payment_provider,
+  };
 }
+
 
 export async function resendCollectionSms(orderId: string) {
   const { data: req } = await supabaseAdmin
