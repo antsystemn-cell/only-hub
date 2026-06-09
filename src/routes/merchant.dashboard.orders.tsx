@@ -383,10 +383,16 @@ function OrderRow({ order, checked, onCheck, onStatus, onPayment, productImages 
     qc.invalidateQueries({ queryKey: ["orders", primaryMerchantId] });
   };
 
+  const itemList = (order.items as any[] | null) ?? [];
+  const itemImageUrl = (it: any): string | null =>
+    it?.image_url || it?.thumbnail_url || (it?.product_id ? productImages[it.product_id] : null) || null;
+  const previewItems = itemList.slice(0, 3);
+  const extraCount = Math.max(0, itemList.length - previewItems.length);
+
   return (
     <div className="rounded-xl border border-border bg-card">
-      <div className="flex items-center gap-3 p-3">
-        <Checkbox checked={checked} onCheckedChange={(v) => onCheck(!!v)} />
+      <div className="flex items-start gap-3 p-3 sm:items-center">
+        <Checkbox className="mt-1 sm:mt-0" checked={checked} onCheckedChange={(v) => onCheck(!!v)} />
         <div className="flex-1 min-w-0">
           <div className="flex flex-wrap items-center gap-2">
             <span className="font-medium">{order.external_ref ?? order.id.slice(0, 8)}</span>
@@ -401,6 +407,41 @@ function OrderRow({ order, checked, onCheck, onStatus, onPayment, productImages 
               </span>
             )}
           </div>
+          {itemList.length > 0 && (
+            <div className="mt-2 flex items-center gap-2">
+              <div className="flex -space-x-2">
+                {previewItems.map((it: any, i: number) => {
+                  const url = itemImageUrl(it);
+                  return (
+                    <div
+                      key={i}
+                      className="h-8 w-8 overflow-hidden rounded-md border-2 border-card bg-muted ring-0"
+                      title={it?.name}
+                    >
+                      {url ? (
+                        <img
+                          src={url}
+                          alt={it?.name ?? ""}
+                          loading="lazy"
+                          decoding="async"
+                          className="h-full w-full object-cover"
+                        />
+                      ) : null}
+                    </div>
+                  );
+                })}
+                {extraCount > 0 && (
+                  <div className="flex h-8 w-8 items-center justify-center rounded-md border-2 border-card bg-muted text-[10px] font-medium text-muted-foreground">
+                    +{extraCount}
+                  </div>
+                )}
+              </div>
+              <span className="truncate text-xs text-muted-foreground">
+                {previewItems.map((it: any) => it?.name).filter(Boolean).join(", ")}
+                {extraCount > 0 ? ` …` : ""}
+              </span>
+            </div>
+          )}
           <div className="mt-1 text-xs text-muted-foreground">{order.phone} • {new Date(order.created_at).toLocaleString("mn-MN")}</div>
         </div>
         <div className="text-right">
