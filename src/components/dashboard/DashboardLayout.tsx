@@ -15,6 +15,7 @@ const TABS: Tab[] = [
   { to: "/merchant/dashboard/products", label: "Бараа", icon: Package },
   { to: "/merchant/dashboard/orders", label: "Захиалга", icon: ShoppingCart },
   { to: "/merchant/dashboard/delivery", label: "Хүргэлт", icon: Truck },
+  { to: "/merchant/dashboard/onshop-delivery", label: "ON Shop хүргэлт", icon: Truck },
   { to: "/merchant/dashboard/users", label: "Үйлчлүүлэгч", icon: Users },
   { to: "/merchant/dashboard/staff", label: "Ажилтан / Эрх", icon: ShieldCheck },
   { to: "/merchant/dashboard/chatbot", label: "AI Чатбот", icon: Bot },
