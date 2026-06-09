@@ -82,6 +82,38 @@ function OrdersPage() {
     },
   });
 
+  // Collect unique product_ids across all visible orders to fetch thumbnails
+  // in a single query. Results are cached aggressively (30min staleTime) so
+  // re-renders/refetches don't re-download images and CDN bandwidth is saved.
+  const productIds = useMemo(() => {
+    const set = new Set<string>();
+    (orders as any[]).forEach((o) => {
+      (o.items as any[] | null)?.forEach((it) => {
+        if (it?.product_id) set.add(String(it.product_id));
+      });
+    });
+    return Array.from(set).sort();
+  }, [orders]);
+
+  const { data: productImages = {} } = useQuery<Record<string, string>>({
+    queryKey: ["order-product-images", merchantId, productIds.join(",")],
+    enabled: productIds.length > 0,
+    staleTime: 1000 * 60 * 30,
+    gcTime: 1000 * 60 * 60 * 2,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("products")
+        .select("id,thumbnail_url,image_url")
+        .in("id", productIds);
+      const map: Record<string, string> = {};
+      (data ?? []).forEach((p: any) => {
+        const url = p.thumbnail_url || p.image_url;
+        if (url) map[p.id] = url;
+      });
+      return map;
+    },
+  });
+
   const filtered = useMemo(() => orders.filter((o: any) => {
     if (search && !((o.phone ?? "").includes(search) || (o.external_ref ?? "").toLowerCase().includes(search.toLowerCase()))) return false;
     if (statusFilter !== "all" && o.status !== statusFilter) return false;
@@ -271,6 +303,7 @@ function OrdersPage() {
           ) : active.map((o: any) => (
             <OrderRow
               key={o.id} order={o}
+              productImages={productImages}
               checked={selected.has(o.id)}
               onCheck={(v) => {
                 const next = new Set(selected); v ? next.add(o.id) : next.delete(o.id); setSelected(next);
@@ -323,9 +356,10 @@ function OrdersPage() {
   );
 }
 
-function OrderRow({ order, checked, onCheck, onStatus, onPayment }: {
+function OrderRow({ order, checked, onCheck, onStatus, onPayment, productImages }: {
   order: any; checked: boolean; onCheck: (v: boolean) => void;
   onStatus: (s: string) => void; onPayment: (s: string) => void;
+  productImages: Record<string, string>;
 }) {
   const [open, setOpen] = useState(false);
   const [editingItems, setEditingItems] = useState(false);
@@ -349,10 +383,16 @@ function OrderRow({ order, checked, onCheck, onStatus, onPayment }: {
     qc.invalidateQueries({ queryKey: ["orders", primaryMerchantId] });
   };
 
+  const itemList = (order.items as any[] | null) ?? [];
+  const itemImageUrl = (it: any): string | null =>
+    it?.image_url || it?.thumbnail_url || (it?.product_id ? productImages[it.product_id] : null) || null;
+  const previewItems = itemList.slice(0, 3);
+  const extraCount = Math.max(0, itemList.length - previewItems.length);
+
   return (
     <div className="rounded-xl border border-border bg-card">
-      <div className="flex items-center gap-3 p-3">
-        <Checkbox checked={checked} onCheckedChange={(v) => onCheck(!!v)} />
+      <div className="flex items-start gap-3 p-3 sm:items-center">
+        <Checkbox className="mt-1 sm:mt-0" checked={checked} onCheckedChange={(v) => onCheck(!!v)} />
         <div className="flex-1 min-w-0">
           <div className="flex flex-wrap items-center gap-2">
             <span className="font-medium">{order.external_ref ?? order.id.slice(0, 8)}</span>
@@ -367,6 +407,41 @@ function OrderRow({ order, checked, onCheck, onStatus, onPayment }: {
               </span>
             )}
           </div>
+          {itemList.length > 0 && (
+            <div className="mt-2 flex items-center gap-2">
+              <div className="flex -space-x-2">
+                {previewItems.map((it: any, i: number) => {
+                  const url = itemImageUrl(it);
+                  return (
+                    <div
+                      key={i}
+                      className="h-8 w-8 overflow-hidden rounded-md border-2 border-card bg-muted ring-0"
+                      title={it?.name}
+                    >
+                      {url ? (
+                        <img
+                          src={url}
+                          alt={it?.name ?? ""}
+                          loading="lazy"
+                          decoding="async"
+                          className="h-full w-full object-cover"
+                        />
+                      ) : null}
+                    </div>
+                  );
+                })}
+                {extraCount > 0 && (
+                  <div className="flex h-8 w-8 items-center justify-center rounded-md border-2 border-card bg-muted text-[10px] font-medium text-muted-foreground">
+                    +{extraCount}
+                  </div>
+                )}
+              </div>
+              <span className="truncate text-xs text-muted-foreground">
+                {previewItems.map((it: any) => it?.name).filter(Boolean).join(", ")}
+                {extraCount > 0 ? ` …` : ""}
+              </span>
+            </div>
+          )}
           <div className="mt-1 text-xs text-muted-foreground">{order.phone} • {new Date(order.created_at).toLocaleString("mn-MN")}</div>
         </div>
         <div className="text-right">
@@ -423,13 +498,29 @@ function OrderRow({ order, checked, onCheck, onStatus, onPayment }: {
                 </div>
               </div>
             ) : (
-              <ul className="space-y-1">
-                {(order.items as any[]).map((it, i) => (
-                  <li key={i} className="flex justify-between">
-                    <span>{it.name} × {it.quantity}{it.color ? ` • ${it.color}` : ""}{it.size ? ` • ${it.size}` : ""}</span>
-                    <span>{fmtMnt((it.price ?? 0) * (it.quantity ?? 1))}</span>
-                  </li>
-                ))}
+              <ul className="space-y-1.5">
+                {itemList.map((it: any, i: number) => {
+                  const url = itemImageUrl(it);
+                  return (
+                    <li key={i} className="flex items-center gap-2.5">
+                      <div className="h-10 w-10 shrink-0 overflow-hidden rounded-md bg-muted">
+                        {url ? (
+                          <img
+                            src={url}
+                            alt={it?.name ?? ""}
+                            loading="lazy"
+                            decoding="async"
+                            className="h-full w-full object-cover"
+                          />
+                        ) : null}
+                      </div>
+                      <span className="flex-1 min-w-0 truncate">
+                        {it.name} × {it.quantity}{it.color ? ` • ${it.color}` : ""}{it.size ? ` • ${it.size}` : ""}
+                      </span>
+                      <span className="shrink-0 tabular-nums">{fmtMnt((it.price ?? 0) * (it.quantity ?? 1))}</span>
+                    </li>
+                  );
+                })}
               </ul>
             )}
           </div>
