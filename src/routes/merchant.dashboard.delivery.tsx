@@ -2,7 +2,6 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useAuth } from "@/hooks/use-auth";
-import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { getOnshopPortalUrl } from "@/lib/delivery/onshop-portal.functions";
 import { Truck } from "lucide-react";
 
@@ -22,7 +21,7 @@ function MerchantOnshopDeliveryPage() {
   });
 
   return (
-    <DashboardLayout>
+    <>
       <div className="mb-4 flex items-center justify-between">
         <h1 className="flex items-center gap-2 text-2xl font-bold">
           <Truck className="h-6 w-6" /> Хүргэлт удирдах
@@ -63,6 +62,6 @@ function MerchantOnshopDeliveryPage() {
           title="ON Shop Delivery Portal"
         />
       )}
-    </DashboardLayout>
+    </>
   );
 }
