@@ -27,6 +27,7 @@ import { Route as AdminUsersRouteImport } from './routes/admin.users'
 import { Route as AdminSettingsRouteImport } from './routes/admin.settings'
 import { Route as AdminPaymentsRouteImport } from './routes/admin.payments'
 import { Route as AdminOrdersRouteImport } from './routes/admin.orders'
+import { Route as AdminOnshopDeliveryRouteImport } from './routes/admin.onshop-delivery'
 import { Route as AdminMerchantsRouteImport } from './routes/admin.merchants'
 import { Route as AdminDeliveryRouteImport } from './routes/admin.delivery'
 import { Route as AdminBannersRouteImport } from './routes/admin.banners'
@@ -41,6 +42,7 @@ import { Route as MerchantDashboardStaffRouteImport } from './routes/merchant.da
 import { Route as MerchantDashboardSettingsRouteImport } from './routes/merchant.dashboard.settings'
 import { Route as MerchantDashboardProductsRouteImport } from './routes/merchant.dashboard.products'
 import { Route as MerchantDashboardOrdersRouteImport } from './routes/merchant.dashboard.orders'
+import { Route as MerchantDashboardOnshopDeliveryRouteImport } from './routes/merchant.dashboard.onshop-delivery'
 import { Route as MerchantDashboardDeliveryRouteImport } from './routes/merchant.dashboard.delivery'
 import { Route as MerchantDashboardChatbotRouteImport } from './routes/merchant.dashboard.chatbot'
 import { Route as AdminBlogNewRouteImport } from './routes/admin.blog.new'
@@ -140,6 +142,11 @@ const AdminOrdersRoute = AdminOrdersRouteImport.update({
   path: '/orders',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminOnshopDeliveryRoute = AdminOnshopDeliveryRouteImport.update({
+  id: '/onshop-delivery',
+  path: '/onshop-delivery',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminMerchantsRoute = AdminMerchantsRouteImport.update({
   id: '/merchants',
   path: '/merchants',
@@ -213,6 +220,12 @@ const MerchantDashboardOrdersRoute = MerchantDashboardOrdersRouteImport.update({
   path: '/orders',
   getParentRoute: () => MerchantDashboardRoute,
 } as any)
+const MerchantDashboardOnshopDeliveryRoute =
+  MerchantDashboardOnshopDeliveryRouteImport.update({
+    id: '/onshop-delivery',
+    path: '/onshop-delivery',
+    getParentRoute: () => MerchantDashboardRoute,
+  } as any)
 const MerchantDashboardDeliveryRoute =
   MerchantDashboardDeliveryRouteImport.update({
     id: '/delivery',
@@ -272,6 +285,7 @@ export interface FileRoutesByFullPath {
   '/admin/banners': typeof AdminBannersRoute
   '/admin/delivery': typeof AdminDeliveryRoute
   '/admin/merchants': typeof AdminMerchantsRoute
+  '/admin/onshop-delivery': typeof AdminOnshopDeliveryRoute
   '/admin/orders': typeof AdminOrdersRoute
   '/admin/payments': typeof AdminPaymentsRoute
   '/admin/settings': typeof AdminSettingsRoute
@@ -287,6 +301,7 @@ export interface FileRoutesByFullPath {
   '/admin/blog/new': typeof AdminBlogNewRoute
   '/merchant/dashboard/chatbot': typeof MerchantDashboardChatbotRoute
   '/merchant/dashboard/delivery': typeof MerchantDashboardDeliveryRoute
+  '/merchant/dashboard/onshop-delivery': typeof MerchantDashboardOnshopDeliveryRoute
   '/merchant/dashboard/orders': typeof MerchantDashboardOrdersRoute
   '/merchant/dashboard/products': typeof MerchantDashboardProductsRoute
   '/merchant/dashboard/settings': typeof MerchantDashboardSettingsRoute
@@ -313,6 +328,7 @@ export interface FileRoutesByTo {
   '/admin/banners': typeof AdminBannersRoute
   '/admin/delivery': typeof AdminDeliveryRoute
   '/admin/merchants': typeof AdminMerchantsRoute
+  '/admin/onshop-delivery': typeof AdminOnshopDeliveryRoute
   '/admin/orders': typeof AdminOrdersRoute
   '/admin/payments': typeof AdminPaymentsRoute
   '/admin/settings': typeof AdminSettingsRoute
@@ -327,6 +343,7 @@ export interface FileRoutesByTo {
   '/admin/blog/new': typeof AdminBlogNewRoute
   '/merchant/dashboard/chatbot': typeof MerchantDashboardChatbotRoute
   '/merchant/dashboard/delivery': typeof MerchantDashboardDeliveryRoute
+  '/merchant/dashboard/onshop-delivery': typeof MerchantDashboardOnshopDeliveryRoute
   '/merchant/dashboard/orders': typeof MerchantDashboardOrdersRoute
   '/merchant/dashboard/products': typeof MerchantDashboardProductsRoute
   '/merchant/dashboard/settings': typeof MerchantDashboardSettingsRoute
@@ -355,6 +372,7 @@ export interface FileRoutesById {
   '/admin/banners': typeof AdminBannersRoute
   '/admin/delivery': typeof AdminDeliveryRoute
   '/admin/merchants': typeof AdminMerchantsRoute
+  '/admin/onshop-delivery': typeof AdminOnshopDeliveryRoute
   '/admin/orders': typeof AdminOrdersRoute
   '/admin/payments': typeof AdminPaymentsRoute
   '/admin/settings': typeof AdminSettingsRoute
@@ -370,6 +388,7 @@ export interface FileRoutesById {
   '/admin/blog/new': typeof AdminBlogNewRoute
   '/merchant/dashboard/chatbot': typeof MerchantDashboardChatbotRoute
   '/merchant/dashboard/delivery': typeof MerchantDashboardDeliveryRoute
+  '/merchant/dashboard/onshop-delivery': typeof MerchantDashboardOnshopDeliveryRoute
   '/merchant/dashboard/orders': typeof MerchantDashboardOrdersRoute
   '/merchant/dashboard/products': typeof MerchantDashboardProductsRoute
   '/merchant/dashboard/settings': typeof MerchantDashboardSettingsRoute
@@ -399,6 +418,7 @@ export interface FileRouteTypes {
     | '/admin/banners'
     | '/admin/delivery'
     | '/admin/merchants'
+    | '/admin/onshop-delivery'
     | '/admin/orders'
     | '/admin/payments'
     | '/admin/settings'
@@ -414,6 +434,7 @@ export interface FileRouteTypes {
     | '/admin/blog/new'
     | '/merchant/dashboard/chatbot'
     | '/merchant/dashboard/delivery'
+    | '/merchant/dashboard/onshop-delivery'
     | '/merchant/dashboard/orders'
     | '/merchant/dashboard/products'
     | '/merchant/dashboard/settings'
@@ -440,6 +461,7 @@ export interface FileRouteTypes {
     | '/admin/banners'
     | '/admin/delivery'
     | '/admin/merchants'
+    | '/admin/onshop-delivery'
     | '/admin/orders'
     | '/admin/payments'
     | '/admin/settings'
@@ -454,6 +476,7 @@ export interface FileRouteTypes {
     | '/admin/blog/new'
     | '/merchant/dashboard/chatbot'
     | '/merchant/dashboard/delivery'
+    | '/merchant/dashboard/onshop-delivery'
     | '/merchant/dashboard/orders'
     | '/merchant/dashboard/products'
     | '/merchant/dashboard/settings'
@@ -481,6 +504,7 @@ export interface FileRouteTypes {
     | '/admin/banners'
     | '/admin/delivery'
     | '/admin/merchants'
+    | '/admin/onshop-delivery'
     | '/admin/orders'
     | '/admin/payments'
     | '/admin/settings'
@@ -496,6 +520,7 @@ export interface FileRouteTypes {
     | '/admin/blog/new'
     | '/merchant/dashboard/chatbot'
     | '/merchant/dashboard/delivery'
+    | '/merchant/dashboard/onshop-delivery'
     | '/merchant/dashboard/orders'
     | '/merchant/dashboard/products'
     | '/merchant/dashboard/settings'
@@ -657,6 +682,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminOrdersRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/onshop-delivery': {
+      id: '/admin/onshop-delivery'
+      path: '/onshop-delivery'
+      fullPath: '/admin/onshop-delivery'
+      preLoaderRoute: typeof AdminOnshopDeliveryRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/merchants': {
       id: '/admin/merchants'
       path: '/merchants'
@@ -755,6 +787,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MerchantDashboardOrdersRouteImport
       parentRoute: typeof MerchantDashboardRoute
     }
+    '/merchant/dashboard/onshop-delivery': {
+      id: '/merchant/dashboard/onshop-delivery'
+      path: '/onshop-delivery'
+      fullPath: '/merchant/dashboard/onshop-delivery'
+      preLoaderRoute: typeof MerchantDashboardOnshopDeliveryRouteImport
+      parentRoute: typeof MerchantDashboardRoute
+    }
     '/merchant/dashboard/delivery': {
       id: '/merchant/dashboard/delivery'
       path: '/delivery'
@@ -830,6 +869,7 @@ interface AdminRouteChildren {
   AdminBannersRoute: typeof AdminBannersRoute
   AdminDeliveryRoute: typeof AdminDeliveryRoute
   AdminMerchantsRoute: typeof AdminMerchantsRoute
+  AdminOnshopDeliveryRoute: typeof AdminOnshopDeliveryRoute
   AdminOrdersRoute: typeof AdminOrdersRoute
   AdminPaymentsRoute: typeof AdminPaymentsRoute
   AdminSettingsRoute: typeof AdminSettingsRoute
@@ -845,6 +885,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminBannersRoute: AdminBannersRoute,
   AdminDeliveryRoute: AdminDeliveryRoute,
   AdminMerchantsRoute: AdminMerchantsRoute,
+  AdminOnshopDeliveryRoute: AdminOnshopDeliveryRoute,
   AdminOrdersRoute: AdminOrdersRoute,
   AdminPaymentsRoute: AdminPaymentsRoute,
   AdminSettingsRoute: AdminSettingsRoute,
@@ -860,6 +901,7 @@ const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 interface MerchantDashboardRouteChildren {
   MerchantDashboardChatbotRoute: typeof MerchantDashboardChatbotRoute
   MerchantDashboardDeliveryRoute: typeof MerchantDashboardDeliveryRoute
+  MerchantDashboardOnshopDeliveryRoute: typeof MerchantDashboardOnshopDeliveryRoute
   MerchantDashboardOrdersRoute: typeof MerchantDashboardOrdersRoute
   MerchantDashboardProductsRoute: typeof MerchantDashboardProductsRoute
   MerchantDashboardSettingsRoute: typeof MerchantDashboardSettingsRoute
@@ -871,6 +913,7 @@ interface MerchantDashboardRouteChildren {
 const MerchantDashboardRouteChildren: MerchantDashboardRouteChildren = {
   MerchantDashboardChatbotRoute: MerchantDashboardChatbotRoute,
   MerchantDashboardDeliveryRoute: MerchantDashboardDeliveryRoute,
+  MerchantDashboardOnshopDeliveryRoute: MerchantDashboardOnshopDeliveryRoute,
   MerchantDashboardOrdersRoute: MerchantDashboardOrdersRoute,
   MerchantDashboardProductsRoute: MerchantDashboardProductsRoute,
   MerchantDashboardSettingsRoute: MerchantDashboardSettingsRoute,
