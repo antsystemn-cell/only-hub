@@ -219,7 +219,16 @@ function OrdersPage() {
               }}><CheckCircle className="mr-1 h-4 w-4" /> Төлсөн</Button>
               <Button size="sm" variant="outline" onClick={async () => {
                 const ids = Array.from(selected);
-                try { const r = await bulkDeliveryFn({ data: { ids } }); toast.success(`${r.count} хүргэлт үүсгэв`); qc.invalidateQueries({ queryKey: ["orders", merchantId] }); setSelected(new Set()); }
+                try {
+                  const r = await bulkDeliveryFn({ data: { ids } });
+                  const parts: string[] = [];
+                  if (r.count > 0) parts.push(`${r.count} хүргэлт үүсгэв`);
+                  if (r.skipped > 0) parts.push(`${r.skipped} аль хэдийн үүсгэсэн тул алгассан`);
+                  if (r.count === 0 && r.skipped > 0) toast.info(parts.join(", "));
+                  else toast.success(parts.join(", ") || "Шинээр үүсгэх захиалга байхгүй");
+                  qc.invalidateQueries({ queryKey: ["orders", merchantId] });
+                  setSelected(new Set());
+                }
                 catch (e: any) { toast.error(e?.message ?? "Алдаа"); }
               }}><Truck className="mr-1 h-4 w-4" /> Хүргэлт үүсгэх</Button>
               <AlertDialog>

@@ -71,17 +71,25 @@ export const bulkCreateDelivery = createServerFn({ method: "POST" })
   .inputValidator((d) => Ids.parse(d))
   .handler(async ({ data, context }) => {
     await assertMerchantAccess(context.userId, data.ids);
+    // Аль хэдийн хүргэлт үүсгэсэн захиалгуудыг хасах
+    const { data: existing } = await supabaseAdmin
+      .from("delivery_requests")
+      .select("order_id")
+      .in("order_id", data.ids);
+    const skipSet = new Set((existing ?? []).map((r) => r.order_id));
+    const toSend = data.ids.filter((id) => !skipSet.has(id));
     let ok = 0;
     const errors: string[] = [];
-    for (const id of data.ids) {
+    for (const id of toSend) {
       try {
-        await createDeliveryRequest({ orderId: id });
-        ok++;
+        const res = await createDeliveryRequest({ orderId: id });
+        if (res.ok && !res.alreadyExists) ok++;
+        else if (!res.ok) errors.push(`${id}: ${res.error}`);
       } catch (e: any) {
         errors.push(`${id}: ${e?.message ?? "error"}`);
       }
     }
-    return { ok: true as const, count: ok, errors };
+    return { ok: true as const, count: ok, skipped: skipSet.size, errors };
   });
 
 export const bulkDeleteOrders = createServerFn({ method: "POST" })
