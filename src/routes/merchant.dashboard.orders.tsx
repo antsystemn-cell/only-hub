@@ -498,13 +498,29 @@ function OrderRow({ order, checked, onCheck, onStatus, onPayment, productImages 
                 </div>
               </div>
             ) : (
-              <ul className="space-y-1">
-                {(order.items as any[]).map((it, i) => (
-                  <li key={i} className="flex justify-between">
-                    <span>{it.name} × {it.quantity}{it.color ? ` • ${it.color}` : ""}{it.size ? ` • ${it.size}` : ""}</span>
-                    <span>{fmtMnt((it.price ?? 0) * (it.quantity ?? 1))}</span>
-                  </li>
-                ))}
+              <ul className="space-y-1.5">
+                {itemList.map((it: any, i: number) => {
+                  const url = itemImageUrl(it);
+                  return (
+                    <li key={i} className="flex items-center gap-2.5">
+                      <div className="h-10 w-10 shrink-0 overflow-hidden rounded-md bg-muted">
+                        {url ? (
+                          <img
+                            src={url}
+                            alt={it?.name ?? ""}
+                            loading="lazy"
+                            decoding="async"
+                            className="h-full w-full object-cover"
+                          />
+                        ) : null}
+                      </div>
+                      <span className="flex-1 min-w-0 truncate">
+                        {it.name} × {it.quantity}{it.color ? ` • ${it.color}` : ""}{it.size ? ` • ${it.size}` : ""}
+                      </span>
+                      <span className="shrink-0 tabular-nums">{fmtMnt((it.price ?? 0) * (it.quantity ?? 1))}</span>
+                    </li>
+                  );
+                })}
               </ul>
             )}
           </div>
