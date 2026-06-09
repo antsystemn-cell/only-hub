@@ -49,7 +49,7 @@ function AdminOnshopDeliveryPage() {
       )}
       {data && data.ok && (
         <iframe
-          src={data.portalUrl}
+          src={`${data.portalUrl}${data.portalUrl.includes("?") ? "&" : "?"}embed=1&chrome=none`}
           className="w-full h-[calc(100vh-8rem)] rounded-xl border border-border bg-card"
           title="ON Shop Delivery Portal"
         />
