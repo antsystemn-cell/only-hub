@@ -4,7 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { getOnshopPortalUrl } from "@/lib/delivery/onshop-portal.functions";
 import { Truck } from "lucide-react";
 
-export const Route = createFileRoute("/admin/onshop-delivery")({
+export const Route = createFileRoute("/admin/delivery")({
   component: AdminOnshopDeliveryPage,
 });
 

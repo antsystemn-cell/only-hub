@@ -27,10 +27,10 @@ import { Route as AdminUsersRouteImport } from './routes/admin.users'
 import { Route as AdminSettingsRouteImport } from './routes/admin.settings'
 import { Route as AdminPaymentsRouteImport } from './routes/admin.payments'
 import { Route as AdminOrdersRouteImport } from './routes/admin.orders'
-import { Route as AdminOnshopDeliveryRouteImport } from './routes/admin.onshop-delivery'
 import { Route as AdminMerchantsRouteImport } from './routes/admin.merchants'
 import { Route as AdminDeliveryRouteImport } from './routes/admin.delivery'
 import { Route as AdminBannersRouteImport } from './routes/admin.banners'
+import { Route as AdminBackupOldDeliveryRouteImport } from './routes/admin.backup-old-delivery'
 import { Route as AdminAnalyticsRouteImport } from './routes/admin.analytics'
 import { Route as AccountOrdersRouteImport } from './routes/account.orders'
 import { Route as MerchantDashboardIndexRouteImport } from './routes/merchant.dashboard.index'
@@ -142,11 +142,6 @@ const AdminOrdersRoute = AdminOrdersRouteImport.update({
   path: '/orders',
   getParentRoute: () => AdminRoute,
 } as any)
-const AdminOnshopDeliveryRoute = AdminOnshopDeliveryRouteImport.update({
-  id: '/onshop-delivery',
-  path: '/onshop-delivery',
-  getParentRoute: () => AdminRoute,
-} as any)
 const AdminMerchantsRoute = AdminMerchantsRouteImport.update({
   id: '/merchants',
   path: '/merchants',
@@ -160,6 +155,11 @@ const AdminDeliveryRoute = AdminDeliveryRouteImport.update({
 const AdminBannersRoute = AdminBannersRouteImport.update({
   id: '/banners',
   path: '/banners',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminBackupOldDeliveryRoute = AdminBackupOldDeliveryRouteImport.update({
+  id: '/backup-old-delivery',
+  path: '/backup-old-delivery',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminAnalyticsRoute = AdminAnalyticsRouteImport.update({
@@ -282,10 +282,10 @@ export interface FileRoutesByFullPath {
   '/stores': typeof StoresRoute
   '/account/orders': typeof AccountOrdersRoute
   '/admin/analytics': typeof AdminAnalyticsRoute
+  '/admin/backup-old-delivery': typeof AdminBackupOldDeliveryRoute
   '/admin/banners': typeof AdminBannersRoute
   '/admin/delivery': typeof AdminDeliveryRoute
   '/admin/merchants': typeof AdminMerchantsRoute
-  '/admin/onshop-delivery': typeof AdminOnshopDeliveryRoute
   '/admin/orders': typeof AdminOrdersRoute
   '/admin/payments': typeof AdminPaymentsRoute
   '/admin/settings': typeof AdminSettingsRoute
@@ -325,10 +325,10 @@ export interface FileRoutesByTo {
   '/stores': typeof StoresRoute
   '/account/orders': typeof AccountOrdersRoute
   '/admin/analytics': typeof AdminAnalyticsRoute
+  '/admin/backup-old-delivery': typeof AdminBackupOldDeliveryRoute
   '/admin/banners': typeof AdminBannersRoute
   '/admin/delivery': typeof AdminDeliveryRoute
   '/admin/merchants': typeof AdminMerchantsRoute
-  '/admin/onshop-delivery': typeof AdminOnshopDeliveryRoute
   '/admin/orders': typeof AdminOrdersRoute
   '/admin/payments': typeof AdminPaymentsRoute
   '/admin/settings': typeof AdminSettingsRoute
@@ -369,10 +369,10 @@ export interface FileRoutesById {
   '/stores': typeof StoresRoute
   '/account/orders': typeof AccountOrdersRoute
   '/admin/analytics': typeof AdminAnalyticsRoute
+  '/admin/backup-old-delivery': typeof AdminBackupOldDeliveryRoute
   '/admin/banners': typeof AdminBannersRoute
   '/admin/delivery': typeof AdminDeliveryRoute
   '/admin/merchants': typeof AdminMerchantsRoute
-  '/admin/onshop-delivery': typeof AdminOnshopDeliveryRoute
   '/admin/orders': typeof AdminOrdersRoute
   '/admin/payments': typeof AdminPaymentsRoute
   '/admin/settings': typeof AdminSettingsRoute
@@ -415,10 +415,10 @@ export interface FileRouteTypes {
     | '/stores'
     | '/account/orders'
     | '/admin/analytics'
+    | '/admin/backup-old-delivery'
     | '/admin/banners'
     | '/admin/delivery'
     | '/admin/merchants'
-    | '/admin/onshop-delivery'
     | '/admin/orders'
     | '/admin/payments'
     | '/admin/settings'
@@ -458,10 +458,10 @@ export interface FileRouteTypes {
     | '/stores'
     | '/account/orders'
     | '/admin/analytics'
+    | '/admin/backup-old-delivery'
     | '/admin/banners'
     | '/admin/delivery'
     | '/admin/merchants'
-    | '/admin/onshop-delivery'
     | '/admin/orders'
     | '/admin/payments'
     | '/admin/settings'
@@ -501,10 +501,10 @@ export interface FileRouteTypes {
     | '/stores'
     | '/account/orders'
     | '/admin/analytics'
+    | '/admin/backup-old-delivery'
     | '/admin/banners'
     | '/admin/delivery'
     | '/admin/merchants'
-    | '/admin/onshop-delivery'
     | '/admin/orders'
     | '/admin/payments'
     | '/admin/settings'
@@ -682,13 +682,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminOrdersRouteImport
       parentRoute: typeof AdminRoute
     }
-    '/admin/onshop-delivery': {
-      id: '/admin/onshop-delivery'
-      path: '/onshop-delivery'
-      fullPath: '/admin/onshop-delivery'
-      preLoaderRoute: typeof AdminOnshopDeliveryRouteImport
-      parentRoute: typeof AdminRoute
-    }
     '/admin/merchants': {
       id: '/admin/merchants'
       path: '/merchants'
@@ -708,6 +701,13 @@ declare module '@tanstack/react-router' {
       path: '/banners'
       fullPath: '/admin/banners'
       preLoaderRoute: typeof AdminBannersRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/backup-old-delivery': {
+      id: '/admin/backup-old-delivery'
+      path: '/backup-old-delivery'
+      fullPath: '/admin/backup-old-delivery'
+      preLoaderRoute: typeof AdminBackupOldDeliveryRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/analytics': {
@@ -866,10 +866,10 @@ const AccountRouteWithChildren =
 
 interface AdminRouteChildren {
   AdminAnalyticsRoute: typeof AdminAnalyticsRoute
+  AdminBackupOldDeliveryRoute: typeof AdminBackupOldDeliveryRoute
   AdminBannersRoute: typeof AdminBannersRoute
   AdminDeliveryRoute: typeof AdminDeliveryRoute
   AdminMerchantsRoute: typeof AdminMerchantsRoute
-  AdminOnshopDeliveryRoute: typeof AdminOnshopDeliveryRoute
   AdminOrdersRoute: typeof AdminOrdersRoute
   AdminPaymentsRoute: typeof AdminPaymentsRoute
   AdminSettingsRoute: typeof AdminSettingsRoute
@@ -882,10 +882,10 @@ interface AdminRouteChildren {
 
 const AdminRouteChildren: AdminRouteChildren = {
   AdminAnalyticsRoute: AdminAnalyticsRoute,
+  AdminBackupOldDeliveryRoute: AdminBackupOldDeliveryRoute,
   AdminBannersRoute: AdminBannersRoute,
   AdminDeliveryRoute: AdminDeliveryRoute,
   AdminMerchantsRoute: AdminMerchantsRoute,
-  AdminOnshopDeliveryRoute: AdminOnshopDeliveryRoute,
   AdminOrdersRoute: AdminOrdersRoute,
   AdminPaymentsRoute: AdminPaymentsRoute,
   AdminSettingsRoute: AdminSettingsRoute,
