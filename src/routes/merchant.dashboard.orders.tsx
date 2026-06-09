@@ -82,6 +82,38 @@ function OrdersPage() {
     },
   });
 
+  // Collect unique product_ids across all visible orders to fetch thumbnails
+  // in a single query. Results are cached aggressively (30min staleTime) so
+  // re-renders/refetches don't re-download images and CDN bandwidth is saved.
+  const productIds = useMemo(() => {
+    const set = new Set<string>();
+    (orders as any[]).forEach((o) => {
+      (o.items as any[] | null)?.forEach((it) => {
+        if (it?.product_id) set.add(String(it.product_id));
+      });
+    });
+    return Array.from(set).sort();
+  }, [orders]);
+
+  const { data: productImages = {} } = useQuery<Record<string, string>>({
+    queryKey: ["order-product-images", merchantId, productIds.join(",")],
+    enabled: productIds.length > 0,
+    staleTime: 1000 * 60 * 30,
+    gcTime: 1000 * 60 * 60 * 2,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("products")
+        .select("id,thumbnail_url,image_url")
+        .in("id", productIds);
+      const map: Record<string, string> = {};
+      (data ?? []).forEach((p: any) => {
+        const url = p.thumbnail_url || p.image_url;
+        if (url) map[p.id] = url;
+      });
+      return map;
+    },
+  });
+
   const filtered = useMemo(() => orders.filter((o: any) => {
     if (search && !((o.phone ?? "").includes(search) || (o.external_ref ?? "").toLowerCase().includes(search.toLowerCase()))) return false;
     if (statusFilter !== "all" && o.status !== statusFilter) return false;
