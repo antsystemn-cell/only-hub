@@ -303,6 +303,7 @@ function OrdersPage() {
           ) : active.map((o: any) => (
             <OrderRow
               key={o.id} order={o}
+              productImages={productImages}
               checked={selected.has(o.id)}
               onCheck={(v) => {
                 const next = new Set(selected); v ? next.add(o.id) : next.delete(o.id); setSelected(next);
