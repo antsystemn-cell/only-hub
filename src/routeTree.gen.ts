@@ -42,9 +42,9 @@ import { Route as MerchantDashboardStaffRouteImport } from './routes/merchant.da
 import { Route as MerchantDashboardSettingsRouteImport } from './routes/merchant.dashboard.settings'
 import { Route as MerchantDashboardProductsRouteImport } from './routes/merchant.dashboard.products'
 import { Route as MerchantDashboardOrdersRouteImport } from './routes/merchant.dashboard.orders'
-import { Route as MerchantDashboardOnshopDeliveryRouteImport } from './routes/merchant.dashboard.onshop-delivery'
 import { Route as MerchantDashboardDeliveryRouteImport } from './routes/merchant.dashboard.delivery'
 import { Route as MerchantDashboardChatbotRouteImport } from './routes/merchant.dashboard.chatbot'
+import { Route as MerchantDashboardBackupOldDeliveryRouteImport } from './routes/merchant.dashboard.backup-old-delivery'
 import { Route as AdminBlogNewRouteImport } from './routes/admin.blog.new'
 import { Route as AdminBlogIdRouteImport } from './routes/admin.blog.$id'
 import { Route as StoreMerchantSlugProductProductSlugRouteImport } from './routes/store.$merchantSlug.product.$productSlug'
@@ -220,12 +220,6 @@ const MerchantDashboardOrdersRoute = MerchantDashboardOrdersRouteImport.update({
   path: '/orders',
   getParentRoute: () => MerchantDashboardRoute,
 } as any)
-const MerchantDashboardOnshopDeliveryRoute =
-  MerchantDashboardOnshopDeliveryRouteImport.update({
-    id: '/onshop-delivery',
-    path: '/onshop-delivery',
-    getParentRoute: () => MerchantDashboardRoute,
-  } as any)
 const MerchantDashboardDeliveryRoute =
   MerchantDashboardDeliveryRouteImport.update({
     id: '/delivery',
@@ -236,6 +230,12 @@ const MerchantDashboardChatbotRoute =
   MerchantDashboardChatbotRouteImport.update({
     id: '/chatbot',
     path: '/chatbot',
+    getParentRoute: () => MerchantDashboardRoute,
+  } as any)
+const MerchantDashboardBackupOldDeliveryRoute =
+  MerchantDashboardBackupOldDeliveryRouteImport.update({
+    id: '/backup-old-delivery',
+    path: '/backup-old-delivery',
     getParentRoute: () => MerchantDashboardRoute,
   } as any)
 const AdminBlogNewRoute = AdminBlogNewRouteImport.update({
@@ -299,9 +299,9 @@ export interface FileRoutesByFullPath {
   '/blog/': typeof BlogIndexRoute
   '/admin/blog/$id': typeof AdminBlogIdRoute
   '/admin/blog/new': typeof AdminBlogNewRoute
+  '/merchant/dashboard/backup-old-delivery': typeof MerchantDashboardBackupOldDeliveryRoute
   '/merchant/dashboard/chatbot': typeof MerchantDashboardChatbotRoute
   '/merchant/dashboard/delivery': typeof MerchantDashboardDeliveryRoute
-  '/merchant/dashboard/onshop-delivery': typeof MerchantDashboardOnshopDeliveryRoute
   '/merchant/dashboard/orders': typeof MerchantDashboardOrdersRoute
   '/merchant/dashboard/products': typeof MerchantDashboardProductsRoute
   '/merchant/dashboard/settings': typeof MerchantDashboardSettingsRoute
@@ -341,9 +341,9 @@ export interface FileRoutesByTo {
   '/blog': typeof BlogIndexRoute
   '/admin/blog/$id': typeof AdminBlogIdRoute
   '/admin/blog/new': typeof AdminBlogNewRoute
+  '/merchant/dashboard/backup-old-delivery': typeof MerchantDashboardBackupOldDeliveryRoute
   '/merchant/dashboard/chatbot': typeof MerchantDashboardChatbotRoute
   '/merchant/dashboard/delivery': typeof MerchantDashboardDeliveryRoute
-  '/merchant/dashboard/onshop-delivery': typeof MerchantDashboardOnshopDeliveryRoute
   '/merchant/dashboard/orders': typeof MerchantDashboardOrdersRoute
   '/merchant/dashboard/products': typeof MerchantDashboardProductsRoute
   '/merchant/dashboard/settings': typeof MerchantDashboardSettingsRoute
@@ -386,9 +386,9 @@ export interface FileRoutesById {
   '/blog/': typeof BlogIndexRoute
   '/admin/blog/$id': typeof AdminBlogIdRoute
   '/admin/blog/new': typeof AdminBlogNewRoute
+  '/merchant/dashboard/backup-old-delivery': typeof MerchantDashboardBackupOldDeliveryRoute
   '/merchant/dashboard/chatbot': typeof MerchantDashboardChatbotRoute
   '/merchant/dashboard/delivery': typeof MerchantDashboardDeliveryRoute
-  '/merchant/dashboard/onshop-delivery': typeof MerchantDashboardOnshopDeliveryRoute
   '/merchant/dashboard/orders': typeof MerchantDashboardOrdersRoute
   '/merchant/dashboard/products': typeof MerchantDashboardProductsRoute
   '/merchant/dashboard/settings': typeof MerchantDashboardSettingsRoute
@@ -432,9 +432,9 @@ export interface FileRouteTypes {
     | '/blog/'
     | '/admin/blog/$id'
     | '/admin/blog/new'
+    | '/merchant/dashboard/backup-old-delivery'
     | '/merchant/dashboard/chatbot'
     | '/merchant/dashboard/delivery'
-    | '/merchant/dashboard/onshop-delivery'
     | '/merchant/dashboard/orders'
     | '/merchant/dashboard/products'
     | '/merchant/dashboard/settings'
@@ -474,9 +474,9 @@ export interface FileRouteTypes {
     | '/blog'
     | '/admin/blog/$id'
     | '/admin/blog/new'
+    | '/merchant/dashboard/backup-old-delivery'
     | '/merchant/dashboard/chatbot'
     | '/merchant/dashboard/delivery'
-    | '/merchant/dashboard/onshop-delivery'
     | '/merchant/dashboard/orders'
     | '/merchant/dashboard/products'
     | '/merchant/dashboard/settings'
@@ -518,9 +518,9 @@ export interface FileRouteTypes {
     | '/blog/'
     | '/admin/blog/$id'
     | '/admin/blog/new'
+    | '/merchant/dashboard/backup-old-delivery'
     | '/merchant/dashboard/chatbot'
     | '/merchant/dashboard/delivery'
-    | '/merchant/dashboard/onshop-delivery'
     | '/merchant/dashboard/orders'
     | '/merchant/dashboard/products'
     | '/merchant/dashboard/settings'
@@ -787,13 +787,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MerchantDashboardOrdersRouteImport
       parentRoute: typeof MerchantDashboardRoute
     }
-    '/merchant/dashboard/onshop-delivery': {
-      id: '/merchant/dashboard/onshop-delivery'
-      path: '/onshop-delivery'
-      fullPath: '/merchant/dashboard/onshop-delivery'
-      preLoaderRoute: typeof MerchantDashboardOnshopDeliveryRouteImport
-      parentRoute: typeof MerchantDashboardRoute
-    }
     '/merchant/dashboard/delivery': {
       id: '/merchant/dashboard/delivery'
       path: '/delivery'
@@ -806,6 +799,13 @@ declare module '@tanstack/react-router' {
       path: '/chatbot'
       fullPath: '/merchant/dashboard/chatbot'
       preLoaderRoute: typeof MerchantDashboardChatbotRouteImport
+      parentRoute: typeof MerchantDashboardRoute
+    }
+    '/merchant/dashboard/backup-old-delivery': {
+      id: '/merchant/dashboard/backup-old-delivery'
+      path: '/backup-old-delivery'
+      fullPath: '/merchant/dashboard/backup-old-delivery'
+      preLoaderRoute: typeof MerchantDashboardBackupOldDeliveryRouteImport
       parentRoute: typeof MerchantDashboardRoute
     }
     '/admin/blog/new': {
@@ -899,9 +899,9 @@ const AdminRouteChildren: AdminRouteChildren = {
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
 interface MerchantDashboardRouteChildren {
+  MerchantDashboardBackupOldDeliveryRoute: typeof MerchantDashboardBackupOldDeliveryRoute
   MerchantDashboardChatbotRoute: typeof MerchantDashboardChatbotRoute
   MerchantDashboardDeliveryRoute: typeof MerchantDashboardDeliveryRoute
-  MerchantDashboardOnshopDeliveryRoute: typeof MerchantDashboardOnshopDeliveryRoute
   MerchantDashboardOrdersRoute: typeof MerchantDashboardOrdersRoute
   MerchantDashboardProductsRoute: typeof MerchantDashboardProductsRoute
   MerchantDashboardSettingsRoute: typeof MerchantDashboardSettingsRoute
@@ -911,9 +911,10 @@ interface MerchantDashboardRouteChildren {
 }
 
 const MerchantDashboardRouteChildren: MerchantDashboardRouteChildren = {
+  MerchantDashboardBackupOldDeliveryRoute:
+    MerchantDashboardBackupOldDeliveryRoute,
   MerchantDashboardChatbotRoute: MerchantDashboardChatbotRoute,
   MerchantDashboardDeliveryRoute: MerchantDashboardDeliveryRoute,
-  MerchantDashboardOnshopDeliveryRoute: MerchantDashboardOnshopDeliveryRoute,
   MerchantDashboardOrdersRoute: MerchantDashboardOrdersRoute,
   MerchantDashboardProductsRoute: MerchantDashboardProductsRoute,
   MerchantDashboardSettingsRoute: MerchantDashboardSettingsRoute,
@@ -963,3 +964,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
