@@ -356,9 +356,10 @@ function OrdersPage() {
   );
 }
 
-function OrderRow({ order, checked, onCheck, onStatus, onPayment }: {
+function OrderRow({ order, checked, onCheck, onStatus, onPayment, productImages }: {
   order: any; checked: boolean; onCheck: (v: boolean) => void;
   onStatus: (s: string) => void; onPayment: (s: string) => void;
+  productImages: Record<string, string>;
 }) {
   const [open, setOpen] = useState(false);
   const [editingItems, setEditingItems] = useState(false);
