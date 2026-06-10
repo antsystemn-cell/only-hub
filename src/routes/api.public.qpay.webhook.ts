@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { checkQpayPayment } from "@/lib/qpay.server";
-import { createDeliveryRequest } from "@/lib/delivery/delivery.service";
+import { confirmOrderPayment } from "@/lib/payments/confirm-order-payment.server";
 
 export const Route = createFileRoute("/api/public/qpay/webhook")({
   server: {
@@ -24,7 +24,8 @@ async function handle(request: Request) {
     .maybeSingle();
   if (!order) return new Response("not found", { status: 404 });
   if (order.payment_status === "confirmed") {
-    await createDeliveryRequest({ orderId: order.id }).catch(() => null);
+    // Idempotent: ensures delivery request still gets created if missing.
+    await confirmOrderPayment({ orderId: order.id, source: "qpay_webhook" });
     return new Response("ok");
   }
   if (!order.qpay_invoice_id) return new Response("no invoice", { status: 400 });
@@ -32,21 +33,7 @@ async function handle(request: Request) {
   try {
     const paid = await checkQpayPayment(order.merchant_id, order.qpay_invoice_id);
     if (paid) {
-      const nowIso = new Date().toISOString();
-      await supabaseAdmin
-        .from("orders")
-        .update({ payment_status: "confirmed", delivery_status: "paid", updated_at: nowIso })
-        .eq("id", order.id);
-      // payment_requests sync (post-delivery collection)
-      await supabaseAdmin
-        .from("payment_requests")
-        .update({ status: "paid", paid_at: nowIso })
-        .eq("order_id", order.id)
-        .neq("status", "paid");
-      // Auto-create delivery request on confirmation
-      await createDeliveryRequest({ orderId: order.id }).catch((e) =>
-        console.error("auto delivery create failed", e),
-      );
+      await confirmOrderPayment({ orderId: order.id, source: "qpay_webhook" });
     }
     return new Response(JSON.stringify({ paid }), {
       headers: { "Content-Type": "application/json" },

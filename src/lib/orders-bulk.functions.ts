@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { createDeliveryRequest } from "@/lib/delivery/delivery.service";
+import { confirmOrderPayment } from "@/lib/payments/confirm-order-payment.server";
 
 const Ids = z.object({ ids: z.array(z.string().uuid()).min(1).max(500) });
 
@@ -36,10 +37,19 @@ export const bulkUpdateOrderStatus = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     await assertMerchantAccess(context.userId, data.ids);
-    const patch: any = { status: data.status };
-    if (data.status === "completed") patch.payment_status = "confirmed";
-    const { error } = await supabaseAdmin.from("orders").update(patch).in("id", data.ids);
+    const { error } = await supabaseAdmin
+      .from("orders")
+      .update({ status: data.status })
+      .in("id", data.ids);
     if (error) throw new Error(error.message);
+    // If marking as completed, also confirm payment via the centralized service.
+    if (data.status === "completed") {
+      for (const id of data.ids) {
+        await confirmOrderPayment({ orderId: id, source: "bulk_import" }).catch((e) =>
+          console.error("bulk confirm failed", id, e),
+        );
+      }
+    }
     return { ok: true as const, count: data.ids.length };
   });
 
@@ -48,22 +58,16 @@ export const bulkMarkPaid = createServerFn({ method: "POST" })
   .inputValidator((d) => Ids.parse(d))
   .handler(async ({ data, context }) => {
     await assertMerchantAccess(context.userId, data.ids);
-    const { error } = await supabaseAdmin
-      .from("orders")
-      .update({ payment_status: "confirmed" })
-      .in("id", data.ids);
-    if (error) throw new Error(error.message);
-    // auto-create delivery request for each (idempotent inside service)
+    let confirmed = 0;
     let delivered = 0;
     for (const id of data.ids) {
-      try {
-        await createDeliveryRequest({ orderId: id });
-        delivered++;
-      } catch (e) {
-        console.error("auto delivery failed", id, e);
+      const res = await confirmOrderPayment({ orderId: id, source: "bulk_mark_paid" });
+      if (res.ok) {
+        confirmed++;
+        if (res.deliveryRequestCreated) delivered++;
       }
     }
-    return { ok: true as const, count: data.ids.length, deliveryCreated: delivered };
+    return { ok: true as const, count: confirmed, deliveryCreated: delivered };
   });
 
 export const bulkCreateDelivery = createServerFn({ method: "POST" })
@@ -113,4 +117,15 @@ export const bulkDeleteOrders = createServerFn({ method: "POST" })
     const { error } = await supabaseAdmin.from("orders").delete().in("id", data.ids);
     if (error) throw new Error(error.message);
     return { ok: true as const, count: data.ids.length };
+  });
+
+// Single-order confirm — used by merchant/admin UI "Mark as paid" toggles.
+// Always flows through the centralized confirmOrderPayment service.
+export const markOrderPaid = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ orderId: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    await assertMerchantAccess(context.userId, [data.orderId]);
+    const res = await confirmOrderPayment({ orderId: data.orderId, source: "merchant_manual" });
+    return res;
   });

@@ -3,6 +3,7 @@ import { getRequestUrl } from "@tanstack/react-start/server";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { createQpayInvoice, checkQpayPayment } from "@/lib/qpay.server";
+import { confirmOrderPayment } from "@/lib/payments/confirm-order-payment.server";
 
 const ItemSchema = z.object({
   productId: z.string().uuid(),
@@ -225,10 +226,7 @@ export const getOrderStatus = createServerFn({ method: "POST" })
       try {
         const paid = await checkQpayPayment(order.merchant_id, order.qpay_invoice_id);
         if (paid) {
-          await supabaseAdmin
-            .from("orders")
-            .update({ payment_status: "confirmed", payment_error: null })
-            .eq("id", order.id);
+          await confirmOrderPayment({ orderId: order.id, source: "qpay_polling" });
           order.payment_status = "confirmed";
           order.payment_error = null;
         }

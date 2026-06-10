@@ -621,6 +621,7 @@ export type Database = {
           legacy_metadata: Json
           merchant_id: string
           note: string | null
+          paid_at: string | null
           payment_error: string | null
           payment_method: string
           payment_status: string
@@ -660,6 +661,7 @@ export type Database = {
           legacy_metadata?: Json
           merchant_id: string
           note?: string | null
+          paid_at?: string | null
           payment_error?: string | null
           payment_method?: string
           payment_status?: string
@@ -699,6 +701,7 @@ export type Database = {
           legacy_metadata?: Json
           merchant_id?: string
           note?: string | null
+          paid_at?: string | null
           payment_error?: string | null
           payment_method?: string
           payment_status?: string

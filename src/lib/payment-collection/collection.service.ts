@@ -232,14 +232,8 @@ export async function onDeliveryCompleted(args: {
   const { orderId, collectedInCash } = args;
 
   if (collectedInCash) {
-    await supabaseAdmin
-      .from("orders")
-      .update({
-        payment_status: "confirmed",
-        delivery_status: "paid",
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", orderId);
+    const { confirmOrderPayment } = await import("@/lib/payments/confirm-order-payment.server");
+    await confirmOrderPayment({ orderId, source: "post_delivery_cash" });
     return { ok: true as const, collectedInCash: true };
   }
 
@@ -311,18 +305,7 @@ export async function resendCollectionSms(orderId: string) {
 }
 
 export async function markRequestPaid(orderId: string) {
-  const nowIso = new Date().toISOString();
-  await supabaseAdmin
-    .from("payment_requests")
-    .update({ status: "paid", paid_at: nowIso })
-    .eq("order_id", orderId);
-  await supabaseAdmin
-    .from("orders")
-    .update({
-      payment_status: "confirmed",
-      delivery_status: "paid",
-      updated_at: nowIso,
-    })
-    .eq("id", orderId);
-  return { ok: true as const };
+  const { confirmOrderPayment } = await import("@/lib/payments/confirm-order-payment.server");
+  const res = await confirmOrderPayment({ orderId, source: "post_delivery_collection" });
+  return res.ok ? { ok: true as const } : { ok: false as const, error: res.error };
 }

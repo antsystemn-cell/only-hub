@@ -26,7 +26,7 @@ import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import { useServerFn } from "@tanstack/react-start";
 import { sendOrderToDelivery } from "@/lib/delivery.functions";
-import { bulkUpdateOrderStatus, bulkMarkPaid, bulkCreateDelivery, bulkDeleteOrders } from "@/lib/orders-bulk.functions";
+import { bulkUpdateOrderStatus, bulkMarkPaid, bulkCreateDelivery, bulkDeleteOrders, markOrderPaid } from "@/lib/orders-bulk.functions";
 
 export const DELIVERY_STATUS_LABELS: Record<string, string> = {
   submitted: "Илгээгдсэн",
@@ -134,19 +134,34 @@ function OrdersPage() {
     paid: filtered.filter((o: any) => o.payment_status === "confirmed").reduce((s: number, o: any) => s + Number(o.total ?? 0), 0),
   }), [filtered]);
 
+  const markPaidFn = useServerFn(markOrderPaid);
+
   const updateStatus = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
-      const patch: any = { status };
-      if (status === "completed") patch.payment_status = "confirmed";
-      const { error } = await supabase.from("orders").update(patch).eq("id", id);
+      const { error } = await supabase.from("orders").update({ status }).eq("id", id);
       if (error) throw error;
+      // When marking as completed, route payment confirmation through the
+      // centralized service (handles paid_at, delivery creation, idempotency).
+      if (status === "completed") {
+        const res = await markPaidFn({ data: { orderId: id } });
+        if (!res.ok) throw new Error(res.error);
+      }
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["orders", merchantId] }); toast.success("Шинэчиллээ"); },
   });
 
   const togglePayment = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
-      const { error } = await supabase.from("orders").update({ payment_status: status }).eq("id", id);
+      if (status === "confirmed") {
+        const res = await markPaidFn({ data: { orderId: id } });
+        if (!res.ok) throw new Error(res.error);
+        return;
+      }
+      // Reverting to unpaid is not a confirmation event — direct update.
+      const { error } = await supabase
+        .from("orders")
+        .update({ payment_status: status, paid_at: null })
+        .eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["orders", merchantId] }); toast.success("Төлбөр шинэчлэгдлээ"); },
