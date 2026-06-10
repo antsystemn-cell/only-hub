@@ -116,7 +116,7 @@ function Banner() {
             aria-roledescription="slide"
             aria-label={`${idx + 1} / ${SLIDES.length}`}
             aria-hidden={idx !== safeI}
-            className={`${idx === safeI ? "block" : "hidden"} relative flex items-center justify-between gap-4 px-5 py-8 sm:px-10 sm:py-12 md:py-16 lg:py-20`}
+            className={`${idx === safeI ? "block" : "hidden"} relative flex items-center justify-between gap-4 px-5 py-10 sm:px-10 sm:py-14 md:py-20 lg:py-24`}
           >
             {slide.banner_image && (
               <img src={slide.banner_image} alt="" aria-hidden className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-30" />
