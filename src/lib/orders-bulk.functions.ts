@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { createDeliveryRequest } from "@/lib/delivery/delivery.service";
+import { confirmOrderPayment } from "@/lib/payments/confirm-order-payment.server";
 
 const Ids = z.object({ ids: z.array(z.string().uuid()).min(1).max(500) });
 
