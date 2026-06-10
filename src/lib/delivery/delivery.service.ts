@@ -105,8 +105,22 @@ export async function createDeliveryRequest(args: CreateDeliveryRequestArgs) {
     .single();
 
   if (insErr || !created) {
+    // Race-safe fallback: another concurrent caller may have inserted first.
+    // The new UNIQUE(order_id) constraint will surface as a duplicate-key
+    // error here. Re-fetch the existing row and return as alreadyExists so
+    // the caller does NOT trigger Swift dispatch twice.
+    const { data: again } = await supabaseAdmin
+      .from("delivery_requests")
+      .select("*")
+      .eq("order_id", orderId)
+      .maybeSingle();
+    if (again) {
+      console.log("[delivery] createDeliveryRequest race resolved", orderId);
+      return { ok: true as const, alreadyExists: true, deliveryRequest: again };
+    }
     return { ok: false as const, error: insErr?.message ?? "Үүсгэхэд алдаа гарлаа" };
   }
+
 
   // External mode: send to Swift immediately
   if (mode === "external") {
