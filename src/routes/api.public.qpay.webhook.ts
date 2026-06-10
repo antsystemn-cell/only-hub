@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { checkQpayPayment } from "@/lib/qpay.server";
-import { createDeliveryRequest } from "@/lib/delivery/delivery.service";
+import { confirmOrderPayment } from "@/lib/payments/confirm-order-payment.server";
 
 export const Route = createFileRoute("/api/public/qpay/webhook")({
   server: {
