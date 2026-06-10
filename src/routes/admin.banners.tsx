@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { Card } from "@/components/ui/card";
@@ -14,7 +14,8 @@ import {
   AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { Plus, Pencil, Trash2, GripVertical, Eye, EyeOff } from "lucide-react";
+import { Plus, Pencil, Trash2, GripVertical, Eye, EyeOff, Upload, Info, Loader2, Monitor, Smartphone } from "lucide-react";
+import { uploadOptimized } from "@/lib/image";
 
 export const Route = createFileRoute("/admin/banners")({ component: AdminBannersPage });
 
