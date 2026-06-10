@@ -116,20 +116,20 @@ function Banner() {
             aria-roledescription="slide"
             aria-label={`${idx + 1} / ${SLIDES.length}`}
             aria-hidden={idx !== safeI}
-            className={`${idx === safeI ? "block" : "hidden"} relative flex items-center justify-between gap-3 px-4 py-5 sm:px-8 sm:py-7 md:py-8`}
+            className={`${idx === safeI ? "block" : "hidden"} relative flex items-center justify-between gap-4 px-5 py-8 sm:px-10 sm:py-12 md:py-16 lg:py-20`}
           >
             {slide.banner_image && (
               <img src={slide.banner_image} alt="" aria-hidden className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-30" />
             )}
             <div className="relative min-w-0 text-white">
-              <div className="mb-1 inline-flex items-center gap-1.5 rounded-full bg-white/20 px-2.5 py-0.5 text-[11px] font-medium backdrop-blur sm:text-xs">
+              <div className="mb-2 inline-flex items-center gap-1.5 rounded-full bg-white/20 px-2.5 py-0.5 text-[11px] font-medium backdrop-blur sm:mb-3 sm:text-xs">
                 <Sparkles className="h-3 w-3" /> Only платформ
               </div>
-              <h2 className="truncate text-lg font-bold sm:text-2xl md:text-3xl">{slide.title}</h2>
-              {slide.subtitle && <p className="mt-0.5 line-clamp-1 text-xs text-white/90 sm:text-sm md:text-base">{slide.subtitle}</p>}
+              <h2 className="truncate text-xl font-bold sm:text-3xl md:text-4xl lg:text-5xl">{slide.title}</h2>
+              {slide.subtitle && <p className="mt-1 line-clamp-1 text-sm text-white/90 sm:mt-2 sm:text-base md:text-lg">{slide.subtitle}</p>}
             </div>
             <a href={slide.button_link ?? "/"} className="relative shrink-0" tabIndex={idx === safeI ? 0 : -1}>
-              <Button size="sm" variant="secondary" className="rounded-full px-3 sm:px-5 sm:text-sm">
+              <Button size="sm" variant="secondary" className="rounded-full px-4 py-2 text-xs sm:px-6 sm:py-2.5 sm:text-sm">
                 {slide.button_text ?? "Дэлгэрэнгүй"}
               </Button>
             </a>
