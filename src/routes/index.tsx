@@ -116,20 +116,20 @@ function Banner() {
             aria-roledescription="slide"
             aria-label={`${idx + 1} / ${SLIDES.length}`}
             aria-hidden={idx !== safeI}
-            className={`${idx === safeI ? "block" : "hidden"} relative flex items-center justify-between gap-4 px-5 py-10 sm:px-10 sm:py-14 md:py-20 lg:py-24`}
+            className={`${idx === safeI ? "flex" : "hidden"} relative flex-col items-start gap-4 px-5 py-8 sm:gap-5 sm:px-10 sm:py-12 md:py-16 lg:py-20`}
           >
             {slide.banner_image && (
               <img src={slide.banner_image} alt="" aria-hidden className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-30" />
             )}
-            <div className="relative min-w-0 text-white">
+            <div className="relative w-full max-w-3xl text-white">
               <div className="mb-2 inline-flex items-center gap-1.5 rounded-full bg-white/20 px-2.5 py-0.5 text-[11px] font-medium backdrop-blur sm:mb-3 sm:text-xs">
                 <Sparkles className="h-3 w-3" /> Only платформ
               </div>
-              <h2 className="truncate text-xl font-bold sm:text-3xl md:text-4xl lg:text-5xl">{slide.title}</h2>
-              {slide.subtitle && <p className="mt-1 line-clamp-1 text-sm text-white/90 sm:mt-2 sm:text-base md:text-lg">{slide.subtitle}</p>}
+              <h2 className="text-balance text-xl font-bold leading-tight sm:text-3xl md:text-4xl lg:text-5xl">{slide.title}</h2>
+              {slide.subtitle && <p className="mt-2 text-pretty text-sm text-white/90 sm:mt-3 sm:text-base md:text-lg">{slide.subtitle}</p>}
             </div>
-            <a href={slide.button_link ?? "/"} className="relative shrink-0" tabIndex={idx === safeI ? 0 : -1}>
-              <Button size="sm" variant="secondary" className="rounded-full px-4 py-2 text-xs sm:px-6 sm:py-2.5 sm:text-sm">
+            <a href={slide.button_link ?? "/"} className="relative" tabIndex={idx === safeI ? 0 : -1}>
+              <Button size="sm" variant="secondary" className="rounded-full px-5 py-2 text-xs font-medium shadow-md sm:px-7 sm:py-2.5 sm:text-sm">
                 {slide.button_text ?? "Дэлгэрэнгүй"}
               </Button>
             </a>
