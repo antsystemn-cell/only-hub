@@ -69,6 +69,40 @@ function AdminBannersPage() {
     onError: (e: any) => toast.error(e.message),
   });
 
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+
+  const handleFile = async (file: File) => {
+    if (!file) return;
+    // Validate dimensions (warn-only)
+    try {
+      const url = URL.createObjectURL(file);
+      const img = await new Promise<HTMLImageElement>((res, rej) => {
+        const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = url;
+      });
+      URL.revokeObjectURL(url);
+      const ratio = img.width / img.height;
+      if (img.width < 1600) {
+        toast.warning(`Зургийн өргөн ${img.width}px байна. 1920px-ээс багагүй байвал тод харагдана.`);
+      }
+      if (ratio < 2.4 || ratio > 4.0) {
+        toast.warning(`Харьцаа ${ratio.toFixed(2)}:1 байна. 3:1 (жишээ нь 1920×640) хамгийн тохиромжтой.`);
+      }
+    } catch {}
+
+    setUploading(true);
+    try {
+      const { url } = await uploadOptimized(file, "banners", "platform");
+      setForm((f: any) => ({ ...f, banner_image: url }));
+      toast.success("Зураг байршууллаа");
+    } catch (e: any) {
+      toast.error(e.message ?? "Байршуулахад алдаа");
+    } finally {
+      setUploading(false);
+      if (fileRef.current) fileRef.current.value = "";
+    }
+  };
+
   const del = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase.from("platform_banners").delete().eq("id", id);
