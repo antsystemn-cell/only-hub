@@ -261,7 +261,7 @@ function Index() {
         </div>
 
         {productsQ.isLoading ? (
-          <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-4 lg:grid-cols-6">
             {Array.from({ length: PAGE_SIZE }).map((_, i) => (
               <div key={i} className="aspect-[3/4] animate-pulse rounded-2xl bg-muted" />
             ))}
@@ -273,7 +273,7 @@ function Index() {
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4">
+            <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-4 lg:grid-cols-6">
               {items.map((p: any) => {
                 const m = merchantById[p.merchant_id];
                 const card = (
