@@ -180,20 +180,20 @@ function AdminBannersPage() {
                 <div className="mb-2 flex items-center gap-1.5 font-semibold">
                   <Info className="h-3.5 w-3.5" /> Зургийн хэмжээний удирдамж
                 </div>
-                <ul className="space-y-1 pl-1">
-                  <li className="flex items-start gap-2">
-                    <Monitor className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                    <span><b>Санал болгох хэмжээ:</b> 1920 × 640 px (харьцаа 3:1)</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <Smartphone className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                    <span><b>Гар утсанд:</b> зургийн төв хэсэгт гол агуулгаа байрлуул — хажуу талууд таслагдаж болно</span>
-                  </li>
-                  <li>• <b>Доод хэмжээ:</b> 1600 × 533 px</li>
-                  <li>• <b>Формат:</b> JPG/PNG/WebP (WebP-рүү автоматаар хувиргана)</li>
-                  <li>• <b>Файлын хэмжээ:</b> 5MB-аас бага</li>
-                  <li>• Текст/товч баннер дээр давхар орох тул зургандаа хэт олон бичээс битгий оруул</li>
-                </ul>
+              <ul className="space-y-1 pl-1">
+                <li className="flex items-start gap-2">
+                  <Monitor className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                  <span><b>Санал болгох хэмжээ:</b> 1920 × 768 px (харьцаа 2.5:1)</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <Smartphone className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                  <span><b>Гар утсанд:</b> зургийн төв хэсэгт гол агуулгаа байрлуул — хажуу талууд таслагдаж болно</span>
+                </li>
+                <li>• <b>Доод хэмжээ:</b> 1600 × 640 px</li>
+                <li>• <b>Формат:</b> JPG/PNG/WebP (WebP-рүү автоматаар хувиргана)</li>
+                <li>• <b>Файлын хэмжээ:</b> 5MB-аас бага</li>
+                <li>• Текст/товч баннер дээр давхар орох тул зургандаа хэт олон бичээс битгий оруул</li>
+              </ul>
               </div>
 
               <div className="flex flex-wrap items-center gap-2">
