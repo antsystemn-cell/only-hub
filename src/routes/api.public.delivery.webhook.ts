@@ -139,80 +139,97 @@ export const Route = createFileRoute("/api/public/delivery/webhook")({
         const ff = (payload.fulfillment_status ?? payload.status ?? "").toLowerCase();
         const newStatus = STATUS_MAP[ff] ?? order.status;
 
-        const patch: any = {
-          delivery_status: ff || order.delivery_status,
-          status: newStatus,
-          updated_at: new Date().toISOString(),
-        };
-        if (intl) patch.delivery_order_id = intl;
+        // Webhook idempotency — derive a stable event key.
+        // Prefer explicit (event + updated_at), else hash the raw body.
+        const { withWebhookIdempotency, hashPayload } = await import(
+          "@/lib/webhooks/idempotency.server"
+        );
+        const stableKeyBase =
+          payload.event && payload.updated_at
+            ? `${order.id}:${payload.event}:${ff}:${payload.updated_at}`
+            : null;
+        const eventKey = stableKeyBase ?? (await hashPayload(`${order.id}:${bodyText}`));
 
-        await supabaseAdmin.from("orders").update(patch).eq("id", order.id);
-
-        // Хэрэв delivery_request бүртгэлтэй бол түүнийг sync хийнэ.
-        // Sync доторх syncDeliveryStatusFromExternal нь delivered үед onDeliveryCompleted-г дуудна.
-        let drId: string | null = null;
-        let syncTriggeredCollection = false;
-        {
-          const { data: dr } = await supabaseAdmin
-            .from("delivery_requests")
-            .select("id,status")
-            .eq("order_id", order.id)
-            .maybeSingle();
-          if (dr) {
-            drId = dr.id;
-            const prev = dr.status;
-            try {
-              const { syncDeliveryStatusFromExternal } = await import(
-                "@/lib/delivery/delivery.service"
-              );
-              await syncDeliveryStatusFromExternal({
-                deliveryRequestId: dr.id,
-                fulfillmentStatus: ff,
-                externalRef: intl,
-              });
-              // syncDeliveryStatusFromExternal calls onDeliveryCompleted only when
-              // prev !== "delivered" AND next === "delivered". Track that.
-              const { SWIFT_STATUS_MAP } = await import("@/lib/delivery/delivery.swift");
-              const nextMapped = SWIFT_STATUS_MAP[ff] ?? prev;
-              syncTriggeredCollection = nextMapped === "delivered" && prev !== "delivered";
-            } catch (e) {
-              console.error("[delivery-webhook] sync failed", e);
-            }
-          }
-        }
-
-        // Хэрэв delivery_request байхгүй ч хүргэлт амжилттай төгссөн бол шууд автомат
-        // төлбөр цуглуулалт асаана. Үүнгүй бол ON Shop портал-аас ирэх хүргэлтүүдэд
-        // SMS автоматаар явахгүй байсан.
-        const deliveredLike = ff === "delivered" || ff === "completed";
-        if (deliveredLike && !syncTriggeredCollection) {
-          try {
-            const { onDeliveryCompleted } = await import(
-              "@/lib/payment-collection/collection.service"
-            );
-            const res = await onDeliveryCompleted({ orderId: order.id });
-            console.log("[delivery-webhook] onDeliveryCompleted", order.id, res);
-          } catch (e) {
-            console.error("[delivery-webhook] onDeliveryCompleted failed", order.id, e);
-          }
-        }
-
-        await supabaseAdmin.from("delivery_webhooks").insert({
-          order_id: order.id,
-          merchant_id: order.merchant_id,
-          delivery_request_id: drId,
-          event: payload.event ?? "order.status_changed",
-          fulfillment_status: ff || null,
+        const idem = await withWebhookIdempotency({
+          provider: "delivery_swift",
+          eventKey,
+          orderId: order.id,
           payload: raw,
+          handler: async () => {
+            const patch: any = {
+              delivery_status: ff || order.delivery_status,
+              status: newStatus,
+              updated_at: new Date().toISOString(),
+            };
+            if (intl) patch.delivery_order_id = intl;
+
+            await supabaseAdmin.from("orders").update(patch).eq("id", order.id);
+
+            let drId: string | null = null;
+            let syncTriggeredCollection = false;
+            {
+              const { data: dr } = await supabaseAdmin
+                .from("delivery_requests")
+                .select("id,status")
+                .eq("order_id", order.id)
+                .maybeSingle();
+              if (dr) {
+                drId = dr.id;
+                const prev = dr.status;
+                try {
+                  const { syncDeliveryStatusFromExternal } = await import(
+                    "@/lib/delivery/delivery.service"
+                  );
+                  await syncDeliveryStatusFromExternal({
+                    deliveryRequestId: dr.id,
+                    fulfillmentStatus: ff,
+                    externalRef: intl,
+                  });
+                  const { SWIFT_STATUS_MAP } = await import("@/lib/delivery/delivery.swift");
+                  const nextMapped = SWIFT_STATUS_MAP[ff] ?? prev;
+                  syncTriggeredCollection = nextMapped === "delivered" && prev !== "delivered";
+                } catch (e) {
+                  console.error("[delivery-webhook] sync failed", e);
+                }
+              }
+            }
+
+            const deliveredLike = ff === "delivered" || ff === "completed";
+            if (deliveredLike && !syncTriggeredCollection) {
+              try {
+                const { onDeliveryCompleted } = await import(
+                  "@/lib/payment-collection/collection.service"
+                );
+                const res = await onDeliveryCompleted({ orderId: order.id });
+                console.log("[delivery-webhook] onDeliveryCompleted", order.id, res);
+              } catch (e) {
+                console.error("[delivery-webhook] onDeliveryCompleted failed", order.id, e);
+              }
+            }
+
+            await supabaseAdmin.from("delivery_webhooks").insert({
+              order_id: order.id,
+              merchant_id: order.merchant_id,
+              delivery_request_id: drId,
+              event: payload.event ?? "order.status_changed",
+              fulfillment_status: ff || null,
+              payload: raw,
+            });
+
+            return { order_id: order.id, status: newStatus, drId };
+          },
         });
 
-
-
-
         return new Response(
-          JSON.stringify({ ok: true, order_id: order.id, status: newStatus }),
+          JSON.stringify({
+            ok: true,
+            order_id: order.id,
+            status: newStatus,
+            duplicate: idem.duplicate,
+          }),
           { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } },
         );
+
       },
     },
   },
