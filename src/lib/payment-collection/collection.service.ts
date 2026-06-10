@@ -232,14 +232,8 @@ export async function onDeliveryCompleted(args: {
   const { orderId, collectedInCash } = args;
 
   if (collectedInCash) {
-    await supabaseAdmin
-      .from("orders")
-      .update({
-        payment_status: "confirmed",
-        delivery_status: "paid",
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", orderId);
+    const { confirmOrderPayment } = await import("@/lib/payments/confirm-order-payment.server");
+    await confirmOrderPayment({ orderId, source: "post_delivery_cash" });
     return { ok: true as const, collectedInCash: true };
   }
 
