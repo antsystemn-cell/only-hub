@@ -173,9 +173,60 @@ function AdminBannersPage() {
               <Label>Товчлуурын линк</Label>
               <Input value={form.button_link ?? ""} onChange={(e) => setForm({ ...form, button_link: e.target.value })} placeholder="/stores" className="mt-1" />
             </div>
-            <div className="md:col-span-2">
-              <Label>Баннер зурагны URL (заавал биш)</Label>
-              <Input value={form.banner_image ?? ""} onChange={(e) => setForm({ ...form, banner_image: e.target.value })} placeholder="https://..." className="mt-1" />
+            <div className="md:col-span-2 space-y-3">
+              <Label>Баннер зураг (заавал биш)</Label>
+
+              <div className="rounded-xl border border-blue-200 bg-blue-50 p-3 text-xs text-blue-900 dark:border-blue-900/40 dark:bg-blue-950/30 dark:text-blue-100">
+                <div className="mb-2 flex items-center gap-1.5 font-semibold">
+                  <Info className="h-3.5 w-3.5" /> Зургийн хэмжээний удирдамж
+                </div>
+                <ul className="space-y-1 pl-1">
+                  <li className="flex items-start gap-2">
+                    <Monitor className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                    <span><b>Санал болгох хэмжээ:</b> 1920 × 640 px (харьцаа 3:1)</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <Smartphone className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                    <span><b>Гар утсанд:</b> зургийн төв хэсэгт гол агуулгаа байрлуул — хажуу талууд таслагдаж болно</span>
+                  </li>
+                  <li>• <b>Доод хэмжээ:</b> 1600 × 533 px</li>
+                  <li>• <b>Формат:</b> JPG/PNG/WebP (WebP-рүү автоматаар хувиргана)</li>
+                  <li>• <b>Файлын хэмжээ:</b> 5MB-аас бага</li>
+                  <li>• Текст/товч баннер дээр давхар орох тул зургандаа хэт олон бичээс битгий оруул</li>
+                </ul>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2">
+                <input
+                  ref={fileRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f); }}
+                />
+                <Button type="button" variant="outline" disabled={uploading} onClick={() => fileRef.current?.click()}>
+                  {uploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
+                  {uploading ? "Байршуулж байна..." : "Зураг сонгох"}
+                </Button>
+                {form.banner_image && (
+                  <Button type="button" variant="ghost" size="sm" onClick={() => setForm({ ...form, banner_image: "" })}>
+                    Устгах
+                  </Button>
+                )}
+              </div>
+
+              <Input
+                value={form.banner_image ?? ""}
+                onChange={(e) => setForm({ ...form, banner_image: e.target.value })}
+                placeholder="эсвэл URL оруулах: https://..."
+                className="text-xs"
+              />
+
+              {form.banner_image && (
+                <div className="overflow-hidden rounded-lg border">
+                  <img src={form.banner_image} alt="preview" className="h-32 w-full object-cover" />
+                </div>
+              )}
             </div>
             <div className="md:col-span-2">
               <Label>Арын өнгө</Label>
