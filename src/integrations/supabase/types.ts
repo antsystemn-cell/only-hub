@@ -1213,6 +1213,47 @@ export type Database = {
           },
         ]
       }
+      webhook_events: {
+        Row: {
+          created_at: string
+          event_key: string
+          id: string
+          order_id: string | null
+          payload: Json | null
+          processed_at: string
+          provider: string
+          result: Json | null
+        }
+        Insert: {
+          created_at?: string
+          event_key: string
+          id?: string
+          order_id?: string | null
+          payload?: Json | null
+          processed_at?: string
+          provider: string
+          result?: Json | null
+        }
+        Update: {
+          created_at?: string
+          event_key?: string
+          id?: string
+          order_id?: string | null
+          payload?: Json | null
+          processed_at?: string
+          provider?: string
+          result?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "webhook_events_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
