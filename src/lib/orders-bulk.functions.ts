@@ -118,3 +118,14 @@ export const bulkDeleteOrders = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true as const, count: data.ids.length };
   });
+
+// Single-order confirm — used by merchant/admin UI "Mark as paid" toggles.
+// Always flows through the centralized confirmOrderPayment service.
+export const markOrderPaid = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ orderId: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    await assertMerchantAccess(context.userId, [data.orderId]);
+    const res = await confirmOrderPayment({ orderId: data.orderId, source: "merchant_manual" });
+    return res;
+  });
