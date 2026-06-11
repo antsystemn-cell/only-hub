@@ -202,6 +202,7 @@ async function sendRequestSms(
   }
 
   const res = await sendCallproSms({ phone: order.phone, message });
+  const { logNotification } = await import("@/lib/notifications/log.server");
   if (!res.ok) {
     await supabaseAdmin
       .from("payment_requests")
@@ -210,6 +211,18 @@ async function sendRequestSms(
         last_sms_error: res.error,
       })
       .eq("id", request.id);
+    await logNotification({
+      orderId: order.id,
+      merchantId: order.merchant_id,
+      eventType: "payment_requested",
+      channel: "sms",
+      provider: "callpro",
+      recipient: order.phone,
+      status: "failed",
+      message,
+      error: res.error,
+      attempt: (request.sms_attempts ?? 0) + 1,
+    });
     return { ok: false, error: res.error };
   }
   await supabaseAdmin
@@ -221,6 +234,17 @@ async function sendRequestSms(
       status: "requested",
     })
     .eq("id", request.id);
+  await logNotification({
+    orderId: order.id,
+    merchantId: order.merchant_id,
+    eventType: "payment_requested",
+    channel: "sms",
+    provider: "callpro",
+    recipient: order.phone,
+    status: "sent",
+    message,
+    attempt: (request.sms_attempts ?? 0) + 1,
+  });
   return { ok: true };
 }
 

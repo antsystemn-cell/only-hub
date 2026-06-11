@@ -195,6 +195,16 @@ export async function updateDeliveryStatus(args: {
   // Хүргэлт амжилттай төгсөхөд автомат төлбөр цуглуулалт асаана.
   if (status === "delivered" && data?.order_id) {
     try {
+      const { logNotification } = await import("@/lib/notifications/log.server");
+      await logNotification({
+        orderId: data.order_id,
+        merchantId: data.merchant_id,
+        eventType: "delivered",
+        channel: "system",
+        status: "sent",
+        provider: data.provider ?? "local",
+        message: "Order delivered",
+      });
       const { onDeliveryCompleted } = await import(
         "@/lib/payment-collection/collection.service"
       );

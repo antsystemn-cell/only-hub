@@ -128,6 +128,21 @@ export async function confirmOrderPayment(opts: ConfirmOptions): Promise<Confirm
     deliveryError,
   });
 
+  try {
+    const { logNotification } = await import("@/lib/notifications/log.server");
+    await logNotification({
+      orderId,
+      merchantId: order.merchant_id,
+      eventType: "paid",
+      channel: "system",
+      status: deliveryError ? "failed" : "sent",
+      provider: source,
+      message: `Order confirmed via ${source}`,
+      error: deliveryError,
+      payload: { deliveryRequestCreated },
+    });
+  } catch {}
+
   return {
     ok: true,
     orderId,
