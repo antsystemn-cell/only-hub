@@ -603,6 +603,69 @@ export type Database = {
         }
         Relationships: []
       }
+      notifications_log: {
+        Row: {
+          attempt: number
+          channel: string
+          created_at: string
+          error: string | null
+          event_type: string
+          id: string
+          merchant_id: string | null
+          message: string | null
+          order_id: string | null
+          payload: Json | null
+          provider: string | null
+          recipient: string | null
+          status: string
+        }
+        Insert: {
+          attempt?: number
+          channel?: string
+          created_at?: string
+          error?: string | null
+          event_type: string
+          id?: string
+          merchant_id?: string | null
+          message?: string | null
+          order_id?: string | null
+          payload?: Json | null
+          provider?: string | null
+          recipient?: string | null
+          status?: string
+        }
+        Update: {
+          attempt?: number
+          channel?: string
+          created_at?: string
+          error?: string | null
+          event_type?: string
+          id?: string
+          merchant_id?: string | null
+          message?: string | null
+          order_id?: string | null
+          payload?: Json | null
+          provider?: string | null
+          recipient?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_log_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_log_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       orders: {
         Row: {
           branch: string | null
