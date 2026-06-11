@@ -119,6 +119,9 @@ vi.mock("@/integrations/supabase/client.server", () => {
       from: (table: string) => {
         if (table === "orders") return fromOrders();
         if (table === "payment_requests") return fromPaymentRequests();
+        if (table === "notifications_log") {
+          return { insert: async () => ({ error: null }) };
+        }
         throw new Error(`Unexpected table: ${table}`);
       },
     },
