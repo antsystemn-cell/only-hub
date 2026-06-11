@@ -116,6 +116,47 @@ export const createOrder = createServerFn({ method: "POST" })
 
     const total = Math.max(0, subtotal - discount) + deliveryFee;
 
+    // 4b. Reserve stock atomically BEFORE creating the order, so concurrent
+    //     checkouts cannot oversell the same tracked variant.
+    const stockItems = normalized
+      .map((i) => {
+        const k = variantKey(i!.color, i!.size);
+        return k ? { product_id: i!.productId, variant_key: k, qty: i!.quantity } : null;
+      })
+      .filter(Boolean) as { product_id: string; variant_key: string; qty: number }[];
+    let stockReserved = false;
+    if (stockItems.length) {
+      const { data: stockRes, error: stockErr } = await supabaseAdmin.rpc(
+        "decrement_variant_stocks",
+        { _items: stockItems as any },
+      );
+      if (stockErr) return { ok: false as const, error: stockErr.message };
+      const r = stockRes as any;
+      if (r && r.ok === false) {
+        const lines = (r.insufficient ?? [])
+          .map(
+            (it: any) =>
+              `Барааны "${it.variant_key}" — үлдэгдэл ${it.remaining}, та ${it.requested}-г сонгосон`,
+          )
+          .join("\n");
+        return { ok: false as const, error: lines || "Барааны үлдэгдэл хүрэлцэхгүй" };
+      }
+      stockReserved = true;
+    }
+
+    // 4c. Atomically consume the coupon (prevents double-use under load).
+    if (couponId) {
+      const { data: consumed, error: consumeErr } = await supabaseAdmin.rpc("consume_coupon", {
+        _coupon_id: couponId,
+      });
+      if (consumeErr || !consumed) {
+        if (stockReserved) {
+          await supabaseAdmin.rpc("restore_variant_stocks", { _items: stockItems as any });
+        }
+        return { ok: false as const, error: "Купоны хязгаар дууссан" };
+      }
+    }
+
     // 5. Insert order
     const { data: order, error: orderErr } = await supabaseAdmin
       .from("orders")
@@ -135,24 +176,32 @@ export const createOrder = createServerFn({ method: "POST" })
         payment_method: data.paymentMethod,
         payment_status: "unpaid",
         status: "pending",
+        coupon_id: couponId,
       })
       .select("*")
       .single();
-    if (orderErr || !order) return { ok: false as const, error: orderErr?.message ?? "Захиалга үүсгэхэд алдаа" };
-
-    if (couponId) {
-      const { data: c } = await supabaseAdmin
-        .from("coupons")
-        .select("used_count")
-        .eq("id", couponId)
-        .single();
-      if (c) {
-        await supabaseAdmin
-          .from("coupons")
-          .update({ used_count: c.used_count + 1 })
-          .eq("id", couponId);
+    if (orderErr || !order) {
+      // Compensating rollback for the reservations we just made.
+      if (stockReserved) {
+        await supabaseAdmin.rpc("restore_variant_stocks", { _items: stockItems as any });
       }
+      if (couponId) {
+        // Best-effort: decrement the counter we just bumped via consume_coupon.
+        const { data: c } = await supabaseAdmin
+          .from("coupons")
+          .select("used_count")
+          .eq("id", couponId)
+          .single();
+        if (c && c.used_count > 0) {
+          await supabaseAdmin
+            .from("coupons")
+            .update({ used_count: c.used_count - 1 })
+            .eq("id", couponId);
+        }
+      }
+      return { ok: false as const, error: orderErr?.message ?? "Захиалга үүсгэхэд алдаа" };
     }
+
 
     // 6. QPay invoice (if applicable)
     let qpay: any = null;

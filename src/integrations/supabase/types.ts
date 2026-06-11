@@ -1259,6 +1259,8 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      consume_coupon: { Args: { _coupon_id: string }; Returns: boolean }
+      decrement_variant_stocks: { Args: { _items: Json }; Returns: Json }
       has_merchant_access: {
         Args: { _merchant_id: string; _user_id: string }
         Returns: boolean
@@ -1275,6 +1277,7 @@ export type Database = {
         Returns: boolean
       }
       is_platform_admin: { Args: { _user_id: string }; Returns: boolean }
+      restore_variant_stocks: { Args: { _items: Json }; Returns: undefined }
     }
     Enums: {
       app_role:
