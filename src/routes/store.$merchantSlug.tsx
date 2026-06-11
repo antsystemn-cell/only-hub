@@ -17,7 +17,7 @@ function StorePage() {
   const isStoreIndex = pathname === `/store/${merchantSlug}` || pathname === `/store/${merchantSlug}/`;
   const { data: merchant } = useQuery({
     queryKey: ["merchant", merchantSlug],
-    queryFn: async () => (await supabase.from("merchants").select("id,name,slug,logo_url,description,is_active,approval_status,owner_id,created_at,updated_at").eq("slug", merchantSlug).maybeSingle()).data,
+    queryFn: async () => (await supabase.from("merchants").select("id,name,slug,logo_url,description,is_active,approval_status,created_at,updated_at").eq("slug", merchantSlug).maybeSingle()).data,
   });
   const { data: products = [] } = useQuery({
     queryKey: ["store-products", merchant?.id],
