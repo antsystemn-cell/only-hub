@@ -111,18 +111,28 @@ vi.mock("@/integrations/supabase/client.server", () => ({
       }
       if (table === "webhook_events") {
         return {
-          insert: async (row: any) => {
+          insert: (row: any) => {
             const key = `${row.provider}:${row.event_key}`;
-            if (state.webhookEvents.has(key)) {
-              return { error: { code: "23505", message: "duplicate" } };
-            }
-            state.webhookEvents.set(key, row);
-            return { error: null };
+            const isDup = state.webhookEvents.has(key);
+            if (!isDup) state.webhookEvents.set(key, { id: crypto.randomUUID(), ...row });
+            const stored = state.webhookEvents.get(key);
+            return {
+              select: () => ({
+                single: async () =>
+                  isDup
+                    ? { data: null, error: { code: "23505", message: "duplicate" } }
+                    : { data: { id: stored!.id }, error: null },
+              }),
+            };
           },
           select: () => ({
-            eq: () => ({ eq: () => ({ maybeSingle: async () => ({ data: null, error: null }) }) }),
+            eq: () => ({
+              eq: () => ({
+                maybeSingle: async () => ({ data: null, error: null }),
+              }),
+            }),
           }),
-          update: () => ({ eq: () => ({ eq: () => Promise.resolve({ error: null }) }) }),
+          update: () => ({ eq: () => Promise.resolve({ error: null }) }),
         } as any;
       }
       if (table === "notifications_log") {
