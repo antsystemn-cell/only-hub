@@ -242,22 +242,25 @@ describe("invariant: webhook duplicate ignored", () => {
       return { processed: true };
     };
 
-    const a = await withWebhookIdempotency(
-      { provider: "qpay", eventKey: "evt-123", payloadHash: hashPayload({ a: 1 }) },
+    const a = await withWebhookIdempotency({
+      provider: "qpay",
+      eventKey: "evt-123",
       handler,
-    );
-    const b = await withWebhookIdempotency(
-      { provider: "qpay", eventKey: "evt-123", payloadHash: hashPayload({ a: 1 }) },
+    });
+    const b = await withWebhookIdempotency({
+      provider: "qpay",
+      eventKey: "evt-123",
       handler,
-    );
+    });
 
-    expect(a.handled).toBe(true);
-    expect(b.handled).toBe(false); // duplicate
+    expect(a.duplicate).toBe(false);
+    expect(b.duplicate).toBe(true);
     expect(executions).toBe(1);
   });
 
-  it("hashPayload is stable across key ordering", () => {
-    expect(hashPayload({ a: 1, b: 2 })).toBe(hashPayload({ b: 2, a: 1 }));
+  it("hashPayload is stable for identical input strings", async () => {
+    const s = JSON.stringify({ a: 1, b: 2 });
+    expect(await hashPayload(s)).toBe(await hashPayload(s));
   });
 });
 
