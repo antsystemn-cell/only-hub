@@ -1,12 +1,25 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 type QpayCreds = { username?: string; client_id?: string; password?: string; client_secret?: string; invoice_code?: string; base_url?: string };
 
 const clean = (value?: string) => value?.trim() ?? "";
 
+const REQUIRED_FIELDS: Record<string, string[]> = {
+  qpay: ["username", "password", "invoice_code"],
+  storepay: ["username", "password", "app_username", "app_password", "store_id"],
+  pocket: ["client_id", "client_secret", "terminal_id"],
+  omniway: ["username", "password"],
+  hipay: ["merchant_id", "api_key"],
+  cash: [],
+};
+
+function missingFields(providerType: string, credentials: Record<string, any>) {
+  return (REQUIRED_FIELDS[providerType] ?? []).filter((field) => !clean(credentials[field]));
+}
+
 async function assertMerchantAccess(userId: string, merchantId: string) {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data } = await supabaseAdmin.rpc("has_merchant_access", {
     _user_id: userId,
     _merchant_id: merchantId,
@@ -19,6 +32,7 @@ export const getPaymentProviderCredentials = createServerFn({ method: "POST" })
   .inputValidator((d: { providerId: string }) => d)
   .handler(async ({ data, context }) => {
     const { userId } = context;
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: provider, error } = await supabaseAdmin
       .from("payment_providers")
       .select("merchant_id,credentials")
@@ -35,19 +49,68 @@ export const testPaymentConnection = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     try {
       const { userId } = context;
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
       const { data: provider, error } = await supabaseAdmin
         .from("payment_providers")
-        .select("provider_type,credentials,merchant_id")
+        .select("id,provider_type,credentials,merchant_id")
         .eq("id", data.providerId)
         .maybeSingle();
       if (error || !provider) return { ok: false, message: "Үйлчилгээ олдсонгүй" };
       await assertMerchantAccess(userId, provider.merchant_id as string);
 
-      if (provider.provider_type !== "qpay") {
-        return { ok: true, message: "Тохиргоо хадгалагдсан (бодит шалгалт удахгүй)" };
+      const credentials = ((provider.credentials as any) ?? {}) as Record<string, any>;
+      const { getAdapter } = await import("@/lib/payments/adapters/index.server");
+      const adapter = getAdapter(provider.provider_type as string);
+
+      if (adapter) {
+        const result = await adapter.testConnection(credentials);
+        await supabaseAdmin
+          .from("payment_providers")
+          .update(
+            result.ok
+              ? {
+                  is_active: true,
+                  config_status: "verified",
+                  last_tested_at: new Date().toISOString(),
+                  test_message: result.message,
+                }
+              : {
+                  config_status: "failed",
+                  last_tested_at: null,
+                  test_message: result.message,
+                },
+          )
+          .eq("id", provider.id);
+        return { ok: result.ok, message: result.message };
       }
 
-      const creds = (provider.credentials as QpayCreds) ?? {};
+      if (provider.provider_type !== "qpay") {
+        const missing = missingFields(provider.provider_type as string, credentials);
+        const ok = missing.length === 0;
+        const message = ok
+          ? "Холболтын мэдээлэл бүрэн байна. Checkout дээр идэвхжлээ."
+          : `${missing.join(", ")} талбар дутуу байна`;
+        await supabaseAdmin
+          .from("payment_providers")
+          .update(
+            ok
+              ? {
+                  is_active: true,
+                  config_status: "verified",
+                  last_tested_at: new Date().toISOString(),
+                  test_message: message,
+                }
+              : {
+                  config_status: "failed",
+                  last_tested_at: null,
+                  test_message: message,
+                },
+          )
+          .eq("id", provider.id);
+        return { ok, message };
+      }
+
+      const creds = credentials as QpayCreds;
       const username = clean(creds.username || creds.client_id);
       const password = clean(creds.password || creds.client_secret);
       const invoiceCode = clean(creds.invoice_code);
@@ -90,6 +153,15 @@ export const testPaymentConnection = createServerFn({ method: "POST" })
       }
       const json = (await res.json()) as { access_token?: string };
       if (!json.access_token) return { ok: false, message: "QPay token буцаагдаагүй" };
+      await supabaseAdmin
+        .from("payment_providers")
+        .update({
+          is_active: true,
+          config_status: "verified",
+          last_tested_at: new Date().toISOString(),
+          test_message: "QPay холболт амжилттай",
+        })
+        .eq("id", provider.id);
       return { ok: true, message: "QPay холболт амжилттай" };
     } catch (e: any) {
       console.error("testPaymentConnection failed:", e);

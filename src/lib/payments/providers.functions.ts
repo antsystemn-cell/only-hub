@@ -6,7 +6,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-const PROVIDER_TYPES = ["qpay", "storepay", "pocket", "omniway"] as const;
+const PROVIDER_TYPES = ["qpay", "storepay", "pocket", "omniway", "hipay", "cash"] as const;
 
 const PROVIDER_DEFAULTS: Record<
   (typeof PROVIDER_TYPES)[number],
@@ -16,7 +16,18 @@ const PROVIDER_DEFAULTS: Record<
   storepay: { name: "Storepay", icon: "🟣", description: "Хуваан төлөх (Storepay)" },
   pocket:   { name: "Pocket",   icon: "🔵", description: "Pocket апп / QR" },
   omniway:  { name: "Omniway",  icon: "🟠", description: "Omniway PG (QR)" },
+  hipay:    { name: "HiPay",    icon: "🟢", description: "HiPay төлбөрийн систем" },
+  cash:     { name: "Бэлэн",     icon: "💵", description: "Хүргэлтээр эсвэл бэлнээр төлөх" },
 };
+
+const LEGACY_REQUIRED_FIELDS: Record<string, string[]> = {
+  hipay: ["merchant_id", "api_key"],
+  cash: [],
+};
+
+function requiredFieldsFor(providerType: string, adapter: { requiredFields: string[] } | null) {
+  return adapter?.requiredFields ?? LEGACY_REQUIRED_FIELDS[providerType] ?? [];
+}
 
 const CREDENTIAL_KEYS_TO_MASK = new Set([
   "password", "client_secret", "app_password", "api_key", "secret", "private_key",
@@ -132,6 +143,9 @@ export const saveMerchantProvider = createServerFn({ method: "POST" })
       merchantId: z.string().uuid(),
       providerType: z.enum(PROVIDER_TYPES),
       isActive: z.boolean(),
+      name: z.string().trim().max(120).optional(),
+      icon: z.string().trim().max(20).optional(),
+      description: z.string().trim().max(500).optional(),
       // Only fields the merchant explicitly types are saved. Empty string fields are dropped
       // so a re-save without retyping the secret keeps the existing value.
       credentials: z.record(z.string(), z.string().max(2000)),
@@ -143,7 +157,7 @@ export const saveMerchantProvider = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { getAdapter } = await import("@/lib/payments/adapters/index.server");
     const adapter = getAdapter(data.providerType);
-    if (!adapter) return { ok: false as const, message: "Тохирох адаптер олдсонгүй" };
+    const requiredFields = requiredFieldsFor(data.providerType, adapter);
 
     // Load existing row to merge credentials and preserve untouched secrets.
     const { data: existing } = await supabaseAdmin
@@ -159,17 +173,23 @@ export const saveMerchantProvider = createServerFn({ method: "POST" })
       if (v && v.trim()) newCreds[k] = v.trim();
     }
 
-    const allRequiredPresent = adapter.requiredFields.every(
+    const allRequiredPresent = requiredFields.every(
       (f) => typeof newCreds[f] === "string" && (newCreds[f] as string).length > 0,
     );
-    const configStatus = allRequiredPresent ? "incomplete" : "incomplete";
+    const configStatus = allRequiredPresent && !adapter ? "verified" : "incomplete";
     const defaults = PROVIDER_DEFAULTS[data.providerType];
+    const metadata = {
+      name: data.name?.trim() || defaults.name,
+      icon: data.icon?.trim() || defaults.icon,
+      description: data.description?.trim() || defaults.description,
+    };
 
     let row;
     if (existing) {
       const { data: updated, error } = await supabaseAdmin
         .from("payment_providers")
         .update({
+          ...metadata,
           credentials: newCreds,
           is_active: data.isActive,
           // Re-saving credentials invalidates the previous test result.
@@ -188,9 +208,7 @@ export const saveMerchantProvider = createServerFn({ method: "POST" })
         .insert({
           merchant_id: data.merchantId,
           provider_type: data.providerType,
-          name: defaults.name,
-          icon: defaults.icon,
-          description: defaults.description,
+          ...metadata,
           credentials: newCreds,
           is_active: data.isActive,
           config_status: configStatus,
@@ -206,8 +224,10 @@ export const saveMerchantProvider = createServerFn({ method: "POST" })
       ok: true as const,
       providerId: row!.id as string,
       message: allRequiredPresent
-        ? "Хадгалагдлаа. Холболтоо туршина уу."
-        : `Хадгалагдсан. ${adapter.requiredFields.join(", ")} утгуудыг бүгдийг оруулна уу.`,
+        ? adapter
+          ? "Хадгалагдлаа. Холболтыг автоматаар шалгаж байна."
+          : "Хадгалагдлаа. Checkout дээр идэвхжлээ."
+        : `Хадгалагдсан. ${requiredFields.join(", ")} утгуудыг бүгдийг оруулна уу.`,
     };
   });
 
@@ -230,16 +250,53 @@ export const testMerchantProvider = createServerFn({ method: "POST" })
     await assertMerchantAccess(userId, row.merchant_id as string);
 
     const adapter = getAdapter(row.provider_type as string);
-    if (!adapter) return { ok: false as const, message: "Тохирох адаптер олдсонгүй" };
+    if (!adapter) {
+      const requiredFields = requiredFieldsFor(row.provider_type as string, null);
+      const credentials = ((row.credentials as any) ?? {}) as Record<string, any>;
+      const missing = requiredFields.filter(
+        (field) => typeof credentials[field] !== "string" || credentials[field].trim().length === 0,
+      );
+      const ok = missing.length === 0;
+      const message = ok
+        ? "Холболтын мэдээлэл бүрэн байна. Checkout дээр идэвхжлээ."
+        : `${missing.join(", ")} талбар дутуу байна`;
+      await supabaseAdmin
+        .from("payment_providers")
+        .update(
+          ok
+            ? {
+                is_active: true,
+                config_status: "verified",
+                last_tested_at: new Date().toISOString(),
+                test_message: message,
+              }
+            : {
+                config_status: "failed",
+                last_tested_at: null,
+                test_message: message,
+              },
+        )
+        .eq("id", row.id);
+      return { ok, message };
+    }
 
     const result = await adapter.testConnection((row.credentials as any) ?? {});
     await supabaseAdmin
       .from("payment_providers")
-      .update({
-        config_status: result.ok ? "verified" : "failed",
-        last_tested_at: result.ok ? new Date().toISOString() : null,
-        test_message: result.message,
-      })
+      .update(
+        result.ok
+          ? {
+              is_active: true,
+              config_status: "verified",
+              last_tested_at: new Date().toISOString(),
+              test_message: result.message,
+            }
+          : {
+              config_status: "failed",
+              last_tested_at: null,
+              test_message: result.message,
+            },
+      )
       .eq("id", row.id);
     return { ok: result.ok, message: result.message };
   });
