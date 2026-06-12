@@ -1010,6 +1010,7 @@ export type Database = {
           provider_type: string
           test_message: string | null
           updated_at: string
+          use_platform_fallback: boolean
         }
         Insert: {
           config_status?: string
@@ -1028,6 +1029,7 @@ export type Database = {
           provider_type: string
           test_message?: string | null
           updated_at?: string
+          use_platform_fallback?: boolean
         }
         Update: {
           config_status?: string
@@ -1046,6 +1048,7 @@ export type Database = {
           provider_type?: string
           test_message?: string | null
           updated_at?: string
+          use_platform_fallback?: boolean
         }
         Relationships: [
           {
