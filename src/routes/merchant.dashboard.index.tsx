@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
+import { useRealtimeSync } from "@/hooks/use-realtime-sync";
 import { Card } from "@/components/ui/card";
 import { fmtMnt, STATUS_LABELS } from "@/lib/format";
 import { Package, ShoppingCart, TrendingUp, Users, Wallet, BadgePercent } from "lucide-react";
@@ -28,6 +29,13 @@ function StatsPage() {
       ]);
       return { products: products.data ?? [], orders: orders.data ?? [] };
     },
+  });
+
+  useRealtimeSync({
+    tables: ["orders", "delivery_requests"],
+    queryKeys: [["stats", merchantId]],
+    merchantId,
+    enabled: !!merchantId,
   });
 
   const products = data?.products ?? [];

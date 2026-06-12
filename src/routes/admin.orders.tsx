@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
+import { useRealtimeSync } from "@/hooks/use-realtime-sync";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -37,6 +38,12 @@ function AdminOrdersPage() {
   });
   const mById: Record<string, { name: string; slug: string }> = {};
   (merchants as any[]).forEach((m) => { mById[m.id] = { name: m.name, slug: m.slug }; });
+
+  useRealtimeSync({
+    tables: ["orders", "delivery_requests"],
+    queryKeys: [["admin-all-orders"]],
+    enabled: isPlatformAdmin,
+  });
 
   const filtered = (orders as any[]).filter((o) =>
     !search ||

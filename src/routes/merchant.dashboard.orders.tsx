@@ -27,6 +27,7 @@ import jsPDF from "jspdf";
 import { useServerFn } from "@tanstack/react-start";
 import { sendOrderToDelivery } from "@/lib/delivery.functions";
 import { bulkUpdateOrderStatus, bulkMarkPaid, bulkCreateDelivery, bulkDeleteOrders, markOrderPaid } from "@/lib/orders-bulk.functions";
+import { useRealtimeSync } from "@/hooks/use-realtime-sync";
 
 export const DELIVERY_STATUS_LABELS: Record<string, string> = {
   submitted: "Илгээгдсэн",
@@ -88,6 +89,13 @@ function OrdersPage() {
         .order("created_at", { ascending: false });
       return data ?? [];
     },
+  });
+
+  useRealtimeSync({
+    tables: ["orders", "delivery_requests"],
+    queryKeys: [["orders", merchantId]],
+    merchantId,
+    enabled: !!merchantId,
   });
 
   // Collect unique product_ids across all visible orders to fetch thumbnails
