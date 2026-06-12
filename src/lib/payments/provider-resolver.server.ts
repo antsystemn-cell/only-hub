@@ -51,8 +51,7 @@ async function loadPlatformByType(): Promise<Map<string, any>> {
   const { data: platform } = await supabaseAdmin
     .from("payment_providers")
     .select("id, name, provider_type, icon, logo_url, description, config_status, credentials, is_active, position")
-    .eq("is_platform_managed", true)
-    .eq("is_active", true);
+    .eq("is_platform_managed", true);
   const map = new Map<string, any>();
   for (const p of platform ?? []) map.set(p.provider_type as string, p);
   return map;
@@ -72,7 +71,7 @@ export async function listCheckoutMethodsForMerchant(merchantId: string): Promis
   for (const p of own ?? []) {
     if ((p as any).use_platform_fallback) {
       const plat = platformByType.get(p.provider_type as string);
-      if (plat && isCheckoutReady(plat)) {
+      if (plat && plat.is_active && isCheckoutReady(plat)) {
         out.push({
           id: plat.id as string,
           providerType: plat.provider_type as string,
@@ -86,11 +85,12 @@ export async function listCheckoutMethodsForMerchant(merchantId: string): Promis
       continue;
     }
     if (isCheckoutReady(p)) {
+      const plat = platformByType.get(p.provider_type as string);
       out.push({
         id: p.id as string,
         providerType: p.provider_type as string,
         name: p.name as string,
-        icon: (p.icon as string) ?? null,
+        icon: (plat?.icon as string) ?? (p.icon as string) ?? null,
         logoUrl: (p.logo_url as string) ?? null,
         description: (p.description as string) ?? null,
         isPlatformFallback: false,

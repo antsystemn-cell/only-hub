@@ -107,7 +107,7 @@ export const listMerchantProviders = createServerFn({ method: "POST" })
           providerType: t,
           id: row.id as string,
           name: (row.name as string) || defaults.name,
-          icon: useFallback ? platformIcon : ((row.icon as string) || platformIcon),
+          icon: platformIcon,
           description: (row.description as string) || defaults.description,
           isActive: !!row.is_active,
           usePlatformFallback: useFallback,
