@@ -24,7 +24,7 @@ const CreateInput = z.object({
   branch: z.string().max(120).optional().nullable(),
   note: z.string().max(1000).optional().nullable(),
   deliveryOptionId: z.string().uuid().nullable().optional(),
-  paymentMethod: z.enum(["qpay", "storepay", "pocket", "omniway", "hipay", "cash", "transfer", "manual"]).default("qpay"),
+  paymentMethod: z.enum(["pending", "qpay", "storepay", "pocket", "omniway", "hipay", "cash", "transfer", "manual"]).default("pending"),
   couponCode: z.string().max(50).optional().nullable(),
 });
 
