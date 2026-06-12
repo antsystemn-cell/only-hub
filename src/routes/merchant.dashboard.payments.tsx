@@ -35,10 +35,10 @@ const PROVIDER_FIELDS: Record<
     { key: "invoice_code", label: "QPAY_INVOICE_CODE", placeholder: "ONLY_MERCHANT_INVOICE" },
   ],
   storepay: [
-    { key: "username", label: "Storepay USERNAME", placeholder: "merchant username" },
-    { key: "password", label: "Storepay PASSWORD", placeholder: "••••••••", secret: true },
-    { key: "app_username", label: "App / Client ID", placeholder: "app username" },
-    { key: "app_password", label: "App / Client SECRET", placeholder: "••••••••", secret: true },
+    { key: "username", label: "App / Client ID", placeholder: "app username" },
+    { key: "password", label: "App / Client SECRET", placeholder: "••••••••", secret: true },
+    { key: "app_username", label: "Storepay USERNAME", placeholder: "merchant username" },
+    { key: "app_password", label: "Storepay PASSWORD", placeholder: "••••••••", secret: true },
     { key: "store_id", label: "Store ID", placeholder: "12345" },
   ],
   pocket: [
