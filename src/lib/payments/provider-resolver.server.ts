@@ -71,7 +71,7 @@ export async function listCheckoutMethodsForMerchant(merchantId: string): Promis
   for (const p of own ?? []) {
     if ((p as any).use_platform_fallback) {
       const plat = platformByType.get(p.provider_type as string);
-      if (plat && isCheckoutReady(plat)) {
+      if (plat && plat.is_active && isCheckoutReady(plat)) {
         out.push({
           id: plat.id as string,
           providerType: plat.provider_type as string,
