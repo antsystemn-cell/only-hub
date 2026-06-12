@@ -64,15 +64,22 @@ export const testPaymentConnection = createServerFn({ method: "POST" })
 
       if (adapter) {
         const result = await adapter.testConnection(credentials);
-        const updatePayload: Record<string, any> = {
-          config_status: result.ok ? "verified" : "failed",
-          last_tested_at: result.ok ? new Date().toISOString() : null,
-          test_message: result.message,
-        };
-        if (result.ok) updatePayload.is_active = true;
         await supabaseAdmin
           .from("payment_providers")
-          .update(updatePayload)
+          .update(
+            result.ok
+              ? {
+                  is_active: true,
+                  config_status: "verified",
+                  last_tested_at: new Date().toISOString(),
+                  test_message: result.message,
+                }
+              : {
+                  config_status: "failed",
+                  last_tested_at: null,
+                  test_message: result.message,
+                },
+          )
           .eq("id", provider.id);
         return { ok: result.ok, message: result.message };
       }
@@ -83,15 +90,22 @@ export const testPaymentConnection = createServerFn({ method: "POST" })
         const message = ok
           ? "Холболтын мэдээлэл бүрэн байна. Checkout дээр идэвхжлээ."
           : `${missing.join(", ")} талбар дутуу байна`;
-        const updatePayload: Record<string, any> = {
-          config_status: ok ? "verified" : "failed",
-          last_tested_at: ok ? new Date().toISOString() : null,
-          test_message: message,
-        };
-        if (ok) updatePayload.is_active = true;
         await supabaseAdmin
           .from("payment_providers")
-          .update(updatePayload)
+          .update(
+            ok
+              ? {
+                  is_active: true,
+                  config_status: "verified",
+                  last_tested_at: new Date().toISOString(),
+                  test_message: message,
+                }
+              : {
+                  config_status: "failed",
+                  last_tested_at: null,
+                  test_message: message,
+                },
+          )
           .eq("id", provider.id);
         return { ok, message };
       }
