@@ -24,7 +24,7 @@ export const Route = createFileRoute("/merchant/dashboard/payments")({
   component: PaymentsSettingsPage,
 });
 
-type ProviderKey = "qpay" | "storepay" | "pocket" | "omniway";
+type ProviderKey = "qpay" | "storepay" | "pocket" | "omniway" | "hipay";
 
 const PROVIDER_FIELDS: Record<
   ProviderKey,
@@ -50,6 +50,11 @@ const PROVIDER_FIELDS: Record<
   omniway: [
     { key: "username", label: "Omniway USERNAME", placeholder: "merchant username" },
     { key: "password", label: "Omniway PASSWORD", placeholder: "••••••••", secret: true },
+  ],
+  hipay: [
+    { key: "entity_id", label: "HiPay ENTITY_ID (Client ID)", placeholder: "entity id" },
+    { key: "client_secret", label: "HiPay CLIENT_SECRET", placeholder: "••••••••", secret: true },
+    { key: "base_url", label: "Base URL (заавал биш)", placeholder: "https://api.hipay.mn" },
   ],
 };
 
