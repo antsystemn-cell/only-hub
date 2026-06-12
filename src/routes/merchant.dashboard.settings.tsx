@@ -342,7 +342,7 @@ function PaymentsTab() {
                   const file = e.target.files?.[0];
                   if (!file) return;
                   const ext = file.name.split(".").pop() || "png";
-                  const path = `payment-icons/${merchantId}/${Date.now()}.${ext}`;
+                  const path = `${merchantId}/payment-icons/${Date.now()}.${ext}`;
                   const { error: upErr } = await supabase.storage.from("merchant-logos").upload(path, file, { upsert: true, contentType: file.type });
                   if (upErr) { toast.error(upErr.message); return; }
                   const { data: pub } = supabase.storage.from("merchant-logos").getPublicUrl(path);
