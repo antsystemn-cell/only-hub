@@ -59,8 +59,8 @@ export const Route = createFileRoute("/merchant/dashboard/orders")({
 const STATUSES = ["pending","phone_confirmed","confirmed","preparing","delivering","completed","cancelled"];
 
 function OrdersPage() {
-  const { primaryMerchantId } = useAuth();
-  const merchantId = primaryMerchantId!;
+  const { primaryMerchantId, loading: authLoading } = useAuth();
+  const merchantId = primaryMerchantId ?? "";
   const qc = useQueryClient();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -74,10 +74,18 @@ function OrdersPage() {
   const bulkDeliveryFn = useServerFn(bulkCreateDelivery);
   const bulkDeleteFn = useServerFn(bulkDeleteOrders);
 
-  const { data: orders = [] } = useQuery({
+  const { data: orders = [], isLoading: ordersLoading } = useQuery({
     queryKey: ["orders", merchantId],
+    // Don't fire the query with an empty merchantId — it would return zero
+    // rows and cache that empty result, briefly blanking the dashboard
+    // during auth/role hydration.
+    enabled: !!merchantId,
     queryFn: async () => {
-      const { data } = await supabase.from("orders").select("*").eq("merchant_id", merchantId).order("created_at", { ascending: false });
+      const { data } = await supabase
+        .from("orders")
+        .select("*")
+        .eq("merchant_id", merchantId)
+        .order("created_at", { ascending: false });
       return data ?? [];
     },
   });
