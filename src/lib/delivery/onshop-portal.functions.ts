@@ -1,7 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 export const getOnshopPortalUrl = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -17,8 +16,10 @@ export const getOnshopPortalUrl = createServerFn({ method: "POST" })
     }
 
     // Authorization
+    let merchantCode: string | undefined;
     if (data.merchantCode) {
       // Merchant context: require access to that merchant
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
       const { data: merchant } = await supabaseAdmin
         .from("merchants")
         .select("id")
@@ -32,8 +33,10 @@ export const getOnshopPortalUrl = createServerFn({ method: "POST" })
         _merchant_id: merchant.id,
       });
       if (!ok) return { ok: false as const, error: "Эрх хүрэхгүй" };
+      merchantCode = merchant.id;
     } else {
       // Admin context
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
       const { data: isAdmin } = await supabaseAdmin.rpc("is_platform_admin", {
         _user_id: userId,
       });
@@ -48,7 +51,7 @@ export const getOnshopPortalUrl = createServerFn({ method: "POST" })
           "x-api-key": apiKey,
         },
         body: JSON.stringify(
-          data.merchantCode ? { merchant_code: data.merchantCode } : {},
+          merchantCode ? { merchant_code: merchantCode } : {},
         ),
       });
       const j: any = await res.json().catch(() => ({}));
