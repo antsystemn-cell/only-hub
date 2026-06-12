@@ -27,6 +27,7 @@ import jsPDF from "jspdf";
 import { useServerFn } from "@tanstack/react-start";
 import { sendOrderToDelivery } from "@/lib/delivery.functions";
 import { bulkUpdateOrderStatus, bulkMarkPaid, bulkCreateDelivery, bulkDeleteOrders, markOrderPaid } from "@/lib/orders-bulk.functions";
+import { createManualOrder } from "@/lib/orders.functions";
 import { useRealtimeSync } from "@/hooks/use-realtime-sync";
 
 export const DELIVERY_STATUS_LABELS: Record<string, string> = {
@@ -614,13 +615,14 @@ function ManualOrderDialog({ open, onOpenChange, merchantId, onCreated }: { open
   const [items, setItems] = useState<Array<{ name: string; price: number; quantity: number; sku?: string; product_id?: string }>>([]);
   const [paymentMethod, setPaymentMethod] = useState("cash");
   const [paymentStatus, setPaymentStatus] = useState("unpaid");
-  const [status, setStatus] = useState("pending");
+  const [status, setStatus] = useState("confirmed");
   const [note, setNote] = useState("");
   const [saving, setSaving] = useState(false);
   const [saleDate, setSaleDate] = useState("");
   const [branch, setBranch] = useState("");
   const [source, setSource] = useState("store");
   const [productSearch, setProductSearch] = useState("");
+  const createManualOrderFn = useServerFn(createManualOrder);
 
   const { data: allProducts = [] } = useQuery({
     queryKey: ["modal-products", merchantId],
@@ -641,17 +643,38 @@ function ManualOrderDialog({ open, onOpenChange, merchantId, onCreated }: { open
   const submit = async () => {
     if (!phone || items.length === 0) return toast.error("Утас, бараа шаардлагатай");
     setSaving(true);
-    const { error } = await supabase.from("orders").insert({
-      merchant_id: merchantId, items, total, status, payment_method: paymentMethod, payment_status: paymentStatus,
-      phone, guest_name: name || null, shipping_address: address || null, delivery_fee: includeDelivery ? deliveryFee : 0,
-      is_guest: true, source, note: note || null,
-      sale_date: saleDate ? new Date(saleDate).toISOString() : null,
-      branch: branch || null,
-    });
-    setSaving(false);
-    if (error) return toast.error(error.message);
-    toast.success("Захиалга үүслээ"); onCreated(); onOpenChange(false);
-    setItems([]); setPhone(""); setName(""); setAddress(""); setNote(""); setSaleDate(""); setBranch(""); setSource("store");
+    try {
+      const res = await createManualOrderFn({
+        data: {
+          merchantId,
+          phone,
+          name: name || null,
+          address: address || null,
+          items,
+          deliveryFee: includeDelivery ? deliveryFee : 0,
+          paymentMethod,
+          paymentStatus: paymentStatus as "unpaid" | "confirmed",
+          status,
+          note: note || null,
+          saleDate: saleDate || null,
+          branch: branch || null,
+          source,
+        },
+      });
+      if (!res.ok) {
+        setSaving(false);
+        return toast.error(res.error ?? "Алдаа гарлаа");
+      }
+      toast.success("Захиалга үүслээ");
+      onCreated();
+      onOpenChange(false);
+      setItems([]); setPhone(""); setName(""); setAddress(""); setNote(""); setSaleDate(""); setBranch(""); setSource("store");
+      setPaymentStatus("unpaid"); setStatus("confirmed");
+    } catch (e: any) {
+      toast.error(e?.message ?? "Алдаа гарлаа");
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (

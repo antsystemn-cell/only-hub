@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { getRequestUrl } from "@tanstack/react-start/server";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { createQpayInvoice, checkQpayPayment } from "@/lib/qpay.server";
 import { confirmOrderPayment } from "@/lib/payments/confirm-order-payment.server";
 
@@ -479,4 +480,97 @@ export const resetOrderPaymentMethod = createServerFn({ method: "POST" })
     }
 
     return { ok: true as const, order: updatedOrder };
+  });
+
+// Merchant/admin manual order entry. Bypasses the strict "insert validated"
+// RLS policy (which only allows status in {pending,new} and payment_status=unpaid)
+// so staff can record sales that are already confirmed/paid.
+const ManualItem = z.object({
+  name: z.string().min(1).max(500),
+  price: z.number().min(0),
+  quantity: z.number().int().min(1).max(999),
+  sku: z.string().max(200).optional().nullable(),
+  product_id: z.string().uuid().optional().nullable(),
+});
+
+const ManualOrderInput = z.object({
+  merchantId: z.string().uuid(),
+  phone: z.string().trim().min(3).max(30),
+  name: z.string().max(200).optional().nullable(),
+  address: z.string().max(1000).optional().nullable(),
+  items: z.array(ManualItem).min(1).max(200),
+  deliveryFee: z.number().min(0).default(0),
+  paymentMethod: z.string().max(50).default("cash"),
+  paymentStatus: z.enum(["unpaid", "confirmed"]).default("unpaid"),
+  status: z.string().max(50).default("confirmed"),
+  note: z.string().max(2000).optional().nullable(),
+  saleDate: z.string().optional().nullable(),
+  branch: z.string().max(200).optional().nullable(),
+  source: z.string().max(50).default("store"),
+});
+
+export const createManualOrder = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => ManualOrderInput.parse(d))
+  .handler(async ({ data, context }) => {
+    const { userId } = context;
+    const { data: access } = await supabaseAdmin.rpc("has_merchant_access", {
+      _user_id: userId,
+      _merchant_id: data.merchantId,
+    });
+    if (!access) return { ok: false as const, error: "Хандах эрхгүй" };
+
+    const subtotal = data.items.reduce((s, it) => s + it.price * it.quantity, 0);
+    const total = subtotal + (data.deliveryFee || 0);
+
+    // Always insert in a safe baseline state, then transition via service.
+    const insertStatus =
+      data.paymentStatus === "confirmed" ? "pending" : data.status;
+    const { data: inserted, error } = await supabaseAdmin
+      .from("orders")
+      .insert({
+        merchant_id: data.merchantId,
+        items: data.items as any,
+        total,
+        status: insertStatus,
+        payment_method: data.paymentMethod,
+        payment_status: "unpaid",
+        phone: data.phone,
+        guest_name: data.name || null,
+        shipping_address: data.address || null,
+        delivery_fee: data.deliveryFee || 0,
+        is_guest: true,
+        source: data.source,
+        note: data.note || null,
+        sale_date: data.saleDate ? new Date(data.saleDate).toISOString() : null,
+        branch: data.branch || null,
+      })
+      .select("id")
+      .single();
+    if (error || !inserted) {
+      return { ok: false as const, error: error?.message ?? "Үүсгэхэд алдаа" };
+    }
+
+    // Apply target status (allowed once row exists because update policy is permissive)
+    if (insertStatus !== data.status && data.paymentStatus !== "confirmed") {
+      await supabaseAdmin.from("orders").update({ status: data.status }).eq("id", inserted.id);
+    }
+
+    // If marked as paid, route through the centralized confirmation service
+    // (idempotent, fires commission trigger + auto delivery request).
+    if (data.paymentStatus === "confirmed") {
+      const res = await confirmOrderPayment({
+        orderId: inserted.id,
+        source: "merchant_manual",
+      });
+      if (!res.ok) {
+        return { ok: false as const, error: res.error, orderId: inserted.id };
+      }
+      // If caller also requested a non-pending status (e.g. completed), apply it now.
+      if (data.status && data.status !== "pending") {
+        await supabaseAdmin.from("orders").update({ status: data.status }).eq("id", inserted.id);
+      }
+    }
+
+    return { ok: true as const, orderId: inserted.id };
   });
