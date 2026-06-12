@@ -184,6 +184,8 @@ function ProviderCard({
 }) {
   const fields = PROVIDER_FIELDS[provider.providerType as ProviderKey] ?? [];
   const [isActive, setIsActive] = useState(provider.isActive);
+  const [icon, setIcon] = useState(provider.icon ?? "");
+  const [uploading, setUploading] = useState(false);
   const [values, setValues] = useState<Record<string, string>>(
     Object.fromEntries(fields.map((f) => [f.key, ""])),
   );
@@ -191,7 +193,8 @@ function ProviderCard({
   // Reset values when server data refreshes.
   useEffect(() => {
     setIsActive(provider.isActive);
-  }, [provider.isActive]);
+    setIcon(provider.icon ?? "");
+  }, [provider.isActive, provider.icon]);
 
   const saveFn = useServerFn(saveMerchantProvider);
   const testFn = useServerFn(testMerchantProvider);
@@ -203,6 +206,7 @@ function ProviderCard({
           merchantId,
           providerType: provider.providerType as ProviderKey,
           isActive,
+          icon: icon.trim() || undefined,
           credentials: values,
         },
       }),
@@ -217,6 +221,26 @@ function ProviderCard({
     },
     onError: (e: any) => toast.error(e?.message ?? "Сүлжээний алдаа"),
   });
+
+  async function handleIconFile(file: File) {
+    setUploading(true);
+    try {
+      const ext = file.name.split(".").pop() || "png";
+      const path = `${merchantId}/payment-icons/${provider.providerType}-${Date.now()}.${ext}`;
+      const { error: upErr } = await supabase.storage
+        .from("merchant-logos")
+        .upload(path, file, { upsert: true, contentType: file.type });
+      if (upErr) throw upErr;
+      const { data: pub } = supabase.storage.from("merchant-logos").getPublicUrl(path);
+      setIcon(pub.publicUrl);
+      toast.success("Icon байршуулагдлаа. Хадгалах товчийг дарна уу.");
+    } catch (e: any) {
+      toast.error(e?.message ?? "Байршуулах алдаа");
+    } finally {
+      setUploading(false);
+    }
+  }
+
 
   const test = useMutation({
     mutationFn: () => {
