@@ -319,7 +319,42 @@ function PaymentsTab() {
           </Select>
         </div>
         <div><Label>Харагдах нэр</Label><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></div>
-        <div><Label>Icon</Label><Input value={form.icon} onChange={(e) => setForm({ ...form, icon: e.target.value })} /></div>
+        <div>
+          <Label>Icon (emoji эсвэл зураг)</Label>
+          <div className="flex items-center gap-2">
+            {form.icon && /^https?:\/\//i.test(form.icon) ? (
+              <img src={form.icon} alt="icon" className="h-9 w-9 rounded border object-contain" />
+            ) : (
+              <span className="flex h-9 w-9 items-center justify-center rounded border text-xl">{form.icon || "💳"}</span>
+            )}
+            <Input
+              className="flex-1"
+              placeholder="💳 эсвэл https://..."
+              value={form.icon}
+              onChange={(e) => setForm({ ...form, icon: e.target.value })}
+            />
+            <label className="cursor-pointer">
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={async (e) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  const ext = file.name.split(".").pop() || "png";
+                  const path = `payment-icons/${merchantId}/${Date.now()}.${ext}`;
+                  const { error: upErr } = await supabase.storage.from("merchant-logos").upload(path, file, { upsert: true, contentType: file.type });
+                  if (upErr) { toast.error(upErr.message); return; }
+                  const { data: pub } = supabase.storage.from("merchant-logos").getPublicUrl(path);
+                  setForm({ ...form, icon: pub.publicUrl });
+                  toast.success("Icon байршуулагдлаа");
+                  e.target.value = "";
+                }}
+              />
+              <span className="inline-flex h-9 items-center rounded-md border px-3 text-sm hover:bg-muted">Upload</span>
+            </label>
+          </div>
+        </div>
         <div className="md:col-span-3"><Label>Тайлбар</Label><Textarea rows={2} value={form.description ?? ""} onChange={(e) => setForm({ ...form, description: e.target.value })} /></div>
 
         {fields.length > 0 && (
