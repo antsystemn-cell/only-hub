@@ -4,12 +4,10 @@ import { useServerFn } from "@tanstack/react-start";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/use-auth";
-import { supabase } from "@/integrations/supabase/client";
 import {
   listMerchantProviders,
   saveMerchantProvider,
   testMerchantProvider,
-  setMerchantPlatformFallback,
 } from "@/lib/payments/providers.functions";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -18,7 +16,9 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Loader2, CheckCircle2, AlertCircle, XCircle, ShieldCheck, Upload } from "lucide-react";
+import {
+  Loader2, CheckCircle2, AlertCircle, XCircle, ShieldCheck,
+} from "lucide-react";
 
 export const Route = createFileRoute("/merchant/dashboard/payments")({
   component: PaymentsSettingsPage,
@@ -28,7 +28,7 @@ type ProviderKey = "qpay" | "storepay" | "pocket" | "omniway" | "hipay";
 
 const PROVIDER_FIELDS: Record<
   ProviderKey,
-  { key: string; label: string; placeholder: string; secret?: boolean; helper?: string }[]
+  { key: string; label: string; placeholder: string; secret?: boolean }[]
 > = {
   qpay: [
     { key: "username", label: "QPAY_CLIENT_ID", placeholder: "ONLY_MERCHANT" },
@@ -58,11 +58,18 @@ const PROVIDER_FIELDS: Record<
   ],
 };
 
-function statusBadge(status: string, isActive: boolean) {
+function statusBadge(status: string, isActive: boolean, useFallback: boolean) {
   if (!isActive) {
     return (
       <Badge variant="outline" className="gap-1">
         <XCircle className="h-3 w-3" /> Идэвхгүй
+      </Badge>
+    );
+  }
+  if (useFallback) {
+    return (
+      <Badge className="gap-1 bg-sky-500/15 text-sky-700 border border-sky-500/30 hover:bg-sky-500/20">
+        <ShieldCheck className="h-3 w-3" /> Платформын нөөц
       </Badge>
     );
   }
@@ -98,17 +105,6 @@ function PaymentsSettingsPage() {
     queryFn: () => listFn({ data: { merchantId: primaryMerchantId! } }),
   });
 
-  const fallbackFn = useServerFn(setMerchantPlatformFallback);
-  const toggleFallback = useMutation({
-    mutationFn: (enabled: boolean) =>
-      fallbackFn({ data: { merchantId: primaryMerchantId!, enabled } }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["merchant-providers", primaryMerchantId] });
-      toast.success("Хадгалагдлаа");
-    },
-    onError: (e: any) => toast.error(e?.message ?? "Алдаа гарлаа"),
-  });
-
   if (isLoading || !data) {
     return (
       <div className="flex h-64 items-center justify-center text-muted-foreground">
@@ -122,48 +118,25 @@ function PaymentsSettingsPage() {
       <div>
         <h1 className="text-2xl font-bold">Төлбөрийн тохиргоо</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Та өөрийн дэлгүүрийн төлбөрийн системүүдийн API мэдээллийг энд оруулна. Зөвхөн амжилттай
-          холболтоо хийсэн систем тань худалдан авагч-ийн төлбөрийн хуудаст харагдана.
+          Төлбөрийн систем бүр дээр өөрийн API-аа холбох эсвэл платформын нөөц
+          төлбөрийн системийг ашиглахаа сонгоно. Зөвхөн идэвхтэй болгосон систем
+          худалдан авагч-ийн төлбөрийн хуудаст харагдана.
         </p>
       </div>
 
-      <Card className="rounded-2xl p-5">
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex gap-3">
-            <ShieldCheck className="mt-0.5 h-5 w-5 text-primary" />
-            <div>
-              <div className="font-semibold">Платформын нөөц төлбөрийн систем</div>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Хэрэв та QPay/Storepay/Pocket/Omniway-тэй өөрөө гэрээ хийгээгүй бол манай
-                платформын үндсэн гэрээт төлбөрийн системээр түр ашиглаж болно. Тооцоо: нийт орлогоос
-                комисс хасагдсаны дараа таны дансанд шилжүүлэгдэнэ.
-              </p>
-            </div>
-          </div>
-          <Switch
-            checked={data.merchant.usePlatformFallback}
-            onCheckedChange={(v) => toggleFallback.mutate(!!v)}
-            disabled={toggleFallback.isPending}
-          />
-        </div>
-        {data.merchant.usePlatformFallback && data.platformAvailableTypes.length > 0 && (
-          <p className="mt-3 text-xs text-muted-foreground">
-            Боломжтой: {data.platformAvailableTypes.join(", ")}
-          </p>
-        )}
-      </Card>
-
       <div className="grid gap-4">
-        {data.providers.map((p) => (
-          <ProviderCard
-            key={p.providerType}
-            merchantId={primaryMerchantId!}
-            provider={p}
-            onChanged={() =>
-              queryClient.invalidateQueries({ queryKey: ["merchant-providers", primaryMerchantId] })
-            }
-          />
-        ))}
+        {data.providers
+          .filter((p) => p.providerType !== "cash")
+          .map((p) => (
+            <ProviderCard
+              key={p.providerType}
+              merchantId={primaryMerchantId!}
+              provider={p}
+              onChanged={() =>
+                queryClient.invalidateQueries({ queryKey: ["merchant-providers", primaryMerchantId] })
+              }
+            />
+          ))}
       </div>
     </div>
   );
@@ -184,17 +157,17 @@ function ProviderCard({
 }) {
   const fields = PROVIDER_FIELDS[provider.providerType as ProviderKey] ?? [];
   const [isActive, setIsActive] = useState(provider.isActive);
-  const [icon, setIcon] = useState(provider.icon ?? "");
-  const [uploading, setUploading] = useState(false);
+  const [mode, setMode] = useState<"own" | "platform">(
+    provider.usePlatformFallback ? "platform" : "own",
+  );
   const [values, setValues] = useState<Record<string, string>>(
     Object.fromEntries(fields.map((f) => [f.key, ""])),
   );
 
-  // Reset values when server data refreshes.
   useEffect(() => {
     setIsActive(provider.isActive);
-    setIcon(provider.icon ?? "");
-  }, [provider.isActive, provider.icon]);
+    setMode(provider.usePlatformFallback ? "platform" : "own");
+  }, [provider.isActive, provider.usePlatformFallback]);
 
   const saveFn = useServerFn(saveMerchantProvider);
   const testFn = useServerFn(testMerchantProvider);
@@ -206,8 +179,8 @@ function ProviderCard({
           merchantId,
           providerType: provider.providerType as ProviderKey,
           isActive,
-          icon: icon.trim() || undefined,
-          credentials: values,
+          usePlatformFallback: mode === "platform",
+          credentials: mode === "own" ? values : {},
         },
       }),
     onSuccess: (r) => {
@@ -221,26 +194,6 @@ function ProviderCard({
     },
     onError: (e: any) => toast.error(e?.message ?? "Сүлжээний алдаа"),
   });
-
-  async function handleIconFile(file: File) {
-    setUploading(true);
-    try {
-      const ext = file.name.split(".").pop() || "png";
-      const path = `${merchantId}/payment-icons/${provider.providerType}-${Date.now()}.${ext}`;
-      const { error: upErr } = await supabase.storage
-        .from("merchant-logos")
-        .upload(path, file, { upsert: true, contentType: file.type });
-      if (upErr) throw upErr;
-      const { data: pub } = supabase.storage.from("merchant-logos").getPublicUrl(path);
-      setIcon(pub.publicUrl);
-      toast.success("Icon байршуулагдлаа. Хадгалах товчийг дарна уу.");
-    } catch (e: any) {
-      toast.error(e?.message ?? "Байршуулах алдаа");
-    } finally {
-      setUploading(false);
-    }
-  }
-
 
   const test = useMutation({
     mutationFn: () => {
@@ -267,15 +220,15 @@ function ProviderCard({
           <div>
             <div className="flex items-center gap-2">
               <span className="font-semibold">{provider.name}</span>
-              {statusBadge(provider.configStatus, provider.isActive)}
+              {statusBadge(provider.configStatus, provider.isActive, mode === "platform")}
             </div>
             <p className="text-sm text-muted-foreground">{provider.description}</p>
-            {provider.lastTestedAt && (
+            {provider.lastTestedAt && mode === "own" && (
               <p className="mt-1 text-xs text-muted-foreground">
                 Сүүлд амжилттай туршсан: {new Date(provider.lastTestedAt).toLocaleString("mn-MN")}
               </p>
             )}
-            {provider.configStatus === "failed" && provider.testMessage && (
+            {provider.configStatus === "failed" && provider.testMessage && mode === "own" && (
               <p className="mt-1 text-xs text-destructive">{provider.testMessage}</p>
             )}
           </div>
@@ -288,83 +241,88 @@ function ProviderCard({
 
       <Separator className="my-4" />
 
-      <div className="mb-4">
-        <Label className="text-xs uppercase tracking-wide text-muted-foreground">
-          Icon (төлбөр төлөх хэсэгт харагдах лого)
-        </Label>
-        <div className="mt-1 flex items-center gap-2">
-          {icon && /^https?:\/\//i.test(icon) ? (
-            <img src={icon} alt="icon" className="h-10 w-10 rounded border bg-white object-contain p-1" />
-          ) : (
-            <span className="flex h-10 w-10 items-center justify-center rounded border text-xl">
-              {icon || "💳"}
-            </span>
-          )}
-          <Input
-            className="flex-1"
-            placeholder="💳 emoji эсвэл https://logo.png"
-            value={icon}
-            onChange={(e) => setIcon(e.target.value)}
-          />
-          <label className="cursor-pointer">
-            <input
-              type="file"
-              accept="image/*"
-              className="hidden"
-              disabled={uploading}
-              onChange={(e) => {
-                const f = e.target.files?.[0];
-                if (f) handleIconFile(f);
-                e.target.value = "";
-              }}
-            />
-            <span className="inline-flex h-9 items-center gap-1 rounded-md border px-3 text-sm hover:bg-muted">
-              {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
-              Upload
-            </span>
-          </label>
-        </div>
-        <p className="mt-1 text-xs text-muted-foreground">
-          Icon-ыг хадгалсны дараа худалдан авагчид төлбөр төлөх системийн сонголтын хэсэгт энэ зураг автоматаар харагдана.
-        </p>
+      <div className="mb-4 flex flex-wrap gap-2">
+        <button
+          type="button"
+          onClick={() => setMode("own")}
+          className={`rounded-full border px-3 py-1.5 text-xs font-medium transition ${
+            mode === "own"
+              ? "border-primary bg-primary text-primary-foreground"
+              : "border-border bg-background hover:bg-muted"
+          }`}
+        >
+          Өөрийн API холбох
+        </button>
+        <button
+          type="button"
+          onClick={() => setMode("platform")}
+          disabled={!provider.platformFallbackAvailable}
+          className={`rounded-full border px-3 py-1.5 text-xs font-medium transition disabled:cursor-not-allowed disabled:opacity-50 ${
+            mode === "platform"
+              ? "border-primary bg-primary text-primary-foreground"
+              : "border-border bg-background hover:bg-muted"
+          }`}
+        >
+          Платформын нөөцийг ашиглах
+          {!provider.platformFallbackAvailable && " (боломжгүй)"}
+        </button>
       </div>
 
-
-      <div className="grid gap-3 sm:grid-cols-2">
-        {fields.map((f) => (
-          <div key={f.key}>
-            <Label className="text-xs uppercase tracking-wide text-muted-foreground">{f.label}</Label>
-            <Input
-              type={f.secret ? "password" : "text"}
-              placeholder={
-                provider.credentialsMasked[f.key]
-                  ? `Хадгалагдсан: ${provider.credentialsMasked[f.key]}`
-                  : f.placeholder
-              }
-              value={values[f.key] ?? ""}
-              onChange={(e) => setValues((v) => ({ ...v, [f.key]: e.target.value }))}
-              autoComplete="off"
-            />
+      {mode === "platform" ? (
+        <div className="rounded-xl border border-sky-500/30 bg-sky-500/5 p-4">
+          <div className="flex gap-3">
+            <ShieldCheck className="mt-0.5 h-5 w-5 text-sky-600" />
+            <div className="text-sm">
+              <div className="font-semibold">Платформын нөөц төлбөрийн систем</div>
+              <p className="mt-1 text-muted-foreground">
+                Манай платформын гэрээт {provider.name} данс ашиглагдана.
+                <br />
+                <span className="font-medium text-foreground">Тооцоо:</span> нийт орлогоос
+                комисс хасагдсаны дараа таны дансанд шилжүүлэгдэнэ.
+              </p>
+            </div>
           </div>
-        ))}
-      </div>
-
-      <p className="mt-2 text-xs text-muted-foreground">
-        Аль нэг талбарыг хоосон үлдээвэл өмнө хадгалагдсан утга нь хадгалагдсаар үлдэнэ. Нууц
-        утгуудыг бид зөвхөн серверт хадгалдаг — энэ хуудсанд буцааж харуулагдахгүй.
-      </p>
+        </div>
+      ) : (
+        <>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {fields.map((f) => (
+              <div key={f.key}>
+                <Label className="text-xs uppercase tracking-wide text-muted-foreground">{f.label}</Label>
+                <Input
+                  type={f.secret ? "password" : "text"}
+                  placeholder={
+                    provider.credentialsMasked[f.key]
+                      ? `Хадгалагдсан: ${provider.credentialsMasked[f.key]}`
+                      : f.placeholder
+                  }
+                  value={values[f.key] ?? ""}
+                  onChange={(e) => setValues((v) => ({ ...v, [f.key]: e.target.value }))}
+                  autoComplete="off"
+                />
+              </div>
+            ))}
+          </div>
+          <p className="mt-2 text-xs text-muted-foreground">
+            Аль нэг талбарыг хоосон үлдээвэл өмнө хадгалагдсан утга нь хадгалагдсаар үлдэнэ.
+            Нууц утгуудыг бид зөвхөн серверт хадгалдаг — энэ хуудсанд буцааж харуулагдахгүй.
+          </p>
+        </>
+      )}
 
       <div className="mt-4 flex flex-wrap gap-2">
         <Button onClick={() => save.mutate()} disabled={save.isPending}>
           {save.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Хадгалах
         </Button>
-        <Button
-          variant="outline"
-          onClick={() => test.mutate()}
-          disabled={test.isPending || !provider.id}
-        >
-          {test.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Холболт шалгах
-        </Button>
+        {mode === "own" && (
+          <Button
+            variant="outline"
+            onClick={() => test.mutate()}
+            disabled={test.isPending || !provider.id}
+          >
+            {test.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Холболт шалгах
+          </Button>
+        )}
       </div>
     </Card>
   );

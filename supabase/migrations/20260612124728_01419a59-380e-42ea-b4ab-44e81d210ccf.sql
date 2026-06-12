@@ -1,0 +1,1 @@
+ALTER TABLE public.payment_providers ADD COLUMN IF NOT EXISTS use_platform_fallback boolean NOT NULL DEFAULT false;

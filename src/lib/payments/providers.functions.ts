@@ -57,6 +57,12 @@ async function assertMerchantAccess(userId: string, merchantId: string) {
   if (!data) throw new Error("Зөвшөөрөлгүй");
 }
 
+async function assertPlatformAdmin(userId: string) {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data } = await supabaseAdmin.rpc("is_platform_admin", { _user_id: userId });
+  if (!data) throw new Error("Зөвхөн платформын админд");
+}
+
 // ───────────────────────── List providers for a merchant ─────────────────────────
 export const listMerchantProviders = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -74,24 +80,38 @@ export const listMerchantProviders = createServerFn({ method: "POST" })
 
     const { data: own } = await supabaseAdmin
       .from("payment_providers")
-      .select("id,name,provider_type,icon,logo_url,description,is_active,config_status,last_tested_at,test_message,credentials,position")
+      .select("id,name,provider_type,icon,logo_url,description,is_active,config_status,last_tested_at,test_message,credentials,position,use_platform_fallback")
       .eq("merchant_id", data.merchantId)
       .order("position", { ascending: true });
 
     const ownByType = new Map<string, any>();
     for (const row of own ?? []) ownByType.set(row.provider_type as string, row);
 
+    const { data: platformAll } = await supabaseAdmin
+      .from("payment_providers")
+      .select("provider_type, name, icon, is_active, config_status")
+      .eq("is_platform_managed", true);
+    const platformByType = new Map<string, any>();
+    for (const r of platformAll ?? []) platformByType.set(r.provider_type as string, r);
+
     const merged = PROVIDER_TYPES.map((t, idx) => {
       const row = ownByType.get(t);
+      const platformRow = platformByType.get(t);
       const defaults = PROVIDER_DEFAULTS[t];
+      const fallbackAvailable =
+        !!platformRow && !!platformRow.is_active && platformRow.config_status === "verified";
+      const platformIcon = (platformRow?.icon as string) || defaults.icon;
       if (row) {
+        const useFallback = !!row.use_platform_fallback;
         return {
           providerType: t,
           id: row.id as string,
           name: (row.name as string) || defaults.name,
-          icon: (row.icon as string) || defaults.icon,
+          icon: useFallback ? platformIcon : ((row.icon as string) || platformIcon),
           description: (row.description as string) || defaults.description,
           isActive: !!row.is_active,
+          usePlatformFallback: useFallback,
+          platformFallbackAvailable: fallbackAvailable,
           configStatus: (row.config_status as string) || "incomplete",
           lastTestedAt: (row.last_tested_at as string) || null,
           testMessage: (row.test_message as string) || null,
@@ -103,9 +123,11 @@ export const listMerchantProviders = createServerFn({ method: "POST" })
         providerType: t,
         id: null as string | null,
         name: defaults.name,
-        icon: defaults.icon,
+        icon: platformIcon,
         description: defaults.description,
         isActive: false,
+        usePlatformFallback: false,
+        platformFallbackAvailable: fallbackAvailable,
         configStatus: "incomplete",
         lastTestedAt: null as string | null,
         testMessage: null as string | null,
@@ -113,15 +135,6 @@ export const listMerchantProviders = createServerFn({ method: "POST" })
         position: idx,
       };
     });
-
-    // Platform-fallback availability per provider type
-    const { data: platform } = await supabaseAdmin
-      .from("payment_providers")
-      .select("provider_type, name, icon")
-      .eq("is_platform_managed", true)
-      .eq("is_active", true)
-      .eq("config_status", "verified");
-    const platformTypes = (platform ?? []).map((p) => p.provider_type as string);
 
     return {
       ok: true as const,
@@ -131,7 +144,9 @@ export const listMerchantProviders = createServerFn({ method: "POST" })
         usePlatformFallback: !!merchant?.use_platform_payment_fallback,
       },
       providers: merged,
-      platformAvailableTypes: platformTypes,
+      platformAvailableTypes: (platformAll ?? [])
+        .filter((p: any) => p.is_active && p.config_status === "verified")
+        .map((p: any) => p.provider_type as string),
     };
   });
 
@@ -143,12 +158,8 @@ export const saveMerchantProvider = createServerFn({ method: "POST" })
       merchantId: z.string().uuid(),
       providerType: z.enum(PROVIDER_TYPES),
       isActive: z.boolean(),
-      name: z.string().trim().max(120).optional(),
-      icon: z.string().trim().max(1000).optional(),
-      description: z.string().trim().max(500).optional(),
-      // Only fields the merchant explicitly types are saved. Empty string fields are dropped
-      // so a re-save without retyping the secret keeps the existing value.
-      credentials: z.record(z.string(), z.string().max(2000)),
+      usePlatformFallback: z.boolean().optional(),
+      credentials: z.record(z.string(), z.string().max(2000)).optional(),
     }).parse(d),
   )
   .handler(async ({ data, context }) => {
@@ -158,8 +169,8 @@ export const saveMerchantProvider = createServerFn({ method: "POST" })
     const { getAdapter } = await import("@/lib/payments/adapters/index.server");
     const adapter = getAdapter(data.providerType);
     const requiredFields = requiredFieldsFor(data.providerType, adapter);
+    const useFallback = !!data.usePlatformFallback;
 
-    // Load existing row to merge credentials and preserve untouched secrets.
     const { data: existing } = await supabaseAdmin
       .from("payment_providers")
       .select("id, credentials")
@@ -169,33 +180,32 @@ export const saveMerchantProvider = createServerFn({ method: "POST" })
 
     const existingCreds = ((existing?.credentials as any) ?? {}) as Record<string, any>;
     const newCreds: Record<string, string> = { ...existingCreds };
-    for (const [k, v] of Object.entries(data.credentials)) {
+    for (const [k, v] of Object.entries(data.credentials ?? {})) {
       if (v && v.trim()) newCreds[k] = v.trim();
     }
 
     const allRequiredPresent = requiredFields.every(
       (f) => typeof newCreds[f] === "string" && (newCreds[f] as string).length > 0,
     );
-    const configStatus = allRequiredPresent && !adapter ? "verified" : "incomplete";
+    // When using platform fallback, the merchant's own row is just a flag — config is "verified".
+    const configStatus = useFallback
+      ? "verified"
+      : (allRequiredPresent && !adapter ? "verified" : "incomplete");
     const defaults = PROVIDER_DEFAULTS[data.providerType];
-    const metadata = {
-      name: data.name?.trim() || defaults.name,
-      icon: data.icon?.trim() || defaults.icon,
-      description: data.description?.trim() || defaults.description,
-    };
 
     let row;
     if (existing) {
       const { data: updated, error } = await supabaseAdmin
         .from("payment_providers")
         .update({
-          ...metadata,
+          name: defaults.name,
+          description: defaults.description,
           credentials: newCreds,
           is_active: data.isActive,
-          // Re-saving credentials invalidates the previous test result.
+          use_platform_fallback: useFallback,
           config_status: configStatus,
           test_message: null,
-          last_tested_at: null,
+          last_tested_at: useFallback ? new Date().toISOString() : null,
         })
         .eq("id", existing.id)
         .select("id")
@@ -208,9 +218,11 @@ export const saveMerchantProvider = createServerFn({ method: "POST" })
         .insert({
           merchant_id: data.merchantId,
           provider_type: data.providerType,
-          ...metadata,
+          name: defaults.name,
+          description: defaults.description,
           credentials: newCreds,
           is_active: data.isActive,
+          use_platform_fallback: useFallback,
           config_status: configStatus,
           position: 100,
         })
@@ -223,11 +235,13 @@ export const saveMerchantProvider = createServerFn({ method: "POST" })
     return {
       ok: true as const,
       providerId: row!.id as string,
-      message: allRequiredPresent
-        ? adapter
-          ? "Хадгалагдлаа. Холболтыг автоматаар шалгаж байна."
-          : "Хадгалагдлаа. Checkout дээр идэвхжлээ."
-        : `Хадгалагдсан. ${requiredFields.join(", ")} утгуудыг бүгдийг оруулна уу.`,
+      message: useFallback
+        ? "Хадгалагдлаа. Платформын нөөц төлбөрийн системээр ажиллана."
+        : allRequiredPresent
+          ? adapter
+            ? "Хадгалагдлаа. Холболтыг шалгаж туршина уу."
+            : "Хадгалагдлаа. Checkout дээр идэвхжлээ."
+          : `Хадгалагдсан. ${requiredFields.join(", ")} утгуудыг бүгдийг оруулна уу.`,
     };
   });
 
@@ -242,12 +256,17 @@ export const testMerchantProvider = createServerFn({ method: "POST" })
 
     const { data: row, error } = await supabaseAdmin
       .from("payment_providers")
-      .select("id, merchant_id, provider_type, credentials")
+      .select("id, merchant_id, provider_type, credentials, is_platform_managed")
       .eq("id", data.providerId)
       .maybeSingle();
     if (error || !row) return { ok: false as const, message: "Үйлчилгээ олдсонгүй" };
-    if (!row.merchant_id) return { ok: false as const, message: "Платформын провайдер — туршилт админы хэсгээс" };
-    await assertMerchantAccess(userId, row.merchant_id as string);
+
+    if (row.is_platform_managed) {
+      await assertPlatformAdmin(userId);
+    } else {
+      if (!row.merchant_id) return { ok: false as const, message: "Эзэмшигч тодорхойгүй" };
+      await assertMerchantAccess(userId, row.merchant_id as string);
+    }
 
     const adapter = getAdapter(row.provider_type as string);
     if (!adapter) {
@@ -301,7 +320,7 @@ export const testMerchantProvider = createServerFn({ method: "POST" })
     return { ok: result.ok, message: result.message };
   });
 
-// ───────────────────────── Toggle platform fallback opt-in ─────────────────────────
+// ───────────────────────── Toggle platform fallback opt-in (legacy global) ─────────────────────────
 export const setMerchantPlatformFallback = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) =>
@@ -319,8 +338,138 @@ export const setMerchantPlatformFallback = createServerFn({ method: "POST" })
     return { ok: true as const };
   });
 
+// ───────────────────────── Admin: list platform-managed providers ─────────────────────────
+export const listPlatformProviders = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({}).parse(d ?? {}))
+  .handler(async ({ context }) => {
+    await assertPlatformAdmin(context.userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const { data: rows } = await supabaseAdmin
+      .from("payment_providers")
+      .select("id,name,provider_type,icon,description,is_active,config_status,last_tested_at,test_message,credentials,position")
+      .eq("is_platform_managed", true)
+      .order("position", { ascending: true });
+
+    const byType = new Map<string, any>();
+    for (const r of rows ?? []) byType.set(r.provider_type as string, r);
+
+    const providers = PROVIDER_TYPES.map((t, idx) => {
+      const row = byType.get(t);
+      const defaults = PROVIDER_DEFAULTS[t];
+      if (row) {
+        return {
+          providerType: t,
+          id: row.id as string,
+          name: (row.name as string) || defaults.name,
+          icon: (row.icon as string) || defaults.icon,
+          description: (row.description as string) || defaults.description,
+          isActive: !!row.is_active,
+          configStatus: (row.config_status as string) || "incomplete",
+          lastTestedAt: (row.last_tested_at as string) || null,
+          testMessage: (row.test_message as string) || null,
+          credentialsMasked: maskCredentials((row.credentials as any) ?? {}),
+          position: row.position as number,
+        };
+      }
+      return {
+        providerType: t,
+        id: null as string | null,
+        name: defaults.name,
+        icon: defaults.icon,
+        description: defaults.description,
+        isActive: false,
+        configStatus: "incomplete",
+        lastTestedAt: null as string | null,
+        testMessage: null as string | null,
+        credentialsMasked: {} as Record<string, string>,
+        position: idx,
+      };
+    });
+
+    return { ok: true as const, providers };
+  });
+
+// ───────────────────────── Admin: save platform provider ─────────────────────────
+export const savePlatformProvider = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) =>
+    z.object({
+      providerType: z.enum(PROVIDER_TYPES),
+      isActive: z.boolean(),
+      icon: z.string().trim().max(1000).optional(),
+      credentials: z.record(z.string(), z.string().max(2000)).optional(),
+    }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    await assertPlatformAdmin(context.userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { getAdapter } = await import("@/lib/payments/adapters/index.server");
+    const adapter = getAdapter(data.providerType);
+    const requiredFields = requiredFieldsFor(data.providerType, adapter);
+    const defaults = PROVIDER_DEFAULTS[data.providerType];
+
+    const { data: existing } = await supabaseAdmin
+      .from("payment_providers")
+      .select("id, credentials, icon")
+      .eq("is_platform_managed", true)
+      .eq("provider_type", data.providerType)
+      .maybeSingle();
+
+    const existingCreds = ((existing?.credentials as any) ?? {}) as Record<string, any>;
+    const newCreds: Record<string, string> = { ...existingCreds };
+    for (const [k, v] of Object.entries(data.credentials ?? {})) {
+      if (v && v.trim()) newCreds[k] = v.trim();
+    }
+    const allRequiredPresent = requiredFields.every(
+      (f) => typeof newCreds[f] === "string" && (newCreds[f] as string).length > 0,
+    );
+    const configStatus = allRequiredPresent && !adapter ? "verified" : "incomplete";
+    const iconValue = data.icon !== undefined ? (data.icon.trim() || defaults.icon) : (existing?.icon ?? defaults.icon);
+
+    if (existing) {
+      const { error } = await supabaseAdmin
+        .from("payment_providers")
+        .update({
+          name: defaults.name,
+          description: defaults.description,
+          icon: iconValue,
+          credentials: newCreds,
+          is_active: data.isActive,
+          config_status: configStatus,
+          test_message: null,
+          last_tested_at: null,
+        })
+        .eq("id", existing.id);
+      if (error) return { ok: false as const, message: error.message };
+    } else {
+      const { error } = await supabaseAdmin
+        .from("payment_providers")
+        .insert({
+          merchant_id: null,
+          is_platform_managed: true,
+          provider_type: data.providerType,
+          name: defaults.name,
+          description: defaults.description,
+          icon: iconValue,
+          credentials: newCreds,
+          is_active: data.isActive,
+          config_status: configStatus,
+          position: 100,
+        });
+      if (error) return { ok: false as const, message: error.message };
+    }
+
+    return {
+      ok: true as const,
+      message: allRequiredPresent
+        ? adapter ? "Хадгалагдлаа. Холболт шалгана уу." : "Хадгалагдлаа."
+        : `Хадгалагдсан. ${requiredFields.join(", ")} дутуу байна.`,
+    };
+  });
+
 // ───────────────────────── Public: checkout method list ─────────────────────────
-// Anonymous-safe: customers fetch this without auth. Returns sanitized rows only.
 export const getCheckoutMethodsForStore = createServerFn({ method: "POST" })
   .inputValidator((d) => z.object({ merchantSlug: z.string().min(1) }).parse(d))
   .handler(async ({ data }) => {
