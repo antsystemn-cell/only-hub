@@ -22,6 +22,7 @@ export const Route = createFileRoute("/store/$merchantSlug/order/$orderId")({
 
 function OrderConfirmationPage() {
   const { merchantSlug, orderId } = Route.useParams();
+  const queryClient = useQueryClient();
   const getStatusFn = useServerFn(getOrderStatus);
   const retryFn = useServerFn(retryQpayInvoice);
   const setMethodFn = useServerFn(setOrderPaymentMethod);
@@ -48,6 +49,14 @@ function OrderConfirmationPage() {
     id: string; providerType: string; name: string; icon: string | null; logoUrl?: string | null; description: string | null; isPlatformFallback: boolean;
   }>;
 
+  async function refetchAll() {
+    await Promise.all([
+      refetch(),
+      queryClient.invalidateQueries({ queryKey: ["order-detail", orderId] }),
+      queryClient.invalidateQueries({ queryKey: ["payment-request", orderId] }),
+    ]);
+  }
+
   async function pickMethod(providerType: string) {
     setPickingMethod(providerType);
     try {
@@ -55,7 +64,7 @@ function OrderConfirmationPage() {
       if (!(r as any).ok) {
         toast.error((r as any).error ?? "Алдаа гарлаа");
       }
-      await refetch();
+      await refetchAll();
       await refetchMethods();
     } catch (e: any) {
       toast.error(e?.message ?? "Алдаа гарлаа");
@@ -64,26 +73,31 @@ function OrderConfirmationPage() {
     }
   }
 
-  // Realtime push
+  // Realtime push — invalidate every order-scoped query so QR/url updates land immediately.
   useEffect(() => {
     const ch = supabase
       .channel(`order-${orderId}`)
       .on(
         "postgres_changes",
         { event: "UPDATE", schema: "public", table: "orders", filter: `id=eq.${orderId}` },
-        () => refetch(),
+        () => {
+          refetch();
+          queryClient.invalidateQueries({ queryKey: ["order-detail", orderId] });
+        },
       )
       .subscribe();
     return () => {
       supabase.removeChannel(ch);
     };
-  }, [orderId, refetch]);
+  }, [orderId, refetch, queryClient]);
 
-  // Fetch QPay invoice details from order
+  // Fetch QPay invoice details from order. Poll while unpaid so newly-created
+  // invoice QR/urls show up automatically without manual tab switching.
   const { data: orderDetail } = useQuery({
     queryKey: ["order-detail", orderId],
     queryFn: async () =>
       (await supabase.from("orders").select("*").eq("id", orderId).maybeSingle()).data,
+    refetchInterval: (q) => ((q.state.data as any)?.payment_status === "confirmed" ? false : 4000),
   });
 
   const getPaymentReqFn = useServerFn(getPaymentRequestByOrderFn);
