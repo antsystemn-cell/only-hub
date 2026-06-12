@@ -76,17 +76,14 @@ function CheckoutPage() {
         .order("position")).data ?? [],
   });
 
-  const { data: paymentMethods = [] } = useQuery({
-    queryKey: ["payment-providers", merchant?.id],
-    enabled: !!merchant?.id,
-    queryFn: async () =>
-      (await supabase
-        .from("payment_providers")
-        .select("id,name,provider_type,icon")
-        .eq("merchant_id", merchant!.id)
-        .eq("is_active", true)
-        .order("position")).data ?? [],
+  const getCheckoutMethodsFn = useServerFn(getCheckoutMethodsForStore);
+  const { data: methodsRes } = useQuery({
+    queryKey: ["checkout-methods", merchantSlug],
+    queryFn: () => getCheckoutMethodsFn({ data: { merchantSlug } }),
   });
+  const paymentMethods = ((methodsRes as any)?.methods ?? []) as Array<{
+    id: string; providerType: string; name: string; icon: string | null; description: string | null; isPlatformFallback: boolean;
+  }>;
 
   const [form, setForm] = useState({ customerName: "", phone: "", shippingAddress: "", branch: "", note: "" });
   const [deliveryOptionId, setDeliveryOptionId] = useState<string>("");
