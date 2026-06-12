@@ -16,6 +16,7 @@ import { fmtMnt } from "@/lib/format";
 import { cart, useCart } from "@/lib/cart";
 import { validateCoupon } from "@/lib/coupons.functions";
 import { createOrder } from "@/lib/orders.functions";
+import { getCheckoutMethodsForStore } from "@/lib/payments/providers.functions";
 import { useShipping } from "@/lib/shipping/use-shipping";
 import { FreeShippingProgress } from "@/components/cart/FreeShippingProgress";
 import { StickyCheckoutBar } from "@/components/cart/StickyCheckoutBar";
