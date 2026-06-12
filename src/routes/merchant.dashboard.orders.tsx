@@ -91,6 +91,13 @@ function OrdersPage() {
     },
   });
 
+  useRealtimeSync({
+    tables: ["orders", "delivery_requests"],
+    queryKeys: [["orders", merchantId]],
+    merchantId,
+    enabled: !!merchantId,
+  });
+
   // Collect unique product_ids across all visible orders to fetch thumbnails
   // in a single query. Results are cached aggressively (30min staleTime) so
   // re-renders/refetches don't re-download images and CDN bandwidth is saved.
