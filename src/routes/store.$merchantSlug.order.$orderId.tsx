@@ -137,6 +137,43 @@ function OrderConfirmationPage() {
 
           <div className="mt-6 text-3xl font-bold">{fmtMnt(Number(order.total))}</div>
 
+          {!paid && (order.payment_method === "pending" || !order.payment_method) && (
+            <div className="mt-8 text-left">
+              <h3 className="mb-3 text-center text-base font-semibold">Төлбөрийн хэлбэрээ сонгоно уу</h3>
+              {paymentMethods.length === 0 ? (
+                <p className="text-center text-sm text-muted-foreground">
+                  Энэ дэлгүүрт төлбөрийн систем тохируулагдаагүй байна.
+                </p>
+              ) : (
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                  {paymentMethods.map((m) => (
+                    <button
+                      key={m.id}
+                      type="button"
+                      disabled={pickingMethod !== null}
+                      onClick={() => pickMethod(m.providerType)}
+                      className="group flex flex-col items-center gap-2 rounded-xl border bg-card p-4 text-center transition hover:border-primary hover:bg-accent/40 disabled:opacity-60"
+                    >
+                      {m.logoUrl ? (
+                        <img src={m.logoUrl} alt={m.name} className="h-10 w-10 rounded object-contain" />
+                      ) : (
+                        <span className="text-3xl">{m.icon ?? "💳"}</span>
+                      )}
+                      <span className="text-sm font-medium">{m.name}</span>
+                      {pickingMethod === m.providerType && (
+                        <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                      )}
+                      {m.isPlatformFallback && (
+                        <span className="text-[10px] text-muted-foreground">платформ</span>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+
           {!paid && order.payment_method === "qpay" && orderDetail?.qpay_invoice_id && !order.payment_error && (
             <div className="mt-6 space-y-4">
               {(orderDetail.qpay_qr_image || orderDetail.qpay_qr_text) && (
