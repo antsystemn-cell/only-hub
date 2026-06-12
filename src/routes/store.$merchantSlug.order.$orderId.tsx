@@ -12,6 +12,7 @@ import { getOrderStatus, retryQpayInvoice } from "@/lib/orders.functions";
 import { getDeliveryHistoryByOrder } from "@/lib/delivery/delivery.functions";
 import { getPaymentRequestByOrderFn } from "@/lib/payment-collection/collection.functions";
 import { DeliveryTimeline } from "@/components/DeliveryTimeline";
+import { PaymentIntentPanel } from "@/components/checkout/PaymentIntentPanel";
 import { AlertTriangle, CheckCircle2, Clock, Loader2, RefreshCw, Banknote } from "lucide-react";
 
 export const Route = createFileRoute("/store/$merchantSlug/order/$orderId")({
