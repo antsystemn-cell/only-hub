@@ -4,6 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/use-auth";
+import { supabase } from "@/integrations/supabase/client";
 import {
   listMerchantProviders,
   saveMerchantProvider,
@@ -17,7 +18,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Loader2, CheckCircle2, AlertCircle, XCircle, ShieldCheck } from "lucide-react";
+import { Loader2, CheckCircle2, AlertCircle, XCircle, ShieldCheck, Upload } from "lucide-react";
 
 export const Route = createFileRoute("/merchant/dashboard/payments")({
   component: PaymentsSettingsPage,
