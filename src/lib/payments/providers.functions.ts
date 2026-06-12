@@ -21,7 +21,7 @@ const PROVIDER_DEFAULTS: Record<
 };
 
 const LEGACY_REQUIRED_FIELDS: Record<string, string[]> = {
-  hipay: ["merchant_id", "api_key"],
+  hipay: ["entity_id", "client_secret"],
   cash: [],
 };
 
