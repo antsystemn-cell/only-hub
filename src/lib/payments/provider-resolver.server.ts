@@ -86,11 +86,12 @@ export async function listCheckoutMethodsForMerchant(merchantId: string): Promis
       continue;
     }
     if (isCheckoutReady(p)) {
+      const plat = platformByType.get(p.provider_type as string);
       out.push({
         id: p.id as string,
         providerType: p.provider_type as string,
         name: p.name as string,
-        icon: (p.icon as string) ?? null,
+        icon: (plat?.icon as string) ?? (p.icon as string) ?? null,
         logoUrl: (p.logo_url as string) ?? null,
         description: (p.description as string) ?? null,
         isPlatformFallback: false,
