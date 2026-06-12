@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { fmtMnt, PAYMENT_STATUS_LABELS, STATUS_LABELS, STATUS_TONE } from "@/lib/format";
-import { getOrderStatus, retryQpayInvoice, setOrderPaymentMethod } from "@/lib/orders.functions";
+import { getOrderStatus, retryQpayInvoice, setOrderPaymentMethod, resetOrderPaymentMethod } from "@/lib/orders.functions";
 import { getCheckoutMethodsForStore } from "@/lib/payments/providers.functions";
 import { getDeliveryHistoryByOrder } from "@/lib/delivery/delivery.functions";
 import { getPaymentRequestByOrderFn } from "@/lib/payment-collection/collection.functions";
