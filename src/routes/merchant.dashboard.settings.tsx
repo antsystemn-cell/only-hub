@@ -279,8 +279,10 @@ function PaymentsTab() {
   };
 
   const credFields: Record<string, string[]> = {
-    qpay: ["invoice_code", "username", "password"],
-    storepay: ["merchant_id", "api_key"],
+    qpay: ["username", "password", "invoice_code"],
+    storepay: ["username", "password", "app_username", "app_password", "store_id"],
+    pocket: ["client_id", "client_secret", "terminal_id"],
+    omniway: ["username", "password"],
     hipay: ["merchant_id", "api_key"],
     cash: [],
   };
