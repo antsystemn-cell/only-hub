@@ -139,6 +139,37 @@ function OrderConfirmationPage() {
 
           <div className="mt-6 text-3xl font-bold">{fmtMnt(Number(order.total))}</div>
 
+          {!paid && order.payment_method && order.payment_method !== "pending" && (
+            <div className="mt-6 flex justify-center">
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={resettingMethod}
+                onClick={async () => {
+                  setResettingMethod(true);
+                  try {
+                    const r = await resetMethodFn({ data: { orderId } });
+                    if (!(r as any).ok) {
+                      toast.error((r as any).error ?? "Алдаа гарлаа");
+                    }
+                    await refetch();
+                  } catch (e: any) {
+                    toast.error(e?.message ?? "Алдаа гарлаа");
+                  } finally {
+                    setResettingMethod(false);
+                  }
+                }}
+              >
+                {resettingMethod ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <RefreshCw className="mr-2 h-4 w-4" />
+                )}
+                Өөр төлбөрийн хэрэгсэл сонгох
+              </Button>
+            </div>
+          )}
+
           {!paid && (order.payment_method === "pending" || !order.payment_method) && (
             <div className="mt-8 text-left">
               <h3 className="mb-3 text-center text-base font-semibold">Төлбөрийн хэлбэрээ сонгоно уу</h3>
