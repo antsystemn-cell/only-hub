@@ -411,7 +411,12 @@ function ProviderRow({ provider: p, onEdit, onDelete }: { provider: any; onEdit:
   return (
     <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border p-3 text-sm">
       <span className="flex items-center gap-2">
-        {p.icon} {p.name}
+        {p.icon && /^https?:\/\//i.test(p.icon) ? (
+          <img src={p.icon} alt={p.name} className="h-6 w-6 rounded object-contain" />
+        ) : (
+          <span className="text-lg">{p.icon}</span>
+        )}
+        {p.name}
         <span className="text-xs text-muted-foreground">({p.provider_type})</span>
         {p.is_active && <span className="rounded bg-emerald-500/10 px-2 py-0.5 text-xs text-emerald-600">Идэвхтэй</span>}
         {hasCreds && <span className="rounded bg-blue-500/10 px-2 py-0.5 text-xs text-blue-600">🔐 Тохируулагдсан</span>}
