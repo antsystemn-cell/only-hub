@@ -279,8 +279,10 @@ function PaymentsTab() {
   };
 
   const credFields: Record<string, string[]> = {
-    qpay: ["invoice_code", "username", "password"],
-    storepay: ["merchant_id", "api_key"],
+    qpay: ["username", "password", "invoice_code"],
+    storepay: ["username", "password", "app_username", "app_password", "store_id"],
+    pocket: ["client_id", "client_secret", "terminal_id"],
+    omniway: ["username", "password"],
     hipay: ["merchant_id", "api_key"],
     cash: [],
   };
@@ -294,8 +296,12 @@ function PaymentsTab() {
           <Select value={form.provider_type} onValueChange={(v) => setForm({ ...form, provider_type: v, credentials: editId ? (form.credentials ?? {}) : {} })}>
             <SelectTrigger><SelectValue /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="qpay">QPay</SelectItem><SelectItem value="storepay">StorePay</SelectItem>
-              <SelectItem value="hipay">HiPay</SelectItem><SelectItem value="cash">Бэлэн мөнгө</SelectItem>
+              <SelectItem value="qpay">QPay</SelectItem>
+              <SelectItem value="storepay">Storepay</SelectItem>
+              <SelectItem value="pocket">Pocket</SelectItem>
+              <SelectItem value="omniway">Omniway</SelectItem>
+              <SelectItem value="hipay">HiPay</SelectItem>
+              <SelectItem value="cash">Бэлэн мөнгө</SelectItem>
             </SelectContent>
           </Select>
         </div>
