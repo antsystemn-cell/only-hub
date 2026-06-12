@@ -87,20 +87,14 @@ function CheckoutPage() {
 
   const [form, setForm] = useState({ customerName: "", phone: "", shippingAddress: "", branch: "", note: "" });
   const [deliveryOptionId, setDeliveryOptionId] = useState<string>("");
-  const [paymentMethod, setPaymentMethod] = useState<string>("qpay");
   const [couponCode, setCouponCode] = useState("");
   const [coupon, setCoupon] = useState<{ code: string; discount: number } | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  // Default to first delivery option / payment method
+  // Default to first delivery option
   useEffect(() => {
     if (!deliveryOptionId && deliveryOptions.length) setDeliveryOptionId(deliveryOptions[0].id);
   }, [deliveryOptions, deliveryOptionId]);
-  useEffect(() => {
-    if (paymentMethods.length && !paymentMethods.find((p) => p.providerType === paymentMethod)) {
-      setPaymentMethod(paymentMethods[0].providerType);
-    }
-  }, [paymentMethods, paymentMethod]);
 
   const subtotal = items.reduce((s, i) => {
     const p = productMap.get(i.productId);
@@ -177,7 +171,7 @@ function CheckoutPage() {
     if (!parsed.success) return toast.error(parsed.error.issues[0].message);
     const stockIssue = clientStockCheck();
     if (stockIssue) return toast.error(stockIssue);
-    if (paymentMethods.length && !paymentMethod) return toast.error("Төлбөрийн хэлбэр сонгоно уу");
+    
 
     setSubmitting(true);
     try {
@@ -199,7 +193,7 @@ function CheckoutPage() {
           branch: parsed.data.branch || null,
           note: parsed.data.note || null,
           deliveryOptionId: deliveryOptionId || null,
-          paymentMethod: paymentMethod as any,
+          paymentMethod: "pending" as any,
           couponCode: coupon?.code ?? null,
         },
       });
@@ -304,20 +298,8 @@ function CheckoutPage() {
             )}
 
             {paymentMethods.length > 0 && (
-              <Card className="rounded-2xl p-5">
-                <h3 className="mb-4 font-semibold">Төлбөрийн хэлбэр</h3>
-                <RadioGroup value={paymentMethod} onValueChange={setPaymentMethod} className="space-y-2">
-                  {paymentMethods.map((p) => (
-                    <label key={p.id} className="flex cursor-pointer items-center gap-3 rounded-lg border p-3 hover:border-primary/50">
-                      <RadioGroupItem value={p.providerType} />
-                      <span className="text-xl">{p.icon ?? "💳"}</span>
-                      <div className="flex-1">
-                        <div className="font-medium">{p.name}{p.isPlatformFallback ? <span className="ml-2 text-xs text-muted-foreground">(платформ)</span> : null}</div>
-                        {p.description && <div className="text-xs text-muted-foreground">{p.description}</div>}
-                      </div>
-                    </label>
-                  ))}
-                </RadioGroup>
+              <Card className="rounded-2xl border-dashed bg-muted/30 p-5 text-sm text-muted-foreground">
+                Төлбөрийн хэлбэрээ дараагийн алхамд (захиалга баталгаажсаны дараа) сонгоно.
               </Card>
             )}
           </div>

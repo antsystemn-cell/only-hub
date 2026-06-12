@@ -24,7 +24,7 @@ const CreateInput = z.object({
   branch: z.string().max(120).optional().nullable(),
   note: z.string().max(1000).optional().nullable(),
   deliveryOptionId: z.string().uuid().nullable().optional(),
-  paymentMethod: z.enum(["qpay", "storepay", "pocket", "omniway", "hipay", "cash", "transfer", "manual"]).default("qpay"),
+  paymentMethod: z.enum(["pending", "qpay", "storepay", "pocket", "omniway", "hipay", "cash", "transfer", "manual"]).default("pending"),
   couponCode: z.string().max(50).optional().nullable(),
 });
 
@@ -337,4 +337,73 @@ export const retryQpayInvoice = createServerFn({ method: "POST" })
       await supabaseAdmin.from("orders").update({ payment_error: err }).eq("id", order.id);
       return { ok: false as const, error: err };
     }
+  });
+
+// Pick a payment method for an existing "pending" order, then bootstrap the
+// provider-specific flow (QPay invoice for qpay; otherwise just persist the choice
+// and let the order page render the appropriate panel).
+export const setOrderPaymentMethod = createServerFn({ method: "POST" })
+  .inputValidator((d) =>
+    z
+      .object({
+        orderId: z.string().uuid(),
+        paymentMethod: z.enum(["qpay", "storepay", "pocket", "omniway", "hipay", "cash", "transfer", "manual"]),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data }) => {
+    const { data: order } = await supabaseAdmin
+      .from("orders")
+      .select("id,merchant_id,total,external_ref,payment_method,payment_status")
+      .eq("id", data.orderId)
+      .maybeSingle();
+    if (!order) return { ok: false as const, error: "Захиалга олдсонгүй" };
+    if (order.payment_status === "confirmed") return { ok: false as const, error: "Аль хэдийн төлөгдсөн" };
+
+    await supabaseAdmin
+      .from("orders")
+      .update({ payment_method: data.paymentMethod, payment_error: null })
+      .eq("id", order.id);
+
+    if (data.paymentMethod === "qpay") {
+      const { data: merchant } = await supabaseAdmin
+        .from("merchants")
+        .select("id,name")
+        .eq("id", order.merchant_id)
+        .maybeSingle();
+      if (!merchant) return { ok: false as const, error: "Дэлгүүр олдсонгүй" };
+      try {
+        const reqUrl = getRequestUrl();
+        const callbackUrl = `${reqUrl.origin}/api/public/qpay/webhook?order_id=${order.id}`;
+        const qpay = await createQpayInvoice({
+          merchantId: order.merchant_id,
+          orderId: order.id,
+          amount: Number(order.total),
+          description: `${merchant.name} - ${order.external_ref ?? order.id}`,
+          callbackUrl,
+        });
+        if (!qpay) {
+          const err = "QPay тохиргоо хийгдээгүй байна";
+          await supabaseAdmin.from("orders").update({ payment_error: err }).eq("id", order.id);
+          return { ok: false as const, error: err };
+        }
+        await supabaseAdmin
+          .from("orders")
+          .update({
+            qpay_invoice_id: qpay.invoice_id,
+            qpay_qr_text: qpay.qr_text ?? null,
+            qpay_qr_image: qpay.qr_image ?? null,
+            qpay_short_url: qpay.qPay_shortUrl ?? null,
+            qpay_urls: (qpay.urls ?? []) as any,
+            payment_error: null,
+          })
+          .eq("id", order.id);
+      } catch (e: any) {
+        const err = e?.message ?? "QPay invoice үүсгэхэд алдаа";
+        await supabaseAdmin.from("orders").update({ payment_error: err }).eq("id", order.id);
+        return { ok: false as const, error: err };
+      }
+    }
+
+    return { ok: true as const };
   });

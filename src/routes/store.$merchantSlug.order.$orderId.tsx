@@ -8,7 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { fmtMnt, PAYMENT_STATUS_LABELS, STATUS_LABELS, STATUS_TONE } from "@/lib/format";
-import { getOrderStatus, retryQpayInvoice } from "@/lib/orders.functions";
+import { getOrderStatus, retryQpayInvoice, setOrderPaymentMethod } from "@/lib/orders.functions";
+import { getCheckoutMethodsForStore } from "@/lib/payments/providers.functions";
 import { getDeliveryHistoryByOrder } from "@/lib/delivery/delivery.functions";
 import { getPaymentRequestByOrderFn } from "@/lib/payment-collection/collection.functions";
 import { DeliveryTimeline } from "@/components/DeliveryTimeline";
@@ -23,7 +24,10 @@ function OrderConfirmationPage() {
   const { merchantSlug, orderId } = Route.useParams();
   const getStatusFn = useServerFn(getOrderStatus);
   const retryFn = useServerFn(retryQpayInvoice);
+  const setMethodFn = useServerFn(setOrderPaymentMethod);
+  const getMethodsFn = useServerFn(getCheckoutMethodsForStore);
   const [retrying, setRetrying] = useState(false);
+  const [pickingMethod, setPickingMethod] = useState<string | null>(null);
 
   const { data: order, refetch } = useQuery({
     queryKey: ["order-status", orderId],
@@ -33,6 +37,30 @@ function OrderConfirmationPage() {
     },
     refetchInterval: (q) => (q.state.data?.payment_status === "confirmed" ? false : 4000),
   });
+
+  const { data: methodsRes, refetch: refetchMethods } = useQuery({
+    queryKey: ["checkout-methods", merchantSlug],
+    queryFn: () => getMethodsFn({ data: { merchantSlug } }),
+  });
+  const paymentMethods = ((methodsRes as any)?.methods ?? []) as Array<{
+    id: string; providerType: string; name: string; icon: string | null; logoUrl?: string | null; description: string | null; isPlatformFallback: boolean;
+  }>;
+
+  async function pickMethod(providerType: string) {
+    setPickingMethod(providerType);
+    try {
+      const r = await setMethodFn({ data: { orderId, paymentMethod: providerType as any } });
+      if (!(r as any).ok) {
+        toast.error((r as any).error ?? "Алдаа гарлаа");
+      }
+      await refetch();
+      await refetchMethods();
+    } catch (e: any) {
+      toast.error(e?.message ?? "Алдаа гарлаа");
+    } finally {
+      setPickingMethod(null);
+    }
+  }
 
   // Realtime push
   useEffect(() => {
@@ -108,6 +136,43 @@ function OrderConfirmationPage() {
           </div>
 
           <div className="mt-6 text-3xl font-bold">{fmtMnt(Number(order.total))}</div>
+
+          {!paid && (order.payment_method === "pending" || !order.payment_method) && (
+            <div className="mt-8 text-left">
+              <h3 className="mb-3 text-center text-base font-semibold">Төлбөрийн хэлбэрээ сонгоно уу</h3>
+              {paymentMethods.length === 0 ? (
+                <p className="text-center text-sm text-muted-foreground">
+                  Энэ дэлгүүрт төлбөрийн систем тохируулагдаагүй байна.
+                </p>
+              ) : (
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                  {paymentMethods.map((m) => (
+                    <button
+                      key={m.id}
+                      type="button"
+                      disabled={pickingMethod !== null}
+                      onClick={() => pickMethod(m.providerType)}
+                      className="group flex flex-col items-center gap-2 rounded-xl border bg-card p-4 text-center transition hover:border-primary hover:bg-accent/40 disabled:opacity-60"
+                    >
+                      {m.logoUrl ? (
+                        <img src={m.logoUrl} alt={m.name} className="h-10 w-10 rounded object-contain" />
+                      ) : (
+                        <span className="text-3xl">{m.icon ?? "💳"}</span>
+                      )}
+                      <span className="text-sm font-medium">{m.name}</span>
+                      {pickingMethod === m.providerType && (
+                        <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                      )}
+                      {m.isPlatformFallback && (
+                        <span className="text-[10px] text-muted-foreground">платформ</span>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
 
           {!paid && order.payment_method === "qpay" && orderDetail?.qpay_invoice_id && !order.payment_error && (
             <div className="mt-6 space-y-4">
