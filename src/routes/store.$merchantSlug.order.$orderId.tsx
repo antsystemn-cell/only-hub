@@ -24,7 +24,10 @@ function OrderConfirmationPage() {
   const { merchantSlug, orderId } = Route.useParams();
   const getStatusFn = useServerFn(getOrderStatus);
   const retryFn = useServerFn(retryQpayInvoice);
+  const setMethodFn = useServerFn(setOrderPaymentMethod);
+  const getMethodsFn = useServerFn(getCheckoutMethodsForStore);
   const [retrying, setRetrying] = useState(false);
+  const [pickingMethod, setPickingMethod] = useState<string | null>(null);
 
   const { data: order, refetch } = useQuery({
     queryKey: ["order-status", orderId],
@@ -34,6 +37,30 @@ function OrderConfirmationPage() {
     },
     refetchInterval: (q) => (q.state.data?.payment_status === "confirmed" ? false : 4000),
   });
+
+  const { data: methodsRes, refetch: refetchMethods } = useQuery({
+    queryKey: ["checkout-methods", merchantSlug],
+    queryFn: () => getMethodsFn({ data: { merchantSlug } }),
+  });
+  const paymentMethods = ((methodsRes as any)?.methods ?? []) as Array<{
+    id: string; providerType: string; name: string; icon: string | null; logoUrl?: string | null; description: string | null; isPlatformFallback: boolean;
+  }>;
+
+  async function pickMethod(providerType: string) {
+    setPickingMethod(providerType);
+    try {
+      const r = await setMethodFn({ data: { orderId, paymentMethod: providerType as any } });
+      if (!(r as any).ok) {
+        toast.error((r as any).error ?? "Алдаа гарлаа");
+      }
+      await refetch();
+      await refetchMethods();
+    } catch (e: any) {
+      toast.error(e?.message ?? "Алдаа гарлаа");
+    } finally {
+      setPickingMethod(null);
+    }
+  }
 
   // Realtime push
   useEffect(() => {
