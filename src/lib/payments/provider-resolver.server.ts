@@ -7,8 +7,10 @@
 
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
+import { getAdapter } from "@/lib/payments/adapters/index.server";
+
 const LEGACY_CHECKOUT_FIELDS: Record<string, string[]> = {
-  hipay: ["merchant_id", "api_key"],
+  hipay: ["entity_id", "client_secret"],
   cash: [],
 };
 
@@ -16,12 +18,26 @@ function hasValue(value: unknown) {
   return typeof value === "string" ? value.trim().length > 0 : value != null;
 }
 
+function requiredFieldsFor(providerType: string): string[] {
+  const adapter = getAdapter(providerType);
+  if (adapter) return adapter.requiredFields;
+  return LEGACY_CHECKOUT_FIELDS[providerType] ?? [];
+}
+
 function isCheckoutReady(row: any) {
-  if (row.config_status === "verified") return true;
-  const required = LEGACY_CHECKOUT_FIELDS[row.provider_type as string];
-  if (!required) return false;
   const credentials = (row.credentials ?? {}) as Record<string, unknown>;
-  return required.every((field) => hasValue(credentials[field]));
+  const required = requiredFieldsFor(row.provider_type as string);
+  // Backward-compat: HiPay used to be saved as { merchant_id, api_key }.
+  const aliases: Record<string, string[]> = {
+    entity_id: ["merchant_id"],
+    client_secret: ["api_key"],
+  };
+  const allPresent = required.every((field) => {
+    if (hasValue(credentials[field])) return true;
+    return (aliases[field] ?? []).some((alt) => hasValue(credentials[alt]));
+  });
+  if (allPresent) return true;
+  return row.config_status === "verified";
 }
 
 export type CheckoutMethod = {
