@@ -39,6 +39,12 @@ function AdminOrdersPage() {
   const mById: Record<string, { name: string; slug: string }> = {};
   (merchants as any[]).forEach((m) => { mById[m.id] = { name: m.name, slug: m.slug }; });
 
+  useRealtimeSync({
+    tables: ["orders", "delivery_requests"],
+    queryKeys: [["admin-all-orders"]],
+    enabled: isPlatformAdmin,
+  });
+
   const filtered = (orders as any[]).filter((o) =>
     !search ||
     o.id.includes(search) ||
