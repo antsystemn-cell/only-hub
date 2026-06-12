@@ -12,6 +12,7 @@ import { getOrderStatus, retryQpayInvoice } from "@/lib/orders.functions";
 import { getDeliveryHistoryByOrder } from "@/lib/delivery/delivery.functions";
 import { getPaymentRequestByOrderFn } from "@/lib/payment-collection/collection.functions";
 import { DeliveryTimeline } from "@/components/DeliveryTimeline";
+import { PaymentIntentPanel } from "@/components/checkout/PaymentIntentPanel";
 import { AlertTriangle, CheckCircle2, Clock, Loader2, RefreshCw, Banknote } from "lucide-react";
 
 export const Route = createFileRoute("/store/$merchantSlug/order/$orderId")({
@@ -172,6 +173,18 @@ function OrderConfirmationPage() {
                 Төлбөр төлөгдмөгц энэ хуудас автоматаар шинэчлэгдэнэ.
               </p>
             </div>
+          )}
+
+          {!paid && (order.payment_method === "storepay" || order.payment_method === "pocket" || order.payment_method === "omniway") && (
+            <PaymentIntentPanel
+              orderId={order.id}
+              providerType={order.payment_method as "storepay" | "pocket" | "omniway"}
+              providerLabel={
+                order.payment_method === "storepay" ? "Storepay" :
+                order.payment_method === "pocket" ? "Pocket" : "Omniway"
+              }
+              defaultPhone={(orderDetail as any)?.phone ?? null}
+            />
           )}
 
           {!paid && paymentReq?.payment_provider === "bank_transfer" && paymentReq?.bank_account && (

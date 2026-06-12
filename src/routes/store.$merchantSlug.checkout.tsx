@@ -16,6 +16,7 @@ import { fmtMnt } from "@/lib/format";
 import { cart, useCart } from "@/lib/cart";
 import { validateCoupon } from "@/lib/coupons.functions";
 import { createOrder } from "@/lib/orders.functions";
+import { getCheckoutMethodsForStore } from "@/lib/payments/providers.functions";
 import { useShipping } from "@/lib/shipping/use-shipping";
 import { FreeShippingProgress } from "@/components/cart/FreeShippingProgress";
 import { StickyCheckoutBar } from "@/components/cart/StickyCheckoutBar";
@@ -75,17 +76,14 @@ function CheckoutPage() {
         .order("position")).data ?? [],
   });
 
-  const { data: paymentMethods = [] } = useQuery({
-    queryKey: ["payment-providers", merchant?.id],
-    enabled: !!merchant?.id,
-    queryFn: async () =>
-      (await supabase
-        .from("payment_providers")
-        .select("id,name,provider_type,icon")
-        .eq("merchant_id", merchant!.id)
-        .eq("is_active", true)
-        .order("position")).data ?? [],
+  const getCheckoutMethodsFn = useServerFn(getCheckoutMethodsForStore);
+  const { data: methodsRes } = useQuery({
+    queryKey: ["checkout-methods", merchantSlug],
+    queryFn: () => getCheckoutMethodsFn({ data: { merchantSlug } }),
   });
+  const paymentMethods = ((methodsRes as any)?.methods ?? []) as Array<{
+    id: string; providerType: string; name: string; icon: string | null; description: string | null; isPlatformFallback: boolean;
+  }>;
 
   const [form, setForm] = useState({ customerName: "", phone: "", shippingAddress: "", branch: "", note: "" });
   const [deliveryOptionId, setDeliveryOptionId] = useState<string>("");
@@ -99,8 +97,8 @@ function CheckoutPage() {
     if (!deliveryOptionId && deliveryOptions.length) setDeliveryOptionId(deliveryOptions[0].id);
   }, [deliveryOptions, deliveryOptionId]);
   useEffect(() => {
-    if (paymentMethods.length && !paymentMethods.find((p: any) => p.provider_type === paymentMethod)) {
-      setPaymentMethod(paymentMethods[0].provider_type);
+    if (paymentMethods.length && !paymentMethods.find((p) => p.providerType === paymentMethod)) {
+      setPaymentMethod(paymentMethods[0].providerType);
     }
   }, [paymentMethods, paymentMethod]);
 
@@ -309,11 +307,14 @@ function CheckoutPage() {
               <Card className="rounded-2xl p-5">
                 <h3 className="mb-4 font-semibold">Төлбөрийн хэлбэр</h3>
                 <RadioGroup value={paymentMethod} onValueChange={setPaymentMethod} className="space-y-2">
-                  {(paymentMethods as any[]).map((p) => (
+                  {paymentMethods.map((p) => (
                     <label key={p.id} className="flex cursor-pointer items-center gap-3 rounded-lg border p-3 hover:border-primary/50">
-                      <RadioGroupItem value={p.provider_type} />
+                      <RadioGroupItem value={p.providerType} />
                       <span className="text-xl">{p.icon ?? "💳"}</span>
-                      <span className="font-medium">{p.name}</span>
+                      <div className="flex-1">
+                        <div className="font-medium">{p.name}{p.isPlatformFallback ? <span className="ml-2 text-xs text-muted-foreground">(платформ)</span> : null}</div>
+                        {p.description && <div className="text-xs text-muted-foreground">{p.description}</div>}
+                      </div>
                     </label>
                   ))}
                 </RadioGroup>
