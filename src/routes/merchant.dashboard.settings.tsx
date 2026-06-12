@@ -296,7 +296,7 @@ function PaymentsTab() {
     storepay: ["username", "password", "app_username", "app_password", "store_id"],
     pocket: ["client_id", "client_secret", "terminal_id"],
     omniway: ["username", "password"],
-    hipay: ["merchant_id", "api_key"],
+    hipay: ["entity_id", "client_secret", "base_url"],
     cash: [],
   };
   const fields = credFields[form.provider_type] ?? [];
