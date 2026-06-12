@@ -31,6 +31,13 @@ function StatsPage() {
     },
   });
 
+  useRealtimeSync({
+    tables: ["orders", "delivery_requests"],
+    queryKeys: [["stats", merchantId]],
+    merchantId,
+    enabled: !!merchantId,
+  });
+
   const products = data?.products ?? [];
   const orders = data?.orders ?? [];
 
