@@ -144,7 +144,7 @@ export const saveMerchantProvider = createServerFn({ method: "POST" })
       providerType: z.enum(PROVIDER_TYPES),
       isActive: z.boolean(),
       name: z.string().trim().max(120).optional(),
-      icon: z.string().trim().max(20).optional(),
+      icon: z.string().trim().max(1000).optional(),
       description: z.string().trim().max(500).optional(),
       // Only fields the merchant explicitly types are saved. Empty string fields are dropped
       // so a re-save without retyping the secret keeps the existing value.
