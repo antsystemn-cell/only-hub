@@ -3,7 +3,14 @@ import { createStart, createMiddleware } from "@tanstack/react-start";
 import { renderErrorPage } from "./lib/error-page";
 import { attachSupabaseAuth } from "@/integrations/supabase/auth-attacher";
 
-const errorMiddleware = createMiddleware().server(async ({ next }) => {
+const errorMiddleware = createMiddleware().server(async ({ next, request }) => {
+  // /lovable/* server routes (auth email webhook, queue processor, previews)
+  // handle their own auth (signed webhook / API key / JWT). Skip the error page
+  // wrapper so JSON errors pass through unchanged.
+  const url = new URL(request.url);
+  if (url.pathname.startsWith("/lovable/")) {
+    return next();
+  }
   try {
     return await next();
   } catch (error) {
