@@ -632,6 +632,7 @@ export type Database = {
           social_facebook: string | null
           social_instagram: string | null
           updated_at: string
+          use_platform_payment_fallback: boolean
           website_url: string | null
         }
         Insert: {
@@ -659,6 +660,7 @@ export type Database = {
           social_facebook?: string | null
           social_instagram?: string | null
           updated_at?: string
+          use_platform_payment_fallback?: boolean
           website_url?: string | null
         }
         Update: {
@@ -686,6 +688,7 @@ export type Database = {
           social_facebook?: string | null
           social_instagram?: string | null
           updated_at?: string
+          use_platform_payment_fallback?: boolean
           website_url?: string | null
         }
         Relationships: []
@@ -898,47 +901,150 @@ export type Database = {
           },
         ]
       }
+      payment_intents: {
+        Row: {
+          amount: number
+          created_at: string
+          deeplink: string | null
+          id: string
+          invoice_id: string | null
+          is_platform_fallback: boolean
+          last_error: string | null
+          merchant_id: string | null
+          order_id: string | null
+          paid_at: string | null
+          phone: string | null
+          provider_id: string | null
+          provider_response: Json | null
+          provider_type: string
+          qr_image: string | null
+          qr_text: string | null
+          request_id: string | null
+          status: string
+          updated_at: string
+          urls: Json | null
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          deeplink?: string | null
+          id?: string
+          invoice_id?: string | null
+          is_platform_fallback?: boolean
+          last_error?: string | null
+          merchant_id?: string | null
+          order_id?: string | null
+          paid_at?: string | null
+          phone?: string | null
+          provider_id?: string | null
+          provider_response?: Json | null
+          provider_type: string
+          qr_image?: string | null
+          qr_text?: string | null
+          request_id?: string | null
+          status?: string
+          updated_at?: string
+          urls?: Json | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          deeplink?: string | null
+          id?: string
+          invoice_id?: string | null
+          is_platform_fallback?: boolean
+          last_error?: string | null
+          merchant_id?: string | null
+          order_id?: string | null
+          paid_at?: string | null
+          phone?: string | null
+          provider_id?: string | null
+          provider_response?: Json | null
+          provider_type?: string
+          qr_image?: string | null
+          qr_text?: string | null
+          request_id?: string | null
+          status?: string
+          updated_at?: string
+          urls?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_intents_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_intents_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_intents_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "payment_providers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payment_providers: {
         Row: {
+          config_status: string
           created_at: string
           credentials: Json
           description: string | null
           icon: string | null
           id: string
           is_active: boolean
+          is_platform_managed: boolean
+          last_tested_at: string | null
           logo_url: string | null
-          merchant_id: string
+          merchant_id: string | null
           name: string
           position: number
           provider_type: string
+          test_message: string | null
           updated_at: string
         }
         Insert: {
+          config_status?: string
           created_at?: string
           credentials?: Json
           description?: string | null
           icon?: string | null
           id?: string
           is_active?: boolean
+          is_platform_managed?: boolean
+          last_tested_at?: string | null
           logo_url?: string | null
-          merchant_id: string
+          merchant_id?: string | null
           name: string
           position?: number
           provider_type: string
+          test_message?: string | null
           updated_at?: string
         }
         Update: {
+          config_status?: string
           created_at?: string
           credentials?: Json
           description?: string | null
           icon?: string | null
           id?: string
           is_active?: boolean
+          is_platform_managed?: boolean
+          last_tested_at?: string | null
           logo_url?: string | null
-          merchant_id?: string
+          merchant_id?: string | null
           name?: string
           position?: number
           provider_type?: string
+          test_message?: string | null
           updated_at?: string
         }
         Relationships: [
