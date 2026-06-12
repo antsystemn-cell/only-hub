@@ -166,7 +166,7 @@ function OrderConfirmationPage() {
                     if (!(r as any).ok) {
                       toast.error((r as any).error ?? "Алдаа гарлаа");
                     }
-                    await refetch();
+                    await refetchAll();
                   } catch (e: any) {
                     toast.error(e?.message ?? "Алдаа гарлаа");
                   } finally {
