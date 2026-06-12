@@ -4,7 +4,14 @@ import { supabase } from "@/integrations/supabase/client";
 
 type Role = "platform_admin" | "merchant_owner" | "merchant_admin" | "merchant_moderator" | "merchant_driver";
 
-export type RoleRow = { role: Role; merchant_id: string | null };
+export type RoleRow = { role: Role; merchant_id: string | null; created_at?: string };
+
+const ACTIVE_MERCHANT_KEY = "only.activeMerchantId";
+
+function readStoredMerchantId() {
+  if (typeof window === "undefined") return null;
+  return window.localStorage.getItem(ACTIVE_MERCHANT_KEY);
+}
 
 interface AuthState {
   user: User | null;
@@ -14,6 +21,7 @@ interface AuthState {
   isPlatformAdmin: boolean;
   merchantIds: string[];
   primaryMerchantId: string | null;
+  setPrimaryMerchantId: (merchantId: string | null) => void;
   refreshRoles: () => Promise<void>;
   signOut: () => Promise<void>;
 }
@@ -25,27 +33,54 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [roles, setRoles] = useState<RoleRow[]>([]);
+  const [selectedMerchantId, setSelectedMerchantId] = useState<string | null>(readStoredMerchantId);
+  const [preferredMerchantId, setPreferredMerchantId] = useState<string | null>(null);
 
   const loadRoles = async (uid: string | null) => {
     if (!uid) {
       setRoles([]);
       return;
     }
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("user_roles")
-      .select("role, merchant_id")
-      .eq("user_id", uid);
+      .select("role, merchant_id, created_at")
+      .eq("user_id", uid)
+      .order("created_at", { ascending: true });
+    if (error) {
+      console.error("[auth] Failed to load merchant roles", error);
+      return;
+    }
     const next = (data as RoleRow[]) ?? [];
-    // Stable sort so primaryMerchantId never flips between refreshes for
-    // users with multiple merchants. Postgres returns rows in unspecified
-    // order, which previously caused the merchant orders/delivery pages
-    // to occasionally show data for a different merchant or appear empty.
+    // Stable role order. The active merchant itself is selected below from
+    // persisted choice or latest merchant activity, so an empty test merchant
+    // cannot accidentally become the default delivery/orders context.
     next.sort((a, b) => {
+      const at = a.created_at ?? "";
+      const bt = b.created_at ?? "";
+      if (at !== bt) return at < bt ? -1 : 1;
       const am = a.merchant_id ?? "";
       const bm = b.merchant_id ?? "";
-      if (am !== bm) return am < bm ? -1 : 1;
+      if (am !== bm) return am.localeCompare(bm);
       return a.role.localeCompare(b.role);
     });
+    const nextMerchantIds = Array.from(
+      new Set(next.filter((r) => r.merchant_id).map((r) => r.merchant_id!)),
+    );
+    let nextPreferredMerchantId = nextMerchantIds[0] ?? null;
+    if (nextMerchantIds.length > 0) {
+      const { data: recentOrders, error: ordersError } = await supabase
+        .from("orders")
+        .select("merchant_id, created_at")
+        .in("merchant_id", nextMerchantIds)
+        .order("created_at", { ascending: false })
+        .limit(1);
+      if (ordersError) {
+        console.error("[auth] Failed to load latest merchant activity", ordersError);
+      } else if (recentOrders?.[0]?.merchant_id) {
+        nextPreferredMerchantId = recentOrders[0].merchant_id;
+      }
+    }
+    setPreferredMerchantId(nextPreferredMerchantId);
     setRoles((prev) => {
       // Avoid replacing the array (and thus invalidating react-query keys)
       // when the role set is unchanged — e.g. on TOKEN_REFRESHED.
@@ -80,8 +115,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const isPlatformAdmin = roles.some((r) => r.role === "platform_admin");
   const merchantIds = Array.from(
     new Set(roles.filter((r) => r.merchant_id).map((r) => r.merchant_id!))
-  ).sort();
-  const primaryMerchantId = merchantIds[0] ?? null;
+  );
+  const primaryMerchantId =
+    selectedMerchantId && merchantIds.includes(selectedMerchantId)
+      ? selectedMerchantId
+      : preferredMerchantId && merchantIds.includes(preferredMerchantId)
+        ? preferredMerchantId
+        : merchantIds[0] ?? null;
+
+  const updatePrimaryMerchantId = (merchantId: string | null) => {
+    if (typeof window !== "undefined") {
+      if (merchantId) window.localStorage.setItem(ACTIVE_MERCHANT_KEY, merchantId);
+      else window.localStorage.removeItem(ACTIVE_MERCHANT_KEY);
+    }
+    setSelectedMerchantId(merchantId);
+  };
 
   return (
     <AuthContext.Provider
@@ -93,6 +141,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isPlatformAdmin,
         merchantIds,
         primaryMerchantId,
+        setPrimaryMerchantId: updatePrimaryMerchantId,
         refreshRoles: () => loadRoles(user?.id ?? null),
         signOut: async () => { await supabase.auth.signOut(); },
       }}
