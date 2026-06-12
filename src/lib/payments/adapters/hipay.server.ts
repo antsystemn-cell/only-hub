@@ -27,7 +27,13 @@ function clean(v?: string) {
 function normalize(c: HipayCreds) {
   const entityId = clean(c.entity_id || c.merchant_id);
   const clientSecret = clean(c.client_secret || c.api_key);
-  const baseUrl = (clean(c.base_url) || "https://api.hipay.mn").replace(/\/$/, "");
+  let raw = clean(c.base_url) || "https://api.hipay.mn";
+  // Ensure protocol is present — users often paste "sts.hipay.mn" without scheme,
+  // which makes fetch() throw "Failed to parse URL".
+  if (!/^https?:\/\//i.test(raw)) raw = "https://" + raw;
+  // Strip trailing slash and a trailing "/checkout" segment if the user pasted
+  // the full endpoint instead of the base host.
+  let baseUrl = raw.replace(/\/+$/, "").replace(/\/checkout$/i, "");
   return { entityId, clientSecret, baseUrl };
 }
 
