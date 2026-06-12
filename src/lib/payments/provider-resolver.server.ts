@@ -51,8 +51,7 @@ async function loadPlatformByType(): Promise<Map<string, any>> {
   const { data: platform } = await supabaseAdmin
     .from("payment_providers")
     .select("id, name, provider_type, icon, logo_url, description, config_status, credentials, is_active, position")
-    .eq("is_platform_managed", true)
-    .eq("is_active", true);
+    .eq("is_platform_managed", true);
   const map = new Map<string, any>();
   for (const p of platform ?? []) map.set(p.provider_type as string, p);
   return map;
