@@ -193,7 +193,7 @@ function CheckoutPage() {
           branch: parsed.data.branch || null,
           note: parsed.data.note || null,
           deliveryOptionId: deliveryOptionId || null,
-          paymentMethod: paymentMethod as any,
+          paymentMethod: "pending" as any,
           couponCode: coupon?.code ?? null,
         },
       });
