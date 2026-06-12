@@ -4,6 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/use-auth";
+import { supabase } from "@/integrations/supabase/client";
 import {
   listMerchantProviders,
   saveMerchantProvider,
@@ -17,13 +18,13 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Loader2, CheckCircle2, AlertCircle, XCircle, ShieldCheck } from "lucide-react";
+import { Loader2, CheckCircle2, AlertCircle, XCircle, ShieldCheck, Upload } from "lucide-react";
 
 export const Route = createFileRoute("/merchant/dashboard/payments")({
   component: PaymentsSettingsPage,
 });
 
-type ProviderKey = "qpay" | "storepay" | "pocket" | "omniway";
+type ProviderKey = "qpay" | "storepay" | "pocket" | "omniway" | "hipay";
 
 const PROVIDER_FIELDS: Record<
   ProviderKey,
@@ -49,6 +50,11 @@ const PROVIDER_FIELDS: Record<
   omniway: [
     { key: "username", label: "Omniway USERNAME", placeholder: "merchant username" },
     { key: "password", label: "Omniway PASSWORD", placeholder: "••••••••", secret: true },
+  ],
+  hipay: [
+    { key: "entity_id", label: "HiPay ENTITY_ID (Client ID)", placeholder: "entity id" },
+    { key: "client_secret", label: "HiPay CLIENT_SECRET", placeholder: "••••••••", secret: true },
+    { key: "base_url", label: "Base URL (заавал биш)", placeholder: "https://api.hipay.mn" },
   ],
 };
 
@@ -178,6 +184,8 @@ function ProviderCard({
 }) {
   const fields = PROVIDER_FIELDS[provider.providerType as ProviderKey] ?? [];
   const [isActive, setIsActive] = useState(provider.isActive);
+  const [icon, setIcon] = useState(provider.icon ?? "");
+  const [uploading, setUploading] = useState(false);
   const [values, setValues] = useState<Record<string, string>>(
     Object.fromEntries(fields.map((f) => [f.key, ""])),
   );
@@ -185,7 +193,8 @@ function ProviderCard({
   // Reset values when server data refreshes.
   useEffect(() => {
     setIsActive(provider.isActive);
-  }, [provider.isActive]);
+    setIcon(provider.icon ?? "");
+  }, [provider.isActive, provider.icon]);
 
   const saveFn = useServerFn(saveMerchantProvider);
   const testFn = useServerFn(testMerchantProvider);
@@ -197,6 +206,7 @@ function ProviderCard({
           merchantId,
           providerType: provider.providerType as ProviderKey,
           isActive,
+          icon: icon.trim() || undefined,
           credentials: values,
         },
       }),
@@ -211,6 +221,26 @@ function ProviderCard({
     },
     onError: (e: any) => toast.error(e?.message ?? "Сүлжээний алдаа"),
   });
+
+  async function handleIconFile(file: File) {
+    setUploading(true);
+    try {
+      const ext = file.name.split(".").pop() || "png";
+      const path = `${merchantId}/payment-icons/${provider.providerType}-${Date.now()}.${ext}`;
+      const { error: upErr } = await supabase.storage
+        .from("merchant-logos")
+        .upload(path, file, { upsert: true, contentType: file.type });
+      if (upErr) throw upErr;
+      const { data: pub } = supabase.storage.from("merchant-logos").getPublicUrl(path);
+      setIcon(pub.publicUrl);
+      toast.success("Icon байршуулагдлаа. Хадгалах товчийг дарна уу.");
+    } catch (e: any) {
+      toast.error(e?.message ?? "Байршуулах алдаа");
+    } finally {
+      setUploading(false);
+    }
+  }
+
 
   const test = useMutation({
     mutationFn: () => {
@@ -257,6 +287,48 @@ function ProviderCard({
       </div>
 
       <Separator className="my-4" />
+
+      <div className="mb-4">
+        <Label className="text-xs uppercase tracking-wide text-muted-foreground">
+          Icon (төлбөр төлөх хэсэгт харагдах лого)
+        </Label>
+        <div className="mt-1 flex items-center gap-2">
+          {icon && /^https?:\/\//i.test(icon) ? (
+            <img src={icon} alt="icon" className="h-10 w-10 rounded border bg-white object-contain p-1" />
+          ) : (
+            <span className="flex h-10 w-10 items-center justify-center rounded border text-xl">
+              {icon || "💳"}
+            </span>
+          )}
+          <Input
+            className="flex-1"
+            placeholder="💳 emoji эсвэл https://logo.png"
+            value={icon}
+            onChange={(e) => setIcon(e.target.value)}
+          />
+          <label className="cursor-pointer">
+            <input
+              type="file"
+              accept="image/*"
+              className="hidden"
+              disabled={uploading}
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) handleIconFile(f);
+                e.target.value = "";
+              }}
+            />
+            <span className="inline-flex h-9 items-center gap-1 rounded-md border px-3 text-sm hover:bg-muted">
+              {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+              Upload
+            </span>
+          </label>
+        </div>
+        <p className="mt-1 text-xs text-muted-foreground">
+          Icon-ыг хадгалсны дараа худалдан авагчид төлбөр төлөх системийн сонголтын хэсэгт энэ зураг автоматаар харагдана.
+        </p>
+      </div>
+
 
       <div className="grid gap-3 sm:grid-cols-2">
         {fields.map((f) => (
