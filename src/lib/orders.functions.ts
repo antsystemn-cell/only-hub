@@ -405,5 +405,43 @@ export const setOrderPaymentMethod = createServerFn({ method: "POST" })
       }
     }
 
+    if (data.paymentMethod === "hipay") {
+      try {
+        const { loadProviderRowForCheckout } = await import("@/lib/payments/provider-resolver.server");
+        const { getAdapter } = await import("@/lib/payments/adapters/index.server");
+        const resolved = await loadProviderRowForCheckout({
+          merchantId: order.merchant_id,
+          providerType: "hipay",
+        });
+        if (!resolved) throw new Error("HiPay тохиргоо хийгдээгүй байна");
+        const adapter = getAdapter("hipay");
+        if (!adapter) throw new Error("HiPay adapter байхгүй");
+        const reqUrl = getRequestUrl();
+        const callbackUrl = `${reqUrl.origin}/api/public/payments/hipay/webhook?order_id=${order.id}`;
+        const invoice = await adapter.createInvoice({
+          orderId: order.id,
+          amount: Number(order.total),
+          description: order.external_ref ?? order.id,
+          orderRef: order.external_ref ?? null,
+          callbackUrl,
+          credentials: (resolved.row.credentials ?? {}) as Record<string, any>,
+        });
+        await supabaseAdmin
+          .from("orders")
+          .update({
+            qpay_invoice_id: invoice.invoiceId,
+            qpay_qr_text: invoice.qrText ?? null,
+            qpay_short_url: invoice.deeplink ?? null,
+            qpay_urls: (invoice.urls ?? []) as any,
+            payment_error: null,
+          })
+          .eq("id", order.id);
+      } catch (e: any) {
+        const err = e?.message ?? "HiPay invoice үүсгэхэд алдаа";
+        await supabaseAdmin.from("orders").update({ payment_error: err }).eq("id", order.id);
+        return { ok: false as const, error: err };
+      }
+    }
+
     return { ok: true as const };
   });

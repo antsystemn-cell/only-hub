@@ -252,6 +252,31 @@ function OrderConfirmationPage() {
             />
           )}
 
+          {!paid && order.payment_method === "hipay" && orderDetail?.qpay_short_url && !order.payment_error && (
+            <div className="mt-6 space-y-4 text-center">
+              {orderDetail.qpay_qr_text && (
+                <div className="flex flex-col items-center gap-3 rounded-xl border bg-card p-5">
+                  <img
+                    src={`https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(orderDetail.qpay_qr_text)}`}
+                    alt="HiPay QR код"
+                    className="h-56 w-56 rounded-lg bg-white p-2"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    HiPay апп эсвэл картаа уншуулж төлбөрөө төлнө үү
+                  </p>
+                </div>
+              )}
+              <a
+                href={orderDetail.qpay_short_url}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-3 text-sm font-medium text-primary-foreground hover:opacity-90"
+              >
+                HiPay төлбөрийн хуудас руу очих →
+              </a>
+            </div>
+          )}
+
           {!paid && paymentReq?.payment_provider === "bank_transfer" && paymentReq?.bank_account && (
             <div className="mt-6 rounded-xl border bg-card p-5 text-left text-sm">
               <div className="mb-3 flex items-center gap-2 font-semibold">

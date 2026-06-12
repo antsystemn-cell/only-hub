@@ -2,7 +2,7 @@
 // (Storepay, Pocket, Omniway, QPay, …) exports the same shape so server
 // functions can dispatch by provider_type without special-casing.
 
-export type ProviderType = "qpay" | "storepay" | "pocket" | "omniway";
+export type ProviderType = "qpay" | "storepay" | "pocket" | "omniway" | "hipay";
 
 export type AdapterInvoice = {
   invoiceId: string;
