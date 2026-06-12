@@ -6,7 +6,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-const PROVIDER_TYPES = ["qpay", "storepay", "pocket", "omniway"] as const;
+const PROVIDER_TYPES = ["qpay", "storepay", "pocket", "omniway", "hipay", "cash"] as const;
 
 const PROVIDER_DEFAULTS: Record<
   (typeof PROVIDER_TYPES)[number],
@@ -16,7 +16,18 @@ const PROVIDER_DEFAULTS: Record<
   storepay: { name: "Storepay", icon: "🟣", description: "Хуваан төлөх (Storepay)" },
   pocket:   { name: "Pocket",   icon: "🔵", description: "Pocket апп / QR" },
   omniway:  { name: "Omniway",  icon: "🟠", description: "Omniway PG (QR)" },
+  hipay:    { name: "HiPay",    icon: "🟢", description: "HiPay төлбөрийн систем" },
+  cash:     { name: "Бэлэн",     icon: "💵", description: "Хүргэлтээр эсвэл бэлнээр төлөх" },
 };
+
+const LEGACY_REQUIRED_FIELDS: Record<string, string[]> = {
+  hipay: ["merchant_id", "api_key"],
+  cash: [],
+};
+
+function requiredFieldsFor(providerType: string, adapter: { requiredFields: string[] } | null) {
+  return adapter?.requiredFields ?? LEGACY_REQUIRED_FIELDS[providerType] ?? [];
+}
 
 const CREDENTIAL_KEYS_TO_MASK = new Set([
   "password", "client_secret", "app_password", "api_key", "secret", "private_key",
@@ -143,7 +154,7 @@ export const saveMerchantProvider = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { getAdapter } = await import("@/lib/payments/adapters/index.server");
     const adapter = getAdapter(data.providerType);
-    if (!adapter) return { ok: false as const, message: "Тохирох адаптер олдсонгүй" };
+    const requiredFields = requiredFieldsFor(data.providerType, adapter);
 
     // Load existing row to merge credentials and preserve untouched secrets.
     const { data: existing } = await supabaseAdmin
@@ -159,10 +170,10 @@ export const saveMerchantProvider = createServerFn({ method: "POST" })
       if (v && v.trim()) newCreds[k] = v.trim();
     }
 
-    const allRequiredPresent = adapter.requiredFields.every(
+    const allRequiredPresent = requiredFields.every(
       (f) => typeof newCreds[f] === "string" && (newCreds[f] as string).length > 0,
     );
-    const configStatus = allRequiredPresent ? "incomplete" : "incomplete";
+    const configStatus = allRequiredPresent && !adapter ? "verified" : "incomplete";
     const defaults = PROVIDER_DEFAULTS[data.providerType];
 
     let row;
@@ -206,8 +217,10 @@ export const saveMerchantProvider = createServerFn({ method: "POST" })
       ok: true as const,
       providerId: row!.id as string,
       message: allRequiredPresent
-        ? "Хадгалагдлаа. Холболтоо туршина уу."
-        : `Хадгалагдсан. ${adapter.requiredFields.join(", ")} утгуудыг бүгдийг оруулна уу.`,
+        ? adapter
+          ? "Хадгалагдлаа. Холболтыг автоматаар шалгаж байна."
+          : "Хадгалагдлаа. Checkout дээр идэвхжлээ."
+        : `Хадгалагдсан. ${requiredFields.join(", ")} утгуудыг бүгдийг оруулна уу.`,
     };
   });
 
