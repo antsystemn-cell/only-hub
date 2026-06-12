@@ -55,6 +55,9 @@ import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/em
 import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
 import { Route as ApiPublicQpayWebhookRouteImport } from './routes/api.public.qpay.webhook'
 import { Route as ApiPublicDeliveryWebhookRouteImport } from './routes/api.public.delivery.webhook'
+import { Route as ApiPublicPaymentsStorepayWebhookRouteImport } from './routes/api.public.payments.storepay.webhook'
+import { Route as ApiPublicPaymentsPocketWebhookRouteImport } from './routes/api.public.payments.pocket.webhook'
+import { Route as ApiPublicPaymentsOmniwayWebhookRouteImport } from './routes/api.public.payments.omniway.webhook'
 
 const StoresRoute = StoresRouteImport.update({
   id: '/stores',
@@ -296,6 +299,24 @@ const ApiPublicDeliveryWebhookRoute =
     path: '/api/public/delivery/webhook',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicPaymentsStorepayWebhookRoute =
+  ApiPublicPaymentsStorepayWebhookRouteImport.update({
+    id: '/api/public/payments/storepay/webhook',
+    path: '/api/public/payments/storepay/webhook',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicPaymentsPocketWebhookRoute =
+  ApiPublicPaymentsPocketWebhookRouteImport.update({
+    id: '/api/public/payments/pocket/webhook',
+    path: '/api/public/payments/pocket/webhook',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicPaymentsOmniwayWebhookRoute =
+  ApiPublicPaymentsOmniwayWebhookRouteImport.update({
+    id: '/api/public/payments/omniway/webhook',
+    path: '/api/public/payments/omniway/webhook',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -344,6 +365,9 @@ export interface FileRoutesByFullPath {
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/store/$merchantSlug/order/$orderId': typeof StoreMerchantSlugOrderOrderIdRoute
   '/store/$merchantSlug/product/$productSlug': typeof StoreMerchantSlugProductProductSlugRoute
+  '/api/public/payments/omniway/webhook': typeof ApiPublicPaymentsOmniwayWebhookRoute
+  '/api/public/payments/pocket/webhook': typeof ApiPublicPaymentsPocketWebhookRoute
+  '/api/public/payments/storepay/webhook': typeof ApiPublicPaymentsStorepayWebhookRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -390,6 +414,9 @@ export interface FileRoutesByTo {
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/store/$merchantSlug/order/$orderId': typeof StoreMerchantSlugOrderOrderIdRoute
   '/store/$merchantSlug/product/$productSlug': typeof StoreMerchantSlugProductProductSlugRoute
+  '/api/public/payments/omniway/webhook': typeof ApiPublicPaymentsOmniwayWebhookRoute
+  '/api/public/payments/pocket/webhook': typeof ApiPublicPaymentsPocketWebhookRoute
+  '/api/public/payments/storepay/webhook': typeof ApiPublicPaymentsStorepayWebhookRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -439,6 +466,9 @@ export interface FileRoutesById {
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/store/$merchantSlug/order/$orderId': typeof StoreMerchantSlugOrderOrderIdRoute
   '/store/$merchantSlug/product/$productSlug': typeof StoreMerchantSlugProductProductSlugRoute
+  '/api/public/payments/omniway/webhook': typeof ApiPublicPaymentsOmniwayWebhookRoute
+  '/api/public/payments/pocket/webhook': typeof ApiPublicPaymentsPocketWebhookRoute
+  '/api/public/payments/storepay/webhook': typeof ApiPublicPaymentsStorepayWebhookRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -489,6 +519,9 @@ export interface FileRouteTypes {
     | '/lovable/email/queue/process'
     | '/store/$merchantSlug/order/$orderId'
     | '/store/$merchantSlug/product/$productSlug'
+    | '/api/public/payments/omniway/webhook'
+    | '/api/public/payments/pocket/webhook'
+    | '/api/public/payments/storepay/webhook'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -535,6 +568,9 @@ export interface FileRouteTypes {
     | '/lovable/email/queue/process'
     | '/store/$merchantSlug/order/$orderId'
     | '/store/$merchantSlug/product/$productSlug'
+    | '/api/public/payments/omniway/webhook'
+    | '/api/public/payments/pocket/webhook'
+    | '/api/public/payments/storepay/webhook'
   id:
     | '__root__'
     | '/'
@@ -583,6 +619,9 @@ export interface FileRouteTypes {
     | '/lovable/email/queue/process'
     | '/store/$merchantSlug/order/$orderId'
     | '/store/$merchantSlug/product/$productSlug'
+    | '/api/public/payments/omniway/webhook'
+    | '/api/public/payments/pocket/webhook'
+    | '/api/public/payments/storepay/webhook'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -604,6 +643,9 @@ export interface RootRouteChildren {
   LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
   LovableEmailAuthWebhookRoute: typeof LovableEmailAuthWebhookRoute
   LovableEmailQueueProcessRoute: typeof LovableEmailQueueProcessRoute
+  ApiPublicPaymentsOmniwayWebhookRoute: typeof ApiPublicPaymentsOmniwayWebhookRoute
+  ApiPublicPaymentsPocketWebhookRoute: typeof ApiPublicPaymentsPocketWebhookRoute
+  ApiPublicPaymentsStorepayWebhookRoute: typeof ApiPublicPaymentsStorepayWebhookRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -930,6 +972,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicDeliveryWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/payments/storepay/webhook': {
+      id: '/api/public/payments/storepay/webhook'
+      path: '/api/public/payments/storepay/webhook'
+      fullPath: '/api/public/payments/storepay/webhook'
+      preLoaderRoute: typeof ApiPublicPaymentsStorepayWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/payments/pocket/webhook': {
+      id: '/api/public/payments/pocket/webhook'
+      path: '/api/public/payments/pocket/webhook'
+      fullPath: '/api/public/payments/pocket/webhook'
+      preLoaderRoute: typeof ApiPublicPaymentsPocketWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/payments/omniway/webhook': {
+      id: '/api/public/payments/omniway/webhook'
+      path: '/api/public/payments/omniway/webhook'
+      fullPath: '/api/public/payments/omniway/webhook'
+      preLoaderRoute: typeof ApiPublicPaymentsOmniwayWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -1045,6 +1108,9 @@ const rootRouteChildren: RootRouteChildren = {
   LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,
   LovableEmailAuthWebhookRoute: LovableEmailAuthWebhookRoute,
   LovableEmailQueueProcessRoute: LovableEmailQueueProcessRoute,
+  ApiPublicPaymentsOmniwayWebhookRoute: ApiPublicPaymentsOmniwayWebhookRoute,
+  ApiPublicPaymentsPocketWebhookRoute: ApiPublicPaymentsPocketWebhookRoute,
+  ApiPublicPaymentsStorepayWebhookRoute: ApiPublicPaymentsStorepayWebhookRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
