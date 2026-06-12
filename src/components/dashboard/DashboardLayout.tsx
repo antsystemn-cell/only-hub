@@ -7,7 +7,7 @@ import {
   BarChart3, Package, ShoppingCart, Users, Bot, Settings, LogOut, Store, Menu, ShieldCheck, Truck,
 } from "lucide-react";
 import { useState } from "react";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetDescription, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
@@ -112,6 +112,8 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
               <Button variant="ghost" size="icon"><Menu className="h-5 w-5" /></Button>
             </SheetTrigger>
             <SheetContent side="left" className="w-64 p-4 flex flex-col">
+              <SheetTitle className="sr-only">Мерчант самбарын цэс</SheetTitle>
+              <SheetDescription className="sr-only">Дэлгүүрийн удирдлагын хэсгүүд рүү шилжих цэс</SheetDescription>
               <SidebarContent />
             </SheetContent>
           </Sheet>
