@@ -87,20 +87,14 @@ function CheckoutPage() {
 
   const [form, setForm] = useState({ customerName: "", phone: "", shippingAddress: "", branch: "", note: "" });
   const [deliveryOptionId, setDeliveryOptionId] = useState<string>("");
-  const [paymentMethod, setPaymentMethod] = useState<string>("qpay");
   const [couponCode, setCouponCode] = useState("");
   const [coupon, setCoupon] = useState<{ code: string; discount: number } | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  // Default to first delivery option / payment method
+  // Default to first delivery option
   useEffect(() => {
     if (!deliveryOptionId && deliveryOptions.length) setDeliveryOptionId(deliveryOptions[0].id);
   }, [deliveryOptions, deliveryOptionId]);
-  useEffect(() => {
-    if (paymentMethods.length && !paymentMethods.find((p) => p.providerType === paymentMethod)) {
-      setPaymentMethod(paymentMethods[0].providerType);
-    }
-  }, [paymentMethods, paymentMethod]);
 
   const subtotal = items.reduce((s, i) => {
     const p = productMap.get(i.productId);
