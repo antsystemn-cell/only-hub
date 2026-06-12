@@ -288,6 +288,48 @@ function ProviderCard({
 
       <Separator className="my-4" />
 
+      <div className="mb-4">
+        <Label className="text-xs uppercase tracking-wide text-muted-foreground">
+          Icon (төлбөр төлөх хэсэгт харагдах лого)
+        </Label>
+        <div className="mt-1 flex items-center gap-2">
+          {icon && /^https?:\/\//i.test(icon) ? (
+            <img src={icon} alt="icon" className="h-10 w-10 rounded border bg-white object-contain p-1" />
+          ) : (
+            <span className="flex h-10 w-10 items-center justify-center rounded border text-xl">
+              {icon || "💳"}
+            </span>
+          )}
+          <Input
+            className="flex-1"
+            placeholder="💳 emoji эсвэл https://logo.png"
+            value={icon}
+            onChange={(e) => setIcon(e.target.value)}
+          />
+          <label className="cursor-pointer">
+            <input
+              type="file"
+              accept="image/*"
+              className="hidden"
+              disabled={uploading}
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) handleIconFile(f);
+                e.target.value = "";
+              }}
+            />
+            <span className="inline-flex h-9 items-center gap-1 rounded-md border px-3 text-sm hover:bg-muted">
+              {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+              Upload
+            </span>
+          </label>
+        </div>
+        <p className="mt-1 text-xs text-muted-foreground">
+          Icon-ыг хадгалсны дараа худалдан авагчид төлбөр төлөх системийн сонголтын хэсэгт энэ зураг автоматаар харагдана.
+        </p>
+      </div>
+
+
       <div className="grid gap-3 sm:grid-cols-2">
         {fields.map((f) => (
           <div key={f.key}>
