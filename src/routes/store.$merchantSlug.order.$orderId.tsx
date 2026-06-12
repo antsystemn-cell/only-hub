@@ -156,6 +156,8 @@ function OrderConfirmationPage() {
                     >
                       {m.logoUrl ? (
                         <img src={m.logoUrl} alt={m.name} className="h-10 w-10 rounded object-contain" />
+                      ) : m.icon && /^https?:\/\//i.test(m.icon) ? (
+                        <img src={m.icon} alt={m.name} className="h-10 w-10 rounded object-contain" />
                       ) : (
                         <span className="text-3xl">{m.icon ?? "💳"}</span>
                       )}
