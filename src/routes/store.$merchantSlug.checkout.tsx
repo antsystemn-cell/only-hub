@@ -97,8 +97,8 @@ function CheckoutPage() {
     if (!deliveryOptionId && deliveryOptions.length) setDeliveryOptionId(deliveryOptions[0].id);
   }, [deliveryOptions, deliveryOptionId]);
   useEffect(() => {
-    if (paymentMethods.length && !paymentMethods.find((p: any) => p.provider_type === paymentMethod)) {
-      setPaymentMethod(paymentMethods[0].provider_type);
+    if (paymentMethods.length && !paymentMethods.find((p) => p.providerType === paymentMethod)) {
+      setPaymentMethod(paymentMethods[0].providerType);
     }
   }, [paymentMethods, paymentMethod]);
 
