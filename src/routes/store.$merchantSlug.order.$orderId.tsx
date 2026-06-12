@@ -175,6 +175,18 @@ function OrderConfirmationPage() {
             </div>
           )}
 
+          {!paid && (order.payment_method === "storepay" || order.payment_method === "pocket" || order.payment_method === "omniway") && (
+            <PaymentIntentPanel
+              orderId={order.id}
+              providerType={order.payment_method as "storepay" | "pocket" | "omniway"}
+              providerLabel={
+                order.payment_method === "storepay" ? "Storepay" :
+                order.payment_method === "pocket" ? "Pocket" : "Omniway"
+              }
+              defaultPhone={(orderDetail as any)?.phone ?? null}
+            />
+          )}
+
           {!paid && paymentReq?.payment_provider === "bank_transfer" && paymentReq?.bank_account && (
             <div className="mt-6 rounded-xl border bg-card p-5 text-left text-sm">
               <div className="mb-3 flex items-center gap-2 font-semibold">
