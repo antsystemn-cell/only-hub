@@ -321,7 +321,9 @@ function OrdersPage() {
         </div>
 
         <div className="space-y-2">
-          {active.length === 0 ? (
+          {(authLoading || (!merchantId) || ordersLoading) ? (
+            <p className="py-10 text-center text-muted-foreground">Ачааллаж байна...</p>
+          ) : active.length === 0 ? (
             <p className="py-10 text-center text-muted-foreground">Захиалга алга</p>
           ) : active.map((o: any) => (
             <OrderRow
