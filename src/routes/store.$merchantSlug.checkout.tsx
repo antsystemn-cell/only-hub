@@ -307,11 +307,14 @@ function CheckoutPage() {
               <Card className="rounded-2xl p-5">
                 <h3 className="mb-4 font-semibold">Төлбөрийн хэлбэр</h3>
                 <RadioGroup value={paymentMethod} onValueChange={setPaymentMethod} className="space-y-2">
-                  {(paymentMethods as any[]).map((p) => (
+                  {paymentMethods.map((p) => (
                     <label key={p.id} className="flex cursor-pointer items-center gap-3 rounded-lg border p-3 hover:border-primary/50">
-                      <RadioGroupItem value={p.provider_type} />
+                      <RadioGroupItem value={p.providerType} />
                       <span className="text-xl">{p.icon ?? "💳"}</span>
-                      <span className="font-medium">{p.name}</span>
+                      <div className="flex-1">
+                        <div className="font-medium">{p.name}{p.isPlatformFallback ? <span className="ml-2 text-xs text-muted-foreground">(платформ)</span> : null}</div>
+                        {p.description && <div className="text-xs text-muted-foreground">{p.description}</div>}
+                      </div>
                     </label>
                   ))}
                 </RadioGroup>
