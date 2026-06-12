@@ -243,7 +243,27 @@ export const testMerchantProvider = createServerFn({ method: "POST" })
     await assertMerchantAccess(userId, row.merchant_id as string);
 
     const adapter = getAdapter(row.provider_type as string);
-    if (!adapter) return { ok: false as const, message: "Тохирох адаптер олдсонгүй" };
+    if (!adapter) {
+      const requiredFields = requiredFieldsFor(row.provider_type as string, null);
+      const credentials = ((row.credentials as any) ?? {}) as Record<string, any>;
+      const missing = requiredFields.filter(
+        (field) => typeof credentials[field] !== "string" || credentials[field].trim().length === 0,
+      );
+      const ok = missing.length === 0;
+      const message = ok
+        ? "Холболтын мэдээлэл бүрэн байна. Checkout дээр идэвхжлээ."
+        : `${missing.join(", ")} талбар дутуу байна`;
+      await supabaseAdmin
+        .from("payment_providers")
+        .update({
+          is_active: ok ? true : undefined,
+          config_status: ok ? "verified" : "failed",
+          last_tested_at: ok ? new Date().toISOString() : null,
+          test_message: message,
+        })
+        .eq("id", row.id);
+      return { ok, message };
+    }
 
     const result = await adapter.testConnection((row.credentials as any) ?? {});
     await supabaseAdmin
