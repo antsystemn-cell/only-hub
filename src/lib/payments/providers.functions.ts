@@ -143,6 +143,9 @@ export const saveMerchantProvider = createServerFn({ method: "POST" })
       merchantId: z.string().uuid(),
       providerType: z.enum(PROVIDER_TYPES),
       isActive: z.boolean(),
+      name: z.string().trim().max(120).optional(),
+      icon: z.string().trim().max(20).optional(),
+      description: z.string().trim().max(500).optional(),
       // Only fields the merchant explicitly types are saved. Empty string fields are dropped
       // so a re-save without retyping the secret keeps the existing value.
       credentials: z.record(z.string(), z.string().max(2000)),
@@ -175,12 +178,18 @@ export const saveMerchantProvider = createServerFn({ method: "POST" })
     );
     const configStatus = allRequiredPresent && !adapter ? "verified" : "incomplete";
     const defaults = PROVIDER_DEFAULTS[data.providerType];
+    const metadata = {
+      name: data.name?.trim() || defaults.name,
+      icon: data.icon?.trim() || defaults.icon,
+      description: data.description?.trim() || defaults.description,
+    };
 
     let row;
     if (existing) {
       const { data: updated, error } = await supabaseAdmin
         .from("payment_providers")
         .update({
+          ...metadata,
           credentials: newCreds,
           is_active: data.isActive,
           // Re-saving credentials invalidates the previous test result.
@@ -199,9 +208,7 @@ export const saveMerchantProvider = createServerFn({ method: "POST" })
         .insert({
           merchant_id: data.merchantId,
           provider_type: data.providerType,
-          name: defaults.name,
-          icon: defaults.icon,
-          description: defaults.description,
+          ...metadata,
           credentials: newCreds,
           is_active: data.isActive,
           config_status: configStatus,
