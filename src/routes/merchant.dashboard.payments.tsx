@@ -229,7 +229,11 @@ function ProviderCard({
     <Card className="rounded-2xl p-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex gap-3">
-          <span className="text-2xl">{provider.icon}</span>
+          {provider.icon && /^https?:\/\//i.test(provider.icon) ? (
+            <img src={provider.icon} alt={provider.name} className="h-8 w-8 rounded object-contain" />
+          ) : (
+            <span className="text-2xl">{provider.icon}</span>
+          )}
           <div>
             <div className="flex items-center gap-2">
               <span className="font-semibold">{provider.name}</span>
