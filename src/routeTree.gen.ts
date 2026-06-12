@@ -26,6 +26,7 @@ import { Route as BlogSlugRouteImport } from './routes/blog.$slug'
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
 import { Route as AdminSettingsRouteImport } from './routes/admin.settings'
 import { Route as AdminPaymentsRouteImport } from './routes/admin.payments'
+import { Route as AdminPaymentProvidersRouteImport } from './routes/admin.payment-providers'
 import { Route as AdminOrdersRouteImport } from './routes/admin.orders'
 import { Route as AdminNotificationsRouteImport } from './routes/admin.notifications'
 import { Route as AdminMerchantsRouteImport } from './routes/admin.merchants'
@@ -143,6 +144,11 @@ const AdminSettingsRoute = AdminSettingsRouteImport.update({
 const AdminPaymentsRoute = AdminPaymentsRouteImport.update({
   id: '/payments',
   path: '/payments',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminPaymentProvidersRoute = AdminPaymentProvidersRouteImport.update({
+  id: '/payment-providers',
+  path: '/payment-providers',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminOrdersRoute = AdminOrdersRouteImport.update({
@@ -341,6 +347,7 @@ export interface FileRoutesByFullPath {
   '/admin/merchants': typeof AdminMerchantsRoute
   '/admin/notifications': typeof AdminNotificationsRoute
   '/admin/orders': typeof AdminOrdersRoute
+  '/admin/payment-providers': typeof AdminPaymentProvidersRoute
   '/admin/payments': typeof AdminPaymentsRoute
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/users': typeof AdminUsersRoute
@@ -392,6 +399,7 @@ export interface FileRoutesByTo {
   '/admin/merchants': typeof AdminMerchantsRoute
   '/admin/notifications': typeof AdminNotificationsRoute
   '/admin/orders': typeof AdminOrdersRoute
+  '/admin/payment-providers': typeof AdminPaymentProvidersRoute
   '/admin/payments': typeof AdminPaymentsRoute
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/users': typeof AdminUsersRoute
@@ -444,6 +452,7 @@ export interface FileRoutesById {
   '/admin/merchants': typeof AdminMerchantsRoute
   '/admin/notifications': typeof AdminNotificationsRoute
   '/admin/orders': typeof AdminOrdersRoute
+  '/admin/payment-providers': typeof AdminPaymentProvidersRoute
   '/admin/payments': typeof AdminPaymentsRoute
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/users': typeof AdminUsersRoute
@@ -498,6 +507,7 @@ export interface FileRouteTypes {
     | '/admin/merchants'
     | '/admin/notifications'
     | '/admin/orders'
+    | '/admin/payment-providers'
     | '/admin/payments'
     | '/admin/settings'
     | '/admin/users'
@@ -549,6 +559,7 @@ export interface FileRouteTypes {
     | '/admin/merchants'
     | '/admin/notifications'
     | '/admin/orders'
+    | '/admin/payment-providers'
     | '/admin/payments'
     | '/admin/settings'
     | '/admin/users'
@@ -600,6 +611,7 @@ export interface FileRouteTypes {
     | '/admin/merchants'
     | '/admin/notifications'
     | '/admin/orders'
+    | '/admin/payment-providers'
     | '/admin/payments'
     | '/admin/settings'
     | '/admin/users'
@@ -780,6 +792,13 @@ declare module '@tanstack/react-router' {
       path: '/payments'
       fullPath: '/admin/payments'
       preLoaderRoute: typeof AdminPaymentsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/payment-providers': {
+      id: '/admin/payment-providers'
+      path: '/payment-providers'
+      fullPath: '/admin/payment-providers'
+      preLoaderRoute: typeof AdminPaymentProvidersRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/orders': {
@@ -1035,6 +1054,7 @@ interface AdminRouteChildren {
   AdminMerchantsRoute: typeof AdminMerchantsRoute
   AdminNotificationsRoute: typeof AdminNotificationsRoute
   AdminOrdersRoute: typeof AdminOrdersRoute
+  AdminPaymentProvidersRoute: typeof AdminPaymentProvidersRoute
   AdminPaymentsRoute: typeof AdminPaymentsRoute
   AdminSettingsRoute: typeof AdminSettingsRoute
   AdminUsersRoute: typeof AdminUsersRoute
@@ -1052,6 +1072,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminMerchantsRoute: AdminMerchantsRoute,
   AdminNotificationsRoute: AdminNotificationsRoute,
   AdminOrdersRoute: AdminOrdersRoute,
+  AdminPaymentProvidersRoute: AdminPaymentProvidersRoute,
   AdminPaymentsRoute: AdminPaymentsRoute,
   AdminSettingsRoute: AdminSettingsRoute,
   AdminUsersRoute: AdminUsersRoute,

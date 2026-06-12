@@ -20,6 +20,7 @@ const NAV: NavItem[] = [
   { to: "/admin/orders", label: "Захиалга", icon: ShoppingCart },
   { to: "/admin/delivery", label: "Хүргэлт Удирдах", icon: Truck },
   { to: "/admin/payments", label: "Төлбөр цуглуулалт", icon: Wallet },
+  { to: "/admin/payment-providers", label: "Төлбөрийн систем", icon: Settings2 },
   { to: "/admin/notifications", label: "Мэдэгдэл", icon: Bell },
   { to: "/admin/users", label: "Хэрэглэгч", icon: Users },
   { to: "/admin/banners", label: "Баннер", icon: ImageIcon },
