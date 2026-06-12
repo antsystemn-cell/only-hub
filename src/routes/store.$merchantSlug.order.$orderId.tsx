@@ -25,9 +25,11 @@ function OrderConfirmationPage() {
   const getStatusFn = useServerFn(getOrderStatus);
   const retryFn = useServerFn(retryQpayInvoice);
   const setMethodFn = useServerFn(setOrderPaymentMethod);
+  const resetMethodFn = useServerFn(resetOrderPaymentMethod);
   const getMethodsFn = useServerFn(getCheckoutMethodsForStore);
   const [retrying, setRetrying] = useState(false);
   const [pickingMethod, setPickingMethod] = useState<string | null>(null);
+  const [resettingMethod, setResettingMethod] = useState(false);
 
   const { data: order, refetch } = useQuery({
     queryKey: ["order-status", orderId],
