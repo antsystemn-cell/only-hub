@@ -296,8 +296,12 @@ function PaymentsTab() {
           <Select value={form.provider_type} onValueChange={(v) => setForm({ ...form, provider_type: v, credentials: editId ? (form.credentials ?? {}) : {} })}>
             <SelectTrigger><SelectValue /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="qpay">QPay</SelectItem><SelectItem value="storepay">StorePay</SelectItem>
-              <SelectItem value="hipay">HiPay</SelectItem><SelectItem value="cash">Бэлэн мөнгө</SelectItem>
+              <SelectItem value="qpay">QPay</SelectItem>
+              <SelectItem value="storepay">Storepay</SelectItem>
+              <SelectItem value="pocket">Pocket</SelectItem>
+              <SelectItem value="omniway">Omniway</SelectItem>
+              <SelectItem value="hipay">HiPay</SelectItem>
+              <SelectItem value="cash">Бэлэн мөнгө</SelectItem>
             </SelectContent>
           </Select>
         </div>
