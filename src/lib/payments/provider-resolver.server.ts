@@ -7,6 +7,23 @@
 
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
+const LEGACY_CHECKOUT_FIELDS: Record<string, string[]> = {
+  hipay: ["merchant_id", "api_key"],
+  cash: [],
+};
+
+function hasValue(value: unknown) {
+  return typeof value === "string" ? value.trim().length > 0 : value != null;
+}
+
+function isCheckoutReady(row: any) {
+  if (row.config_status === "verified") return true;
+  const required = LEGACY_CHECKOUT_FIELDS[row.provider_type as string];
+  if (!required) return false;
+  const credentials = (row.credentials ?? {}) as Record<string, unknown>;
+  return required.every((field) => hasValue(credentials[field]));
+}
+
 export type CheckoutMethod = {
   id: string;
   providerType: string;
@@ -26,21 +43,22 @@ export async function listCheckoutMethodsForMerchant(merchantId: string): Promis
 
   const { data: own } = await supabaseAdmin
     .from("payment_providers")
-    .select("id, name, provider_type, icon, logo_url, description, config_status, is_active, position")
+    .select("id, name, provider_type, icon, logo_url, description, config_status, credentials, is_active, position")
     .eq("merchant_id", merchantId)
     .eq("is_active", true)
-    .eq("config_status", "verified")
     .order("position", { ascending: true });
 
-  const ownList: CheckoutMethod[] = (own ?? []).map((p) => ({
-    id: p.id as string,
-    providerType: p.provider_type as string,
-    name: p.name as string,
-    icon: (p.icon as string) ?? null,
-    logoUrl: (p.logo_url as string) ?? null,
-    description: (p.description as string) ?? null,
-    isPlatformFallback: false,
-  }));
+  const ownList: CheckoutMethod[] = (own ?? [])
+    .filter(isCheckoutReady)
+    .map((p) => ({
+      id: p.id as string,
+      providerType: p.provider_type as string,
+      name: p.name as string,
+      icon: (p.icon as string) ?? null,
+      logoUrl: (p.logo_url as string) ?? null,
+      description: (p.description as string) ?? null,
+      isPlatformFallback: false,
+    }));
 
   // Only add platform fallback when merchant has opted in.
   if (!merchant?.use_platform_payment_fallback) return ownList;
@@ -48,13 +66,13 @@ export async function listCheckoutMethodsForMerchant(merchantId: string): Promis
   const ownTypes = new Set(ownList.map((m) => m.providerType));
   const { data: platform } = await supabaseAdmin
     .from("payment_providers")
-    .select("id, name, provider_type, icon, logo_url, description, config_status, is_active, position")
+    .select("id, name, provider_type, icon, logo_url, description, config_status, credentials, is_active, position")
     .eq("is_platform_managed", true)
     .eq("is_active", true)
-    .eq("config_status", "verified")
     .order("position", { ascending: true });
 
   const platformList: CheckoutMethod[] = (platform ?? [])
+    .filter(isCheckoutReady)
     .filter((p) => !ownTypes.has(p.provider_type as string))
     .map((p) => ({
       id: p.id as string,
@@ -83,9 +101,8 @@ export async function loadProviderRowForCheckout(opts: {
     .eq("merchant_id", opts.merchantId)
     .eq("provider_type", opts.providerType)
     .eq("is_active", true)
-    .eq("config_status", "verified")
     .maybeSingle();
-  if (own) return { row: own, isPlatformFallback: false };
+  if (own && isCheckoutReady(own)) return { row: own, isPlatformFallback: false };
 
   // Platform fallback (only if merchant opted in)
   const { data: merchant } = await supabaseAdmin
@@ -101,8 +118,7 @@ export async function loadProviderRowForCheckout(opts: {
     .eq("is_platform_managed", true)
     .eq("provider_type", opts.providerType)
     .eq("is_active", true)
-    .eq("config_status", "verified")
     .maybeSingle();
-  if (!plat) return null;
+  if (!plat || !isCheckoutReady(plat)) return null;
   return { row: plat, isPlatformFallback: true };
 }
