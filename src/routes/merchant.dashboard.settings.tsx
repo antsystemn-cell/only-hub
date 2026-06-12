@@ -233,6 +233,8 @@ function PaymentsTab() {
   const [showSecret, setShowSecret] = useState(false);
 
   const loadCreds = useServerFn(getPaymentProviderCredentials);
+  const saveProvider = useServerFn(saveMerchantProvider);
+  const testProvider = useServerFn(testMerchantProvider);
 
   const { data: items = [] } = useQuery({
     queryKey: ["payment_providers", merchantId],
@@ -243,16 +245,26 @@ function PaymentsTab() {
 
   const save = useMutation({
     mutationFn: async () => {
-      if (editId) {
-        const { id, created_at, updated_at, merchant_id, ...rest } = form;
-        const { error } = await supabase.from("payment_providers").update(rest).eq("id", editId);
-        if (error) throw error;
-      } else {
-        const { error } = await supabase.from("payment_providers").insert({ ...form, merchant_id: merchantId });
-        if (error) throw error;
+      const saved = await saveProvider({
+        data: {
+          merchantId,
+          providerType: form.provider_type,
+          isActive: !!form.is_active,
+          name: form.name,
+          icon: form.icon,
+          description: form.description,
+          credentials: form.credentials ?? {},
+        },
+      });
+      if (!saved.ok) throw new Error(saved.message);
+      if (saved.providerId && form.provider_type !== "cash") {
+        const tested = await testProvider({ data: { providerId: saved.providerId } });
+        if (!tested.ok) throw new Error(tested.message);
+        return tested.message;
       }
+      return saved.message;
     },
-    onSuccess: () => { toast.success(editId ? "Шинэчлэгдлээ" : "Нэмэгдлээ"); resetForm(); qc.invalidateQueries({ queryKey: ["payment_providers", merchantId] }); },
+    onSuccess: (message) => { toast.success(message ?? (editId ? "Шинэчлэгдлээ" : "Нэмэгдлээ")); resetForm(); qc.invalidateQueries({ queryKey: ["payment_providers", merchantId] }); },
     onError: (e: any) => toast.error(e.message),
   });
 
