@@ -262,12 +262,20 @@ export const testMerchantProvider = createServerFn({ method: "POST" })
         : `${missing.join(", ")} талбар дутуу байна`;
       await supabaseAdmin
         .from("payment_providers")
-        .update({
-          is_active: ok ? true : undefined,
-          config_status: ok ? "verified" : "failed",
-          last_tested_at: ok ? new Date().toISOString() : null,
-          test_message: message,
-        })
+        .update(
+          ok
+            ? {
+                is_active: true,
+                config_status: "verified",
+                last_tested_at: new Date().toISOString(),
+                test_message: message,
+              }
+            : {
+                config_status: "failed",
+                last_tested_at: null,
+                test_message: message,
+              },
+        )
         .eq("id", row.id);
       return { ok, message };
     }
@@ -275,11 +283,20 @@ export const testMerchantProvider = createServerFn({ method: "POST" })
     const result = await adapter.testConnection((row.credentials as any) ?? {});
     await supabaseAdmin
       .from("payment_providers")
-      .update({
-        config_status: result.ok ? "verified" : "failed",
-        last_tested_at: result.ok ? new Date().toISOString() : null,
-        test_message: result.message,
-      })
+      .update(
+        result.ok
+          ? {
+              is_active: true,
+              config_status: "verified",
+              last_tested_at: new Date().toISOString(),
+              test_message: result.message,
+            }
+          : {
+              config_status: "failed",
+              last_tested_at: null,
+              test_message: result.message,
+            },
+      )
       .eq("id", row.id);
     return { ok: result.ok, message: result.message };
   });
