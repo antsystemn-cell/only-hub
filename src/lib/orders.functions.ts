@@ -445,3 +445,32 @@ export const setOrderPaymentMethod = createServerFn({ method: "POST" })
 
     return { ok: true as const };
   });
+
+// Reset payment method back to "pending" so the user can pick a different one.
+// Clears any previously-generated invoice metadata (QPay/HiPay QR, urls, etc.).
+export const resetOrderPaymentMethod = createServerFn({ method: "POST" })
+  .inputValidator((d) => z.object({ orderId: z.string().uuid() }).parse(d))
+  .handler(async ({ data }) => {
+    const { data: order } = await supabaseAdmin
+      .from("orders")
+      .select("id,payment_status")
+      .eq("id", data.orderId)
+      .maybeSingle();
+    if (!order) return { ok: false as const, error: "Захиалга олдсонгүй" };
+    if (order.payment_status === "confirmed") return { ok: false as const, error: "Аль хэдийн төлөгдсөн" };
+
+    await supabaseAdmin
+      .from("orders")
+      .update({
+        payment_method: "pending",
+        payment_error: null,
+        qpay_invoice_id: null,
+        qpay_qr_text: null,
+        qpay_qr_image: null,
+        qpay_short_url: null,
+        qpay_urls: null,
+      })
+      .eq("id", order.id);
+
+    return { ok: true as const };
+  });
