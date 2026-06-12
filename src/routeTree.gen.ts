@@ -42,6 +42,7 @@ import { Route as MerchantDashboardUsersRouteImport } from './routes/merchant.da
 import { Route as MerchantDashboardStaffRouteImport } from './routes/merchant.dashboard.staff'
 import { Route as MerchantDashboardSettingsRouteImport } from './routes/merchant.dashboard.settings'
 import { Route as MerchantDashboardProductsRouteImport } from './routes/merchant.dashboard.products'
+import { Route as MerchantDashboardPaymentsRouteImport } from './routes/merchant.dashboard.payments'
 import { Route as MerchantDashboardOrdersRouteImport } from './routes/merchant.dashboard.orders'
 import { Route as MerchantDashboardDeliveryRouteImport } from './routes/merchant.dashboard.delivery'
 import { Route as MerchantDashboardChatbotRouteImport } from './routes/merchant.dashboard.chatbot'
@@ -227,6 +228,12 @@ const MerchantDashboardProductsRoute =
     path: '/products',
     getParentRoute: () => MerchantDashboardRoute,
   } as any)
+const MerchantDashboardPaymentsRoute =
+  MerchantDashboardPaymentsRouteImport.update({
+    id: '/payments',
+    path: '/payments',
+    getParentRoute: () => MerchantDashboardRoute,
+  } as any)
 const MerchantDashboardOrdersRoute = MerchantDashboardOrdersRouteImport.update({
   id: '/orders',
   path: '/orders',
@@ -350,6 +357,7 @@ export interface FileRoutesByFullPath {
   '/merchant/dashboard/chatbot': typeof MerchantDashboardChatbotRoute
   '/merchant/dashboard/delivery': typeof MerchantDashboardDeliveryRoute
   '/merchant/dashboard/orders': typeof MerchantDashboardOrdersRoute
+  '/merchant/dashboard/payments': typeof MerchantDashboardPaymentsRoute
   '/merchant/dashboard/products': typeof MerchantDashboardProductsRoute
   '/merchant/dashboard/settings': typeof MerchantDashboardSettingsRoute
   '/merchant/dashboard/staff': typeof MerchantDashboardStaffRoute
@@ -399,6 +407,7 @@ export interface FileRoutesByTo {
   '/merchant/dashboard/chatbot': typeof MerchantDashboardChatbotRoute
   '/merchant/dashboard/delivery': typeof MerchantDashboardDeliveryRoute
   '/merchant/dashboard/orders': typeof MerchantDashboardOrdersRoute
+  '/merchant/dashboard/payments': typeof MerchantDashboardPaymentsRoute
   '/merchant/dashboard/products': typeof MerchantDashboardProductsRoute
   '/merchant/dashboard/settings': typeof MerchantDashboardSettingsRoute
   '/merchant/dashboard/staff': typeof MerchantDashboardStaffRoute
@@ -451,6 +460,7 @@ export interface FileRoutesById {
   '/merchant/dashboard/chatbot': typeof MerchantDashboardChatbotRoute
   '/merchant/dashboard/delivery': typeof MerchantDashboardDeliveryRoute
   '/merchant/dashboard/orders': typeof MerchantDashboardOrdersRoute
+  '/merchant/dashboard/payments': typeof MerchantDashboardPaymentsRoute
   '/merchant/dashboard/products': typeof MerchantDashboardProductsRoute
   '/merchant/dashboard/settings': typeof MerchantDashboardSettingsRoute
   '/merchant/dashboard/staff': typeof MerchantDashboardStaffRoute
@@ -504,6 +514,7 @@ export interface FileRouteTypes {
     | '/merchant/dashboard/chatbot'
     | '/merchant/dashboard/delivery'
     | '/merchant/dashboard/orders'
+    | '/merchant/dashboard/payments'
     | '/merchant/dashboard/products'
     | '/merchant/dashboard/settings'
     | '/merchant/dashboard/staff'
@@ -553,6 +564,7 @@ export interface FileRouteTypes {
     | '/merchant/dashboard/chatbot'
     | '/merchant/dashboard/delivery'
     | '/merchant/dashboard/orders'
+    | '/merchant/dashboard/payments'
     | '/merchant/dashboard/products'
     | '/merchant/dashboard/settings'
     | '/merchant/dashboard/staff'
@@ -604,6 +616,7 @@ export interface FileRouteTypes {
     | '/merchant/dashboard/chatbot'
     | '/merchant/dashboard/delivery'
     | '/merchant/dashboard/orders'
+    | '/merchant/dashboard/payments'
     | '/merchant/dashboard/products'
     | '/merchant/dashboard/settings'
     | '/merchant/dashboard/staff'
@@ -881,6 +894,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MerchantDashboardProductsRouteImport
       parentRoute: typeof MerchantDashboardRoute
     }
+    '/merchant/dashboard/payments': {
+      id: '/merchant/dashboard/payments'
+      path: '/payments'
+      fullPath: '/merchant/dashboard/payments'
+      preLoaderRoute: typeof MerchantDashboardPaymentsRouteImport
+      parentRoute: typeof MerchantDashboardRoute
+    }
     '/merchant/dashboard/orders': {
       id: '/merchant/dashboard/orders'
       path: '/orders'
@@ -1048,6 +1068,7 @@ interface MerchantDashboardRouteChildren {
   MerchantDashboardChatbotRoute: typeof MerchantDashboardChatbotRoute
   MerchantDashboardDeliveryRoute: typeof MerchantDashboardDeliveryRoute
   MerchantDashboardOrdersRoute: typeof MerchantDashboardOrdersRoute
+  MerchantDashboardPaymentsRoute: typeof MerchantDashboardPaymentsRoute
   MerchantDashboardProductsRoute: typeof MerchantDashboardProductsRoute
   MerchantDashboardSettingsRoute: typeof MerchantDashboardSettingsRoute
   MerchantDashboardStaffRoute: typeof MerchantDashboardStaffRoute
@@ -1061,6 +1082,7 @@ const MerchantDashboardRouteChildren: MerchantDashboardRouteChildren = {
   MerchantDashboardChatbotRoute: MerchantDashboardChatbotRoute,
   MerchantDashboardDeliveryRoute: MerchantDashboardDeliveryRoute,
   MerchantDashboardOrdersRoute: MerchantDashboardOrdersRoute,
+  MerchantDashboardPaymentsRoute: MerchantDashboardPaymentsRoute,
   MerchantDashboardProductsRoute: MerchantDashboardProductsRoute,
   MerchantDashboardSettingsRoute: MerchantDashboardSettingsRoute,
   MerchantDashboardStaffRoute: MerchantDashboardStaffRoute,
