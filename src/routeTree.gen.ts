@@ -50,6 +50,7 @@ import { Route as AdminBlogNewRouteImport } from './routes/admin.blog.new'
 import { Route as AdminBlogIdRouteImport } from './routes/admin.blog.$id'
 import { Route as StoreMerchantSlugProductProductSlugRouteImport } from './routes/store.$merchantSlug.product.$productSlug'
 import { Route as StoreMerchantSlugOrderOrderIdRouteImport } from './routes/store.$merchantSlug.order.$orderId'
+import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
 import { Route as ApiPublicQpayWebhookRouteImport } from './routes/api.public.qpay.webhook'
 import { Route as ApiPublicDeliveryWebhookRouteImport } from './routes/api.public.delivery.webhook'
 
@@ -266,6 +267,12 @@ const StoreMerchantSlugOrderOrderIdRoute =
     path: '/order/$orderId',
     getParentRoute: () => StoreMerchantSlugRoute,
   } as any)
+const LovableEmailQueueProcessRoute =
+  LovableEmailQueueProcessRouteImport.update({
+    id: '/lovable/email/queue/process',
+    path: '/lovable/email/queue/process',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicQpayWebhookRoute = ApiPublicQpayWebhookRouteImport.update({
   id: '/api/public/qpay/webhook',
   path: '/api/public/qpay/webhook',
@@ -320,6 +327,7 @@ export interface FileRoutesByFullPath {
   '/merchant/dashboard/': typeof MerchantDashboardIndexRoute
   '/api/public/delivery/webhook': typeof ApiPublicDeliveryWebhookRoute
   '/api/public/qpay/webhook': typeof ApiPublicQpayWebhookRoute
+  '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/store/$merchantSlug/order/$orderId': typeof StoreMerchantSlugOrderOrderIdRoute
   '/store/$merchantSlug/product/$productSlug': typeof StoreMerchantSlugProductProductSlugRoute
 }
@@ -363,6 +371,7 @@ export interface FileRoutesByTo {
   '/merchant/dashboard': typeof MerchantDashboardIndexRoute
   '/api/public/delivery/webhook': typeof ApiPublicDeliveryWebhookRoute
   '/api/public/qpay/webhook': typeof ApiPublicQpayWebhookRoute
+  '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/store/$merchantSlug/order/$orderId': typeof StoreMerchantSlugOrderOrderIdRoute
   '/store/$merchantSlug/product/$productSlug': typeof StoreMerchantSlugProductProductSlugRoute
 }
@@ -409,6 +418,7 @@ export interface FileRoutesById {
   '/merchant/dashboard/': typeof MerchantDashboardIndexRoute
   '/api/public/delivery/webhook': typeof ApiPublicDeliveryWebhookRoute
   '/api/public/qpay/webhook': typeof ApiPublicQpayWebhookRoute
+  '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/store/$merchantSlug/order/$orderId': typeof StoreMerchantSlugOrderOrderIdRoute
   '/store/$merchantSlug/product/$productSlug': typeof StoreMerchantSlugProductProductSlugRoute
 }
@@ -456,6 +466,7 @@ export interface FileRouteTypes {
     | '/merchant/dashboard/'
     | '/api/public/delivery/webhook'
     | '/api/public/qpay/webhook'
+    | '/lovable/email/queue/process'
     | '/store/$merchantSlug/order/$orderId'
     | '/store/$merchantSlug/product/$productSlug'
   fileRoutesByTo: FileRoutesByTo
@@ -499,6 +510,7 @@ export interface FileRouteTypes {
     | '/merchant/dashboard'
     | '/api/public/delivery/webhook'
     | '/api/public/qpay/webhook'
+    | '/lovable/email/queue/process'
     | '/store/$merchantSlug/order/$orderId'
     | '/store/$merchantSlug/product/$productSlug'
   id:
@@ -544,6 +556,7 @@ export interface FileRouteTypes {
     | '/merchant/dashboard/'
     | '/api/public/delivery/webhook'
     | '/api/public/qpay/webhook'
+    | '/lovable/email/queue/process'
     | '/store/$merchantSlug/order/$orderId'
     | '/store/$merchantSlug/product/$productSlug'
   fileRoutesById: FileRoutesById
@@ -564,6 +577,7 @@ export interface RootRouteChildren {
   BlogIndexRoute: typeof BlogIndexRoute
   ApiPublicDeliveryWebhookRoute: typeof ApiPublicDeliveryWebhookRoute
   ApiPublicQpayWebhookRoute: typeof ApiPublicQpayWebhookRoute
+  LovableEmailQueueProcessRoute: typeof LovableEmailQueueProcessRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -855,6 +869,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof StoreMerchantSlugOrderOrderIdRouteImport
       parentRoute: typeof StoreMerchantSlugRoute
     }
+    '/lovable/email/queue/process': {
+      id: '/lovable/email/queue/process'
+      path: '/lovable/email/queue/process'
+      fullPath: '/lovable/email/queue/process'
+      preLoaderRoute: typeof LovableEmailQueueProcessRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/qpay/webhook': {
       id: '/api/public/qpay/webhook'
       path: '/api/public/qpay/webhook'
@@ -981,6 +1002,7 @@ const rootRouteChildren: RootRouteChildren = {
   BlogIndexRoute: BlogIndexRoute,
   ApiPublicDeliveryWebhookRoute: ApiPublicDeliveryWebhookRoute,
   ApiPublicQpayWebhookRoute: ApiPublicQpayWebhookRoute,
+  LovableEmailQueueProcessRoute: LovableEmailQueueProcessRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
