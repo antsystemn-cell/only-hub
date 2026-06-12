@@ -459,7 +459,7 @@ export const resetOrderPaymentMethod = createServerFn({ method: "POST" })
     if (!order) return { ok: false as const, error: "Захиалга олдсонгүй" };
     if (order.payment_status === "confirmed") return { ok: false as const, error: "Аль хэдийн төлөгдсөн" };
 
-    await supabaseAdmin
+    const { data: updatedOrder, error: updateError } = await supabaseAdmin
       .from("orders")
       .update({
         payment_method: "pending",
@@ -468,9 +468,15 @@ export const resetOrderPaymentMethod = createServerFn({ method: "POST" })
         qpay_qr_text: null,
         qpay_qr_image: null,
         qpay_short_url: null,
-        qpay_urls: null,
+        qpay_urls: [],
       })
-      .eq("id", order.id);
+      .eq("id", order.id)
+      .select("id,external_ref,status,payment_status,total,merchant_id,qpay_invoice_id,payment_method,payment_error")
+      .single();
 
-    return { ok: true as const };
+    if (updateError || !updatedOrder) {
+      return { ok: false as const, error: updateError?.message ?? "Төлбөрийн хэрэгсэл солиход алдаа гарлаа" };
+    }
+
+    return { ok: true as const, order: updatedOrder };
   });

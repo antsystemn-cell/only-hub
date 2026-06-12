@@ -52,6 +52,7 @@ function OrderConfirmationPage() {
   async function refetchAll() {
     await Promise.all([
       refetch(),
+      queryClient.invalidateQueries({ queryKey: ["order-status", orderId] }),
       queryClient.invalidateQueries({ queryKey: ["order-detail", orderId] }),
       queryClient.invalidateQueries({ queryKey: ["payment-request", orderId] }),
     ]);
@@ -165,7 +166,24 @@ function OrderConfirmationPage() {
                     const r = await resetMethodFn({ data: { orderId } });
                     if (!(r as any).ok) {
                       toast.error((r as any).error ?? "Алдаа гарлаа");
+                      return;
                     }
+                    queryClient.setQueryData(["order-status", orderId], (prev: any) => ({
+                      ...(prev ?? (r as any).order ?? {}),
+                      ...((r as any).order ?? {}),
+                      payment_method: "pending",
+                      payment_error: null,
+                    }));
+                    queryClient.setQueryData(["order-detail", orderId], (prev: any) => ({
+                      ...(prev ?? {}),
+                      payment_method: "pending",
+                      payment_error: null,
+                      qpay_invoice_id: null,
+                      qpay_qr_text: null,
+                      qpay_qr_image: null,
+                      qpay_short_url: null,
+                      qpay_urls: [],
+                    }));
                     await refetchAll();
                   } catch (e: any) {
                     toast.error(e?.message ?? "Алдаа гарлаа");
