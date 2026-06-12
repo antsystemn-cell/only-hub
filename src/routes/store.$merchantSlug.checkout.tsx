@@ -171,7 +171,7 @@ function CheckoutPage() {
     if (!parsed.success) return toast.error(parsed.error.issues[0].message);
     const stockIssue = clientStockCheck();
     if (stockIssue) return toast.error(stockIssue);
-    if (paymentMethods.length && !paymentMethod) return toast.error("Төлбөрийн хэлбэр сонгоно уу");
+    
 
     setSubmitting(true);
     try {
