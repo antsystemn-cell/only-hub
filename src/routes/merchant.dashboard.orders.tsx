@@ -27,7 +27,7 @@ import jsPDF from "jspdf";
 import { useServerFn } from "@tanstack/react-start";
 import { sendOrderToDelivery } from "@/lib/delivery.functions";
 import { bulkUpdateOrderStatus, bulkMarkPaid, bulkCreateDelivery, bulkDeleteOrders, markOrderPaid } from "@/lib/orders-bulk.functions";
-import { createManualOrder } from "@/lib/orders.functions";
+import { createManualOrder, updateOrderShipping } from "@/lib/orders.functions";
 import { useRealtimeSync } from "@/hooks/use-realtime-sync";
 
 export const DELIVERY_STATUS_LABELS: Record<string, string> = {
