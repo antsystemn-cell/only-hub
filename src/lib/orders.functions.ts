@@ -624,7 +624,7 @@ export const updateOrderShipping = createServerFn({ method: "POST" })
 
     const { error: updErr } = await supabaseAdmin
       .from("orders")
-      .update(patch)
+      .update(patch as any)
       .eq("id", order.id);
     if (updErr) return { ok: false as const, error: updErr.message };
 
@@ -636,7 +636,7 @@ export const updateOrderShipping = createServerFn({ method: "POST" })
     if (data.recipientName !== undefined) drPatch.recipient_name = data.recipientName;
     const { data: dr } = await supabaseAdmin
       .from("delivery_requests")
-      .update(drPatch)
+      .update(drPatch as any)
       .eq("order_id", order.id)
       .select("id,mode,provider,status")
       .maybeSingle();
