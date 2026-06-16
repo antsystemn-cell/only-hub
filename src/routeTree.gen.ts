@@ -29,6 +29,7 @@ import { Route as AdminPaymentsRouteImport } from './routes/admin.payments'
 import { Route as AdminPaymentProvidersRouteImport } from './routes/admin.payment-providers'
 import { Route as AdminOrdersRouteImport } from './routes/admin.orders'
 import { Route as AdminNotificationsRouteImport } from './routes/admin.notifications'
+import { Route as AdminMessageTestRouteImport } from './routes/admin.message-test'
 import { Route as AdminMerchantsRouteImport } from './routes/admin.merchants'
 import { Route as AdminDeliveryRouteImport } from './routes/admin.delivery'
 import { Route as AdminBannersRouteImport } from './routes/admin.banners'
@@ -159,6 +160,11 @@ const AdminOrdersRoute = AdminOrdersRouteImport.update({
 const AdminNotificationsRoute = AdminNotificationsRouteImport.update({
   id: '/notifications',
   path: '/notifications',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminMessageTestRoute = AdminMessageTestRouteImport.update({
+  id: '/message-test',
+  path: '/message-test',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminMerchantsRoute = AdminMerchantsRouteImport.update({
@@ -345,6 +351,7 @@ export interface FileRoutesByFullPath {
   '/admin/banners': typeof AdminBannersRoute
   '/admin/delivery': typeof AdminDeliveryRoute
   '/admin/merchants': typeof AdminMerchantsRoute
+  '/admin/message-test': typeof AdminMessageTestRoute
   '/admin/notifications': typeof AdminNotificationsRoute
   '/admin/orders': typeof AdminOrdersRoute
   '/admin/payment-providers': typeof AdminPaymentProvidersRoute
@@ -397,6 +404,7 @@ export interface FileRoutesByTo {
   '/admin/banners': typeof AdminBannersRoute
   '/admin/delivery': typeof AdminDeliveryRoute
   '/admin/merchants': typeof AdminMerchantsRoute
+  '/admin/message-test': typeof AdminMessageTestRoute
   '/admin/notifications': typeof AdminNotificationsRoute
   '/admin/orders': typeof AdminOrdersRoute
   '/admin/payment-providers': typeof AdminPaymentProvidersRoute
@@ -450,6 +458,7 @@ export interface FileRoutesById {
   '/admin/banners': typeof AdminBannersRoute
   '/admin/delivery': typeof AdminDeliveryRoute
   '/admin/merchants': typeof AdminMerchantsRoute
+  '/admin/message-test': typeof AdminMessageTestRoute
   '/admin/notifications': typeof AdminNotificationsRoute
   '/admin/orders': typeof AdminOrdersRoute
   '/admin/payment-providers': typeof AdminPaymentProvidersRoute
@@ -505,6 +514,7 @@ export interface FileRouteTypes {
     | '/admin/banners'
     | '/admin/delivery'
     | '/admin/merchants'
+    | '/admin/message-test'
     | '/admin/notifications'
     | '/admin/orders'
     | '/admin/payment-providers'
@@ -557,6 +567,7 @@ export interface FileRouteTypes {
     | '/admin/banners'
     | '/admin/delivery'
     | '/admin/merchants'
+    | '/admin/message-test'
     | '/admin/notifications'
     | '/admin/orders'
     | '/admin/payment-providers'
@@ -609,6 +620,7 @@ export interface FileRouteTypes {
     | '/admin/banners'
     | '/admin/delivery'
     | '/admin/merchants'
+    | '/admin/message-test'
     | '/admin/notifications'
     | '/admin/orders'
     | '/admin/payment-providers'
@@ -813,6 +825,13 @@ declare module '@tanstack/react-router' {
       path: '/notifications'
       fullPath: '/admin/notifications'
       preLoaderRoute: typeof AdminNotificationsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/message-test': {
+      id: '/admin/message-test'
+      path: '/message-test'
+      fullPath: '/admin/message-test'
+      preLoaderRoute: typeof AdminMessageTestRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/merchants': {
@@ -1052,6 +1071,7 @@ interface AdminRouteChildren {
   AdminBannersRoute: typeof AdminBannersRoute
   AdminDeliveryRoute: typeof AdminDeliveryRoute
   AdminMerchantsRoute: typeof AdminMerchantsRoute
+  AdminMessageTestRoute: typeof AdminMessageTestRoute
   AdminNotificationsRoute: typeof AdminNotificationsRoute
   AdminOrdersRoute: typeof AdminOrdersRoute
   AdminPaymentProvidersRoute: typeof AdminPaymentProvidersRoute
@@ -1070,6 +1090,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminBannersRoute: AdminBannersRoute,
   AdminDeliveryRoute: AdminDeliveryRoute,
   AdminMerchantsRoute: AdminMerchantsRoute,
+  AdminMessageTestRoute: AdminMessageTestRoute,
   AdminNotificationsRoute: AdminNotificationsRoute,
   AdminOrdersRoute: AdminOrdersRoute,
   AdminPaymentProvidersRoute: AdminPaymentProvidersRoute,
