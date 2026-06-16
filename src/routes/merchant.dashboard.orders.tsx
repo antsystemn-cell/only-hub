@@ -831,3 +831,94 @@ function ManualOrderDialog({ open, onOpenChange, merchantId, onCreated }: { open
     </Dialog>
   );
 }
+
+function AddressEditor({ order }: { order: any }) {
+  const [editing, setEditing] = useState(false);
+  const [address, setAddress] = useState<string>(order.shipping_address ?? "");
+  const [phone, setPhone] = useState<string>(order.phone ?? "");
+  const [name, setName] = useState<string>(order.guest_name ?? "");
+  const [saving, setSaving] = useState(false);
+  const qc = useQueryClient();
+  const { primaryMerchantId } = useAuth();
+  const updateShippingFn = useServerFn(updateOrderShipping);
+
+  const start = () => {
+    setAddress(order.shipping_address ?? "");
+    setPhone(order.phone ?? "");
+    setName(order.guest_name ?? "");
+    setEditing(true);
+  };
+
+  const save = async () => {
+    if (!address.trim()) return toast.error("Хаяг хоосон байж болохгүй");
+    setSaving(true);
+    try {
+      const res = await updateShippingFn({
+        data: {
+          orderId: order.id,
+          shippingAddress: address.trim(),
+          phone: phone.trim() || null,
+          recipientName: name.trim() || null,
+        },
+      });
+      if (!res.ok) {
+        toast.error(res.error ?? "Алдаа");
+        return;
+      }
+      if (res.syncedExternal) toast.success("Хаяг шинэчлэгдэж, хүргэлт рүү давхар илгээгдлээ");
+      else if (res.deliverySynced) toast.success("Хаяг шинэчлэгдэж, хүргэлтийн мэдээлэл шинэчлэгдлээ");
+      else toast.success("Хаяг шинэчлэгдлээ");
+      if (res.syncError) toast.warning(`Хүргэлтийн систем рүү дамжуулахад: ${res.syncError}`);
+      setEditing(false);
+      qc.invalidateQueries({ queryKey: ["orders", primaryMerchantId] });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (!editing) {
+    return (
+      <div className="flex items-start gap-2">
+        <div className="flex-1">
+          <span className="text-muted-foreground">Хаяг: </span>
+          {order.shipping_address || <span className="italic text-muted-foreground">—</span>}
+        </div>
+        <Button size="sm" variant="ghost" className="h-7 px-2" onClick={start}>
+          <Pencil className="mr-1 h-3 w-3" /> Засах
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-2 rounded-lg border border-border bg-muted/30 p-3">
+      <div className="grid gap-2 md:grid-cols-2">
+        <div>
+          <Label className="text-xs">Хүлээн авагч</Label>
+          <Input value={name} onChange={(e) => setName(e.target.value)} className="h-8" />
+        </div>
+        <div>
+          <Label className="text-xs">Утас</Label>
+          <Input value={phone} onChange={(e) => setPhone(e.target.value)} className="h-8" />
+        </div>
+      </div>
+      <div>
+        <Label className="text-xs">Хүргэлтийн хаяг</Label>
+        <Textarea value={address} onChange={(e) => setAddress(e.target.value)} rows={2} />
+      </div>
+      <div className="flex justify-end gap-2">
+        <Button size="sm" variant="outline" onClick={() => setEditing(false)} disabled={saving}>
+          Болих
+        </Button>
+        <Button size="sm" onClick={save} disabled={saving}>
+          {saving ? <><Loader2 className="mr-1 h-3 w-3 animate-spin" /> Хадгалж байна...</> : "Хадгалах"}
+        </Button>
+      </div>
+      {order.delivery_order_id && (
+        <p className="text-xs text-muted-foreground">
+          ⚠️ Хадгалахад хүргэлтийн систем рүү шинэ хаяг автоматаар дамжина.
+        </p>
+      )}
+    </div>
+  );
+}
