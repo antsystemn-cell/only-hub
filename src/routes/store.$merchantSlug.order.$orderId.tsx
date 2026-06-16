@@ -384,13 +384,17 @@ function OrderConfirmationPage() {
                   onClick={async () => {
                     setRetrying(true);
                     try {
-                      const r = await retryFn({ data: { orderId } });
+                      const r: any = await retryFn({ data: { orderId } });
                       if (r.ok) {
                         toast.success("QPay invoice дахин үүслээ");
-                        refetch();
+                        if (r.order) {
+                          queryClient.setQueryData(["order-status", orderId], (prev: any) => ({ ...(prev ?? {}), ...r.order }));
+                          queryClient.setQueryData(["order-detail", orderId], (prev: any) => ({ ...(prev ?? {}), ...r.order }));
+                        }
+                        await refetchAll();
                       } else {
                         toast.error(r.error);
-                        refetch();
+                        await refetchAll();
                       }
                     } catch (e: any) {
                       toast.error(e?.message ?? "Алдаа гарлаа");
