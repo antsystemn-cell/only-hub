@@ -446,7 +446,12 @@ export const setOrderPaymentMethod = createServerFn({ method: "POST" })
       }
     }
 
-    return { ok: true as const };
+    const { data: refreshed } = await supabaseAdmin
+      .from("orders")
+      .select("id,external_ref,status,payment_status,total,merchant_id,payment_method,payment_error,qpay_invoice_id,qpay_qr_text,qpay_qr_image,qpay_short_url,qpay_urls")
+      .eq("id", order.id)
+      .maybeSingle();
+    return { ok: true as const, order: refreshed };
   });
 
 // Reset payment method back to "pending" so the user can pick a different one.
