@@ -61,9 +61,15 @@ function OrderConfirmationPage() {
   async function pickMethod(providerType: string) {
     setPickingMethod(providerType);
     try {
-      const r = await setMethodFn({ data: { orderId, paymentMethod: providerType as any } });
-      if (!(r as any).ok) {
-        toast.error((r as any).error ?? "Алдаа гарлаа");
+      const r: any = await setMethodFn({ data: { orderId, paymentMethod: providerType as any } });
+      if (!r.ok) {
+        toast.error(r.error ?? "Алдаа гарлаа");
+        await refetchAll();
+        return;
+      }
+      if (r.order) {
+        queryClient.setQueryData(["order-status", orderId], (prev: any) => ({ ...(prev ?? {}), ...r.order }));
+        queryClient.setQueryData(["order-detail", orderId], (prev: any) => ({ ...(prev ?? {}), ...r.order }));
       }
       await refetchAll();
       await refetchMethods();
@@ -378,13 +384,17 @@ function OrderConfirmationPage() {
                   onClick={async () => {
                     setRetrying(true);
                     try {
-                      const r = await retryFn({ data: { orderId } });
+                      const r: any = await retryFn({ data: { orderId } });
                       if (r.ok) {
                         toast.success("QPay invoice дахин үүслээ");
-                        refetch();
+                        if (r.order) {
+                          queryClient.setQueryData(["order-status", orderId], (prev: any) => ({ ...(prev ?? {}), ...r.order }));
+                          queryClient.setQueryData(["order-detail", orderId], (prev: any) => ({ ...(prev ?? {}), ...r.order }));
+                        }
+                        await refetchAll();
                       } else {
                         toast.error(r.error);
-                        refetch();
+                        await refetchAll();
                       }
                     } catch (e: any) {
                       toast.error(e?.message ?? "Алдаа гарлаа");
