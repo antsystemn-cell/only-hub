@@ -581,3 +581,108 @@ export const createManualOrder = createServerFn({ method: "POST" })
 
     return { ok: true as const, orderId: inserted.id };
   });
+
+// Merchant admin updates an order's recipient/address. If the order was
+// already pushed to the delivery provider, we mirror the change so the
+// courier sees the new destination.
+export const updateOrderShipping = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) =>
+    z
+      .object({
+        orderId: z.string().uuid(),
+        shippingAddress: z.string().trim().min(1).max(500),
+        phone: z.string().trim().min(4).max(30).optional().nullable(),
+        recipientName: z.string().trim().max(120).optional().nullable(),
+        branch: z.string().trim().max(120).optional().nullable(),
+        note: z.string().max(1000).optional().nullable(),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { userId } = context;
+    const { data: order } = await supabaseAdmin
+      .from("orders")
+      .select("id,merchant_id")
+      .eq("id", data.orderId)
+      .maybeSingle();
+    if (!order) return { ok: false as const, error: "Захиалга олдсонгүй" };
+    const { data: allowed } = await supabaseAdmin.rpc("has_merchant_access", {
+      _user_id: userId,
+      _merchant_id: order.merchant_id,
+    });
+    if (!allowed) return { ok: false as const, error: "Эрх хүрэхгүй" };
+
+    const patch: Record<string, any> = {
+      shipping_address: data.shippingAddress,
+      updated_at: new Date().toISOString(),
+    };
+    if (data.phone != null) patch.phone = data.phone;
+    if (data.recipientName !== undefined) patch.guest_name = data.recipientName;
+    if (data.branch !== undefined) patch.branch = data.branch;
+    if (data.note !== undefined) patch.note = data.note;
+
+    const { error: updErr } = await supabaseAdmin
+      .from("orders")
+      .update(patch as any)
+      .eq("id", order.id);
+    if (updErr) return { ok: false as const, error: updErr.message };
+
+    // Sync local delivery_request row (always — works for local + external).
+    const drPatch: Record<string, any> = {
+      dropoff_address: data.shippingAddress,
+    };
+    if (data.phone != null) drPatch.recipient_phone = data.phone;
+    if (data.recipientName !== undefined) drPatch.recipient_name = data.recipientName;
+    const { data: dr } = await supabaseAdmin
+      .from("delivery_requests")
+      .update(drPatch as any)
+      .eq("order_id", order.id)
+      .select("id,mode,provider,status")
+      .maybeSingle();
+
+    // If pushed to Swift, re-post the order so the provider gets the new
+    // destination. /order-intake is idempotent on external_order_id.
+    let syncedExternal = false;
+    let syncError: string | null = null;
+    if (dr && dr.mode === "external" && dr.status !== "delivered" && dr.status !== "cancelled") {
+      try {
+        const { swiftSendOrder } = await import("@/lib/delivery/delivery.swift");
+        const { data: freshOrder } = await supabaseAdmin
+          .from("orders")
+          .select("*")
+          .eq("id", order.id)
+          .maybeSingle();
+        const { data: merchant } = await supabaseAdmin
+          .from("merchants")
+          .select("id,name,slug")
+          .eq("id", order.merchant_id)
+          .maybeSingle();
+        if (freshOrder && merchant) {
+          const res = await swiftSendOrder({
+            order: freshOrder,
+            merchant,
+            deliveryRequestId: dr.id,
+          });
+          if (res.ok) {
+            syncedExternal = true;
+          } else {
+            syncError = res.error ?? "Swift sync failed";
+            await supabaseAdmin
+              .from("delivery_requests")
+              .update({ last_error: syncError })
+              .eq("id", dr.id);
+          }
+        }
+      } catch (e: any) {
+        syncError = e?.message ?? String(e);
+      }
+    }
+
+    return {
+      ok: true as const,
+      deliverySynced: !!dr,
+      syncedExternal,
+      syncError,
+    };
+  });
