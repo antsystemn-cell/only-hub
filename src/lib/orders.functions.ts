@@ -321,7 +321,7 @@ export const retryQpayInvoice = createServerFn({ method: "POST" })
         await supabaseAdmin.from("orders").update({ payment_error: err }).eq("id", order.id);
         return { ok: false as const, error: err };
       }
-      await supabaseAdmin
+      const { data: updated } = await supabaseAdmin
         .from("orders")
         .update({
           qpay_invoice_id: qpay.invoice_id,
@@ -331,8 +331,10 @@ export const retryQpayInvoice = createServerFn({ method: "POST" })
           qpay_urls: (qpay.urls ?? []) as any,
           payment_error: null,
         })
-        .eq("id", order.id);
-      return { ok: true as const, qpay };
+        .eq("id", order.id)
+        .select("id,external_ref,status,payment_status,total,merchant_id,payment_method,payment_error,qpay_invoice_id,qpay_qr_text,qpay_qr_image,qpay_short_url,qpay_urls")
+        .single();
+      return { ok: true as const, qpay, order: updated };
     } catch (e: any) {
       const err = e?.message ?? "QPay invoice үүсгэхэд алдаа";
       await supabaseAdmin.from("orders").update({ payment_error: err }).eq("id", order.id);
