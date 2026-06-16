@@ -560,7 +560,6 @@ function OrderRow({ order, checked, onCheck, onStatus, onPayment, productImages 
           </div>
           <AddressEditor order={order} />
           {order.note && <div><span className="text-muted-foreground">Тэмдэглэл: </span>{order.note}</div>}
-          {order.note && <div><span className="text-muted-foreground">Тэмдэглэл: </span>{order.note}</div>}
           <div className="flex flex-wrap gap-2">
             <Select value={order.status} onValueChange={onStatus}>
               <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
