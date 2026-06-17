@@ -266,16 +266,22 @@ export async function syncDeliveryStatusFromExternal(args: {
     .update(patch)
     .eq("id", args.deliveryRequestId);
 
-  // "Хүргэлтэнд гарсан" төлөвт орсон үед tracking link SMS-ийг автоматаар явуулна (idempotent).
-  if (
-    (next === "in_transit" || next === "picked_up") &&
-    prev !== "in_transit" &&
-    prev !== "picked_up" &&
-    current?.order_id
-  ) {
+  // Хүргэлт идэвхтэй болсон (driver dispatched) үед tracking link SMS-ийг автоматаар явуулна.
+  // Swift Hub-аас зөвхөн зарим төлөв (confirmed/preparing/assigned/picked_up/in_transit/out_for_delivery)
+  // ирэх боломжтой тул pending/requested-аас ямар ч идэвхтэй төлөвт шилжихэд асаана.
+  const PRE_DISPATCH = new Set(["pending", "requested"]);
+  const TERMINAL = new Set(["delivered", "failed", "cancelled"]);
+  console.log("[delivery] syncFromExternal", {
+    drId: args.deliveryRequestId,
+    ff: args.fulfillmentStatus,
+    prev,
+    next,
+  });
+  if (PRE_DISPATCH.has(prev) && !PRE_DISPATCH.has(next) && !TERMINAL.has(next) && current?.order_id) {
     try {
       const { sendTrackingLinkSms } = await import("@/lib/tracking/tracking-notify.server");
-      void sendTrackingLinkSms(current.order_id);
+      const res = await sendTrackingLinkSms(current.order_id);
+      console.log("[delivery] sendTrackingLinkSms (webhook) result", current.order_id, res);
     } catch (e) {
       console.error("[delivery] sendTrackingLinkSms (webhook) failed", e);
     }
