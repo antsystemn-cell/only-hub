@@ -164,7 +164,7 @@ export async function resolveOrderByToken(token: string): Promise<PublicTracking
 
   const { data: merchant } = await supabaseAdmin
     .from("merchants")
-    .select("name, slug, logo_url, phone")
+    .select("name, slug, logo_url, contact_phone")
     .eq("id", order.merchant_id)
     .maybeSingle();
 
@@ -272,10 +272,10 @@ export async function resolveOrderByToken(token: string): Promise<PublicTracking
         qpay_short_url: order.qpay_short_url,
       },
       merchant: {
-        name: merchant?.name ?? "—",
-        slug: merchant?.slug ?? "",
+        name: (merchant as any)?.name ?? "—",
+        slug: (merchant as any)?.slug ?? "",
         logo: (merchant as any)?.logo_url ?? null,
-        phone: (merchant as any)?.phone ?? null,
+        phone: (merchant as any)?.contact_phone ?? null,
       },
       delivery: dr
         ? {
