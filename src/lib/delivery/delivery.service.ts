@@ -192,11 +192,15 @@ export async function updateDeliveryStatus(args: {
       .insert({ delivery_request_id: deliveryRequestId, status, note });
   }
 
-  // "Хүргэлтэнд гарсан" төлөвт орсон үед tracking link SMS-ийг автоматаар явуулна (idempotent).
-  if ((status === "in_transit" || status === "picked_up") && data?.order_id) {
+  // Идэвхтэй хүргэлт төлөвт орвол tracking link SMS-ийг автоматаар явуулна (idempotent).
+  if (
+    ["assigned", "picked_up", "in_transit"].includes(status) &&
+    data?.order_id
+  ) {
     try {
       const { sendTrackingLinkSms } = await import("@/lib/tracking/tracking-notify.server");
-      void sendTrackingLinkSms(data.order_id);
+      const res = await sendTrackingLinkSms(data.order_id);
+      console.log("[delivery] sendTrackingLinkSms (manual)", data.order_id, status, res);
     } catch (e) {
       console.error("[delivery] sendTrackingLinkSms (dispatched) failed", e);
     }
