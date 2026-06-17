@@ -40,18 +40,29 @@ export const sendTestSmsFn = createServerFn({ method: "POST" })
 
 export const listSmsTestLogsFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(() => ({}))
-  .handler(async ({ context }) => {
+  .inputValidator((d) =>
+    z
+      .object({
+        page: z.number().int().min(1).optional().default(1),
+        pageSize: z.number().int().min(1).max(200).optional().default(50),
+      })
+      .parse(d ?? {}),
+  )
+  .handler(async ({ data, context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: isAdmin } = await supabaseAdmin.rpc("is_platform_admin", {
       _user_id: context.userId,
     });
-    if (!isAdmin) return { ok: false as const, error: "Эрхгүй", items: [] };
-    const { data } = await supabaseAdmin
+    if (!isAdmin) return { ok: false as const, error: "Эрхгүй", items: [], total: 0, page: 1, pageSize: 50 };
+    const page = data.page ?? 1;
+    const pageSize = data.pageSize ?? 50;
+    const from = (page - 1) * pageSize;
+    const to = from + pageSize - 1;
+    const { data: items, count } = await supabaseAdmin
       .from("notifications_log")
-      .select("id,event_type,recipient,status,message,error,created_at,provider")
+      .select("id,event_type,recipient,status,message,error,created_at,provider", { count: "exact" })
       .eq("channel", "sms")
       .order("created_at", { ascending: false })
-      .limit(50);
-    return { ok: true as const, items: data ?? [] };
+      .range(from, to);
+    return { ok: true as const, items: items ?? [], total: count ?? 0, page, pageSize };
   });
