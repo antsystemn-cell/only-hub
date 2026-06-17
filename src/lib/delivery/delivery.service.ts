@@ -256,6 +256,7 @@ export async function syncDeliveryStatusFromExternal(args: {
   const next = mapSwiftStatus(args.fulfillmentStatus, prev) as DeliveryStatus;
   const patch: any = { status: next };
   if (args.externalRef) patch.external_ref = args.externalRef;
+  if (next === "assigned" && prev !== "assigned") patch.assigned_at = new Date().toISOString();
   if (next === "picked_up") patch.picked_up_at = new Date().toISOString();
   if (next === "delivered") patch.delivered_at = new Date().toISOString();
   if (next === "cancelled") patch.cancelled_at = new Date().toISOString();
@@ -264,6 +265,16 @@ export async function syncDeliveryStatusFromExternal(args: {
     .from("delivery_requests")
     .update(patch)
     .eq("id", args.deliveryRequestId);
+
+  // Жолооч оноогдсон үед tracking link SMS-ийг автоматаар явуулна (idempotent).
+  if (next === "assigned" && prev !== "assigned" && current?.order_id) {
+    try {
+      const { sendTrackingLinkSms } = await import("@/lib/tracking/tracking-notify.server");
+      void sendTrackingLinkSms(current.order_id);
+    } catch (e) {
+      console.error("[delivery] sendTrackingLinkSms (webhook) failed", e);
+    }
+  }
 
   // Хүргэгдсэн төлөв шинээр орж ирвэл автомат төлбөрийн SMS-ийг асаана.
   if (next === "delivered" && prev !== "delivered" && current?.order_id) {
