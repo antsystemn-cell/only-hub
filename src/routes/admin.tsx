@@ -22,7 +22,6 @@ const NAV: NavItem[] = [
   { to: "/admin/payments", label: "Төлбөр цуглуулалт", icon: Wallet },
   { to: "/admin/payment-providers", label: "Төлбөрийн систем", icon: Settings2 },
   { to: "/admin/notifications", label: "Мэдэгдэл", icon: Bell },
-  { to: "/admin/message-test", label: "Message API Test", icon: MessageSquare },
   { to: "/admin/users", label: "Хэрэглэгч", icon: Users },
   { to: "/admin/banners", label: "Баннер", icon: ImageIcon },
   { to: "/admin/blog", label: "Блог", icon: FileText },

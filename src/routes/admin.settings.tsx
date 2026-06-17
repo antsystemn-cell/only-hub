@@ -11,9 +11,12 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Settings2, Send, Download } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Settings2, Send, Download, MessageSquare, ChevronLeft, ChevronRight } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { importEasyshopProducts } from "@/lib/import-easyshop.functions";
+import { sendTestSmsFn, listSmsTestLogsFn } from "@/lib/admin-message-test.functions";
 
 const SETTING_KEYS = ["default_delivery_fee", "delivery_fee_rules", "default_commission_rate"] as const;
 
@@ -175,50 +178,189 @@ function AdminSettingsPage() {
         <Settings2 className="h-6 w-6" />
         <div>
           <h1 className="text-2xl font-bold sm:text-3xl">Платформын тохиргоо</h1>
-          <p className="text-sm text-muted-foreground">Хүргэлтийн төлбөр, комисс</p>
+          <p className="text-sm text-muted-foreground">Хүргэлт, комисс, Message API</p>
         </div>
       </div>
 
-      <Card className="mt-6 rounded-2xl p-6">
-        <h2 className="text-lg font-semibold">Хүргэлтийн стандарт төлбөр</h2>
-        <p className="mt-1 text-xs text-muted-foreground">
-          Дэлгүүр өөрийн delivery option бүртгээгүй үед энэ хэрэглэгдэнэ.
-        </p>
-        <div className="mt-4 grid gap-4 md:grid-cols-2">
-          <div>
-            <Label>Үндсэн төлбөр (₮)</Label>
-            <Input type="number" value={flat} onChange={(e) => setFlat(e.target.value)} className="mt-1" />
+      <Tabs defaultValue="general" className="mt-6">
+        <TabsList>
+          <TabsTrigger value="general">Ерөнхий</TabsTrigger>
+          <TabsTrigger value="message">
+            <MessageSquare className="mr-1 h-4 w-4" /> Message API Test
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="general" className="space-y-4">
+          <Card className="mt-4 rounded-2xl p-6">
+            <h2 className="text-lg font-semibold">Хүргэлтийн стандарт төлбөр</h2>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Дэлгүүр өөрийн delivery option бүртгээгүй үед энэ хэрэглэгдэнэ.
+            </p>
+            <div className="mt-4 grid gap-4 md:grid-cols-2">
+              <div>
+                <Label>Үндсэн төлбөр (₮)</Label>
+                <Input type="number" value={flat} onChange={(e) => setFlat(e.target.value)} className="mt-1" />
+              </div>
+              <div>
+                <Label>Үнэгүй хүргэлт босго (₮)</Label>
+                <Input type="number" value={freeOver} onChange={(e) => setFreeOver(e.target.value)} className="mt-1" />
+                <p className="mt-1 text-xs text-muted-foreground">0 = идэвхгүй</p>
+              </div>
+            </div>
+          </Card>
+
+          <Card className="rounded-2xl p-6">
+            <h2 className="text-lg font-semibold">Үндсэн комисс (%)</h2>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Шинэ дэлгүүр үүсэхэд default commission rate.
+            </p>
+            <Input
+              type="number"
+              step="0.1"
+              value={commission}
+              onChange={(e) => setCommission(e.target.value)}
+              className="mt-3 max-w-xs"
+            />
+          </Card>
+
+          <div className="flex justify-end">
+            <Button onClick={() => save.mutate()} disabled={save.isPending}>
+              {save.isPending ? "Хадгалж байна..." : "Хадгалах"}
+            </Button>
           </div>
-          <div>
-            <Label>Үнэгүй хүргэлт босго (₮)</Label>
-            <Input type="number" value={freeOver} onChange={(e) => setFreeOver(e.target.value)} className="mt-1" />
-            <p className="mt-1 text-xs text-muted-foreground">0 = идэвхгүй</p>
-          </div>
+
+          <SwiftTestOrderCard />
+          <EasyshopImportCard />
+        </TabsContent>
+
+        <TabsContent value="message" className="mt-4">
+          <MessageApiTestPanel />
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+}
+
+function MessageApiTestPanel() {
+  const sendFn = useServerFn(sendTestSmsFn);
+  const listFn = useServerFn(listSmsTestLogsFn);
+  const [phone, setPhone] = useState("");
+  const [message, setMessage] = useState(
+    "Sain bn uu? Eniig Only Hub-aas test SMS yavuulj baina.",
+  );
+  const [sending, setSending] = useState(false);
+  const [page, setPage] = useState(1);
+  const pageSize = 50;
+
+  const { data: logs, refetch } = useQuery({
+    queryKey: ["admin-sms-logs", page],
+    queryFn: () => listFn({ data: { page, pageSize } }),
+    refetchInterval: 15_000,
+  });
+
+  const total = logs?.ok ? logs.total : 0;
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+
+  const submit = async () => {
+    if (!phone.trim() || !message.trim()) {
+      toast.error("Утас ба зурвас оруулна уу");
+      return;
+    }
+    setSending(true);
+    try {
+      const res = await sendFn({ data: { phone: phone.trim(), message } });
+      if (res.ok) toast.success("SMS амжилттай илгээгдлээ");
+      else toast.error(res.error || "Илгээж чадсангүй");
+      setPage(1);
+      refetch();
+    } catch (e: any) {
+      toast.error(e?.message ?? "Алдаа гарлаа");
+    } finally {
+      setSending(false);
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      <Card className="space-y-4 rounded-2xl p-6">
+        <div className="space-y-2">
+          <Label>Утасны дугаар</Label>
+          <Input placeholder="99112233" value={phone} onChange={(e) => setPhone(e.target.value)} />
         </div>
-      </Card>
-
-      <Card className="mt-4 rounded-2xl p-6">
-        <h2 className="text-lg font-semibold">Үндсэн комисс (%)</h2>
-        <p className="mt-1 text-xs text-muted-foreground">
-          Шинэ дэлгүүр үүсэхэд default commission rate.
-        </p>
-        <Input
-          type="number"
-          step="0.1"
-          value={commission}
-          onChange={(e) => setCommission(e.target.value)}
-          className="mt-3 max-w-xs"
-        />
-      </Card>
-
-      <div className="mt-6 flex justify-end">
-        <Button onClick={() => save.mutate()} disabled={save.isPending}>
-          {save.isPending ? "Хадгалж байна..." : "Хадгалах"}
+        <div className="space-y-2">
+          <Label>Зурвасын агуулга</Label>
+          <Textarea rows={5} value={message} onChange={(e) => setMessage(e.target.value)} maxLength={800} />
+          <p className="text-xs text-muted-foreground">{message.length}/800 тэмдэгт</p>
+        </div>
+        <Button onClick={submit} disabled={sending} className="gap-2">
+          <Send className="h-4 w-4" />
+          {sending ? "Илгээж байна..." : "Test message илгээх"}
         </Button>
-      </div>
+      </Card>
 
-      <SwiftTestOrderCard />
-      <EasyshopImportCard />
+      <Card className="rounded-2xl p-0 overflow-hidden">
+        <div className="flex items-center justify-between border-b border-border px-4 py-3">
+          <h2 className="text-sm font-semibold">
+            SMS лог {total > 0 && <span className="ml-1 text-muted-foreground">({total})</span>}
+          </h2>
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <span>Хуудас {page} / {totalPages}</span>
+            <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page <= 1}>
+              <ChevronLeft className="h-3 w-3" />
+            </Button>
+            <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page >= totalPages}>
+              <ChevronRight className="h-3 w-3" />
+            </Button>
+          </div>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="bg-muted/40 text-left text-xs text-muted-foreground">
+              <tr>
+                <th className="px-4 py-2 whitespace-nowrap">#</th>
+                <th className="px-4 py-2 whitespace-nowrap">Огноо</th>
+                <th className="px-4 py-2 whitespace-nowrap">Утас</th>
+                <th className="px-4 py-2">Зурвас</th>
+                <th className="px-4 py-2 whitespace-nowrap">Төлөв</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border">
+              {(logs?.items ?? []).map((l: any, idx: number) => (
+                <tr key={l.id} className="align-top">
+                  <td className="px-4 py-2 text-xs text-muted-foreground whitespace-nowrap">
+                    {(page - 1) * pageSize + idx + 1}
+                  </td>
+                  <td className="px-4 py-2 text-xs text-muted-foreground whitespace-nowrap">
+                    {new Date(l.created_at).toLocaleString("mn-MN")}
+                  </td>
+                  <td className="px-4 py-2 font-mono text-xs whitespace-nowrap">{l.recipient ?? "—"}</td>
+                  <td className="px-4 py-2 text-xs whitespace-pre-wrap break-words">{l.message ?? "—"}</td>
+                  <td className="px-4 py-2 whitespace-nowrap">
+                    <Badge
+                      variant="outline"
+                      className={
+                        l.status === "sent"
+                          ? "border-emerald-500/40 text-emerald-600"
+                          : "border-destructive/40 text-destructive"
+                      }
+                    >
+                      {l.status}
+                    </Badge>
+                    {l.error && (
+                      <div className="mt-1 text-[10px] text-destructive whitespace-pre-wrap break-words">{l.error}</div>
+                    )}
+                  </td>
+                </tr>
+              ))}
+              {(!logs || logs.items.length === 0) && (
+                <tr>
+                  <td colSpan={5} className="py-8 text-center text-muted-foreground">Лог байхгүй</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </Card>
     </div>
   );
 }
