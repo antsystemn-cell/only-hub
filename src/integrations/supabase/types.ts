@@ -357,6 +357,7 @@ export type Database = {
           recipient_phone: string | null
           requested_at: string | null
           status: string
+          tracking_sms_sent_at: string | null
           updated_at: string
         }
         Insert: {
@@ -382,6 +383,7 @@ export type Database = {
           recipient_phone?: string | null
           requested_at?: string | null
           status?: string
+          tracking_sms_sent_at?: string | null
           updated_at?: string
         }
         Update: {
@@ -407,6 +409,7 @@ export type Database = {
           recipient_phone?: string | null
           requested_at?: string | null
           status?: string
+          tracking_sms_sent_at?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -1397,6 +1400,53 @@ export type Database = {
             columns: ["merchant_id"]
             isOneToOne: false
             referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      public_order_tokens: {
+        Row: {
+          created_at: string
+          customer_phone: string | null
+          expires_at: string
+          id: string
+          is_active: boolean
+          last_accessed_at: string | null
+          open_count: number
+          order_id: string
+          public_token: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          customer_phone?: string | null
+          expires_at?: string
+          id?: string
+          is_active?: boolean
+          last_accessed_at?: string | null
+          open_count?: number
+          order_id: string
+          public_token: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          customer_phone?: string | null
+          expires_at?: string
+          id?: string
+          is_active?: boolean
+          last_accessed_at?: string | null
+          open_count?: number
+          order_id?: string
+          public_token?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "public_order_tokens_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: true
+            referencedRelation: "orders"
             referencedColumns: ["id"]
           },
         ]
