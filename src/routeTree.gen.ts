@@ -18,6 +18,7 @@ import { Route as AccountRouteImport } from './routes/account'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as BlogIndexRouteImport } from './routes/blog.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
+import { Route as TrackTokenRouteImport } from './routes/track.$token'
 import { Route as StoreMerchantSlugRouteImport } from './routes/store.$merchantSlug'
 import { Route as MerchantRegisterRouteImport } from './routes/merchant.register'
 import { Route as MerchantLoginRouteImport } from './routes/merchant.login'
@@ -106,6 +107,11 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AdminRoute,
+} as any)
+const TrackTokenRoute = TrackTokenRouteImport.update({
+  id: '/track/$token',
+  path: '/track/$token',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const StoreMerchantSlugRoute = StoreMerchantSlugRouteImport.update({
   id: '/store/$merchantSlug',
@@ -363,6 +369,7 @@ export interface FileRoutesByFullPath {
   '/merchant/login': typeof MerchantLoginRoute
   '/merchant/register': typeof MerchantRegisterRoute
   '/store/$merchantSlug': typeof StoreMerchantSlugRouteWithChildren
+  '/track/$token': typeof TrackTokenRoute
   '/admin/': typeof AdminIndexRoute
   '/blog/': typeof BlogIndexRoute
   '/admin/blog/$id': typeof AdminBlogIdRoute
@@ -415,6 +422,7 @@ export interface FileRoutesByTo {
   '/merchant/login': typeof MerchantLoginRoute
   '/merchant/register': typeof MerchantRegisterRoute
   '/store/$merchantSlug': typeof StoreMerchantSlugRouteWithChildren
+  '/track/$token': typeof TrackTokenRoute
   '/admin': typeof AdminIndexRoute
   '/blog': typeof BlogIndexRoute
   '/admin/blog/$id': typeof AdminBlogIdRoute
@@ -470,6 +478,7 @@ export interface FileRoutesById {
   '/merchant/login': typeof MerchantLoginRoute
   '/merchant/register': typeof MerchantRegisterRoute
   '/store/$merchantSlug': typeof StoreMerchantSlugRouteWithChildren
+  '/track/$token': typeof TrackTokenRoute
   '/admin/': typeof AdminIndexRoute
   '/blog/': typeof BlogIndexRoute
   '/admin/blog/$id': typeof AdminBlogIdRoute
@@ -526,6 +535,7 @@ export interface FileRouteTypes {
     | '/merchant/login'
     | '/merchant/register'
     | '/store/$merchantSlug'
+    | '/track/$token'
     | '/admin/'
     | '/blog/'
     | '/admin/blog/$id'
@@ -578,6 +588,7 @@ export interface FileRouteTypes {
     | '/merchant/login'
     | '/merchant/register'
     | '/store/$merchantSlug'
+    | '/track/$token'
     | '/admin'
     | '/blog'
     | '/admin/blog/$id'
@@ -632,6 +643,7 @@ export interface FileRouteTypes {
     | '/merchant/login'
     | '/merchant/register'
     | '/store/$merchantSlug'
+    | '/track/$token'
     | '/admin/'
     | '/blog/'
     | '/admin/blog/$id'
@@ -674,6 +686,7 @@ export interface RootRouteChildren {
   MerchantLoginRoute: typeof MerchantLoginRoute
   MerchantRegisterRoute: typeof MerchantRegisterRoute
   StoreMerchantSlugRoute: typeof StoreMerchantSlugRouteWithChildren
+  TrackTokenRoute: typeof TrackTokenRoute
   BlogIndexRoute: typeof BlogIndexRoute
   ApiPublicDeliveryWebhookRoute: typeof ApiPublicDeliveryWebhookRoute
   ApiPublicQpayWebhookRoute: typeof ApiPublicQpayWebhookRoute
@@ -749,6 +762,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/'
       preLoaderRoute: typeof AdminIndexRouteImport
       parentRoute: typeof AdminRoute
+    }
+    '/track/$token': {
+      id: '/track/$token'
+      path: '/track/$token'
+      fullPath: '/track/$token'
+      preLoaderRoute: typeof TrackTokenRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/store/$merchantSlug': {
       id: '/store/$merchantSlug'
@@ -1166,6 +1186,7 @@ const rootRouteChildren: RootRouteChildren = {
   MerchantLoginRoute: MerchantLoginRoute,
   MerchantRegisterRoute: MerchantRegisterRoute,
   StoreMerchantSlugRoute: StoreMerchantSlugRouteWithChildren,
+  TrackTokenRoute: TrackTokenRoute,
   BlogIndexRoute: BlogIndexRoute,
   ApiPublicDeliveryWebhookRoute: ApiPublicDeliveryWebhookRoute,
   ApiPublicQpayWebhookRoute: ApiPublicQpayWebhookRoute,
