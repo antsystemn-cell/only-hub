@@ -192,6 +192,16 @@ export async function updateDeliveryStatus(args: {
       .insert({ delivery_request_id: deliveryRequestId, status, note });
   }
 
+  // Жолооч оноогдсон үед tracking link SMS-ийг автоматаар явуулна (idempotent).
+  if (status === "assigned" && data?.order_id) {
+    try {
+      const { sendTrackingLinkSms } = await import("@/lib/tracking/tracking-notify.server");
+      void sendTrackingLinkSms(data.order_id);
+    } catch (e) {
+      console.error("[delivery] sendTrackingLinkSms (assigned) failed", e);
+    }
+  }
+
   // Хүргэлт амжилттай төгсөхөд автомат төлбөр цуглуулалт асаана.
   if (status === "delivered" && data?.order_id) {
     try {
