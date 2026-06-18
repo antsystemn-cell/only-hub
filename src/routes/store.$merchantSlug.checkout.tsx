@@ -430,6 +430,64 @@ function CheckoutPage() {
       />
       <div className="h-20 lg:hidden" />
       <SiteFooter />
+
+      <AlertDialog
+        open={savePromptOpen}
+        onOpenChange={(open) => {
+          if (!open && pendingOrderId) {
+            // Closing without choosing — just continue to order
+            const id = pendingOrderId;
+            setPendingOrderId(null);
+            setSavePromptOpen(false);
+            navigate({ to: "/store/$merchantSlug/order/$orderId", params: { merchantSlug, orderId: id } });
+          } else {
+            setSavePromptOpen(open);
+          }
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Мэдээллээ хадгалах уу?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Та эдгээр мэдээллээ өөрийн бүртгэлдээ хадгалах уу? Хадгалснаар та дараагийн захиалгууддаа дахин бөглөх шаардлагагүй болно.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              onClick={() => {
+                const id = pendingOrderId;
+                setPendingOrderId(null);
+                setSavePromptOpen(false);
+                if (id) navigate({ to: "/store/$merchantSlug/order/$orderId", params: { merchantSlug, orderId: id } });
+              }}
+            >
+              Үгүй
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={async () => {
+                if (!user) return;
+                try {
+                  await saveProfile(user.id, {
+                    full_name: form.customerName,
+                    phone: form.phone,
+                    shipping_address: form.shippingAddress,
+                    branch: form.branch || null,
+                  });
+                  toast.success("Мэдээлэл бүртгэлд хадгалагдлаа");
+                } catch (e: any) {
+                  toast.error(e?.message ?? "Хадгалахад алдаа");
+                }
+                const id = pendingOrderId;
+                setPendingOrderId(null);
+                setSavePromptOpen(false);
+                if (id) navigate({ to: "/store/$merchantSlug/order/$orderId", params: { merchantSlug, orderId: id } });
+              }}
+            >
+              Тийм, хадгалах
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
