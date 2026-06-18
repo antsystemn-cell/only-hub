@@ -716,9 +716,13 @@ function Index() {
         <div className="container mx-auto grid grid-cols-2 gap-6 px-4 py-10 sm:grid-cols-3 lg:grid-cols-5">
           <div className="col-span-2 sm:col-span-3 lg:col-span-2">
             <div className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-orange-500 text-white">
-                <ShoppingBag className="h-4 w-4" />
-              </div>
+              {platformLogo ? (
+                <img src={platformLogo} alt="Logo" className="h-8 w-8 rounded-lg object-contain" />
+              ) : (
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-orange-500 text-white">
+                  <ShoppingBag className="h-4 w-4" />
+                </div>
+              )}
               <div className="leading-none">
                 <div className="text-base font-extrabold text-white">ONLY</div>
                 <div className="text-[9px] font-semibold tracking-wider text-orange-400">MERCHANTS HUB</div>
