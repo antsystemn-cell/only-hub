@@ -64,6 +64,11 @@ function CheckoutPage() {
     queryFn: async () =>
       (await supabase.from("merchants").select("id,name,slug").eq("slug", merchantSlug).maybeSingle()).data,
   });
+  const { user } = useAuth();
+  const { data: profile } = useProfile(user?.id);
+  const [profileLoaded, setProfileLoaded] = useState(false);
+  const [savePromptOpen, setSavePromptOpen] = useState(false);
+  const [pendingOrderId, setPendingOrderId] = useState<string | null>(null);
 
   const productIds = useMemo(() => Array.from(new Set(items.map((i) => i.productId))), [items]);
   const { data: products = [] } = useQuery({
