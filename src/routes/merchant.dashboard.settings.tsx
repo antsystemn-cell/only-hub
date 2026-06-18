@@ -68,6 +68,157 @@ function SettingsPage() {
   );
 }
 
+function StoreProfileTab() {
+  const { primaryMerchantId } = useAuth();
+  const qc = useQueryClient();
+  const merchantId = primaryMerchantId;
+
+  const { data: merchant } = useQuery({
+    queryKey: ["merchant-profile", merchantId],
+    enabled: !!merchantId,
+    queryFn: async () =>
+      (await supabase.from("merchants").select("id,name,slug,description,logo_url").eq("id", merchantId!).maybeSingle()).data,
+  });
+
+  const [name, setName] = useState<string | null>(null);
+  const [description, setDescription] = useState<string | null>(null);
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+
+  // Initialize from loaded data once
+  if (merchant && name === null && description === null && logoUrl === null) {
+    setName(merchant.name ?? "");
+    setDescription(merchant.description ?? "");
+    setLogoUrl(merchant.logo_url ?? "");
+  }
+
+  const save = useMutation({
+    mutationFn: async () => {
+      if (!merchantId) throw new Error("merchant байхгүй");
+      const { error } = await supabase
+        .from("merchants")
+        .update({ name: name ?? "", description: description ?? null, logo_url: logoUrl || null })
+        .eq("id", merchantId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Хадгалагдлаа");
+      qc.invalidateQueries({ queryKey: ["merchant-profile", merchantId] });
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Алдаа"),
+  });
+
+  const uploadLogo = async (file: File) => {
+    if (!merchantId) return;
+    setUploading(true);
+    try {
+      const ext = file.name.split(".").pop() || "png";
+      const path = `${merchantId}/logo-${Date.now()}.${ext}`;
+      const { error: upErr } = await supabase.storage
+        .from("merchant-logos")
+        .upload(path, file, { upsert: true, contentType: file.type });
+      if (upErr) throw upErr;
+      const { data: pub } = supabase.storage.from("merchant-logos").getPublicUrl(path);
+      setLogoUrl(pub.publicUrl);
+      const { error } = await supabase
+        .from("merchants")
+        .update({ logo_url: pub.publicUrl })
+        .eq("id", merchantId);
+      if (error) throw error;
+      qc.invalidateQueries({ queryKey: ["merchant-profile", merchantId] });
+      toast.success("Лого шинэчлэгдлээ");
+    } catch (e: any) {
+      toast.error(e?.message ?? "Лого upload амжилтгүй");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  if (!merchantId) {
+    return <Card className="rounded-2xl p-6 text-sm text-muted-foreground">Дэлгүүр олдсонгүй.</Card>;
+  }
+
+  return (
+    <Card className="rounded-2xl p-6 space-y-6">
+      <div>
+        <h2 className="text-lg font-semibold">Дэлгүүрийн профайл</h2>
+        <p className="text-xs text-muted-foreground mt-1">
+          Энд оруулсан лого, нэр нь нүүр хуудас, "Бүх дэлгүүр" жагсаалт, дэлгүүрийн нүүр, барааны дэлгэрэнгүй зэрэг хэрэглэгчийн талын бүх хуудсанд харагдана.
+        </p>
+      </div>
+
+      <div className="flex items-start gap-4">
+        <div className="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-2xl border bg-muted">
+          {logoUrl ? (
+            <img src={logoUrl} alt="logo" className="h-full w-full object-cover" />
+          ) : (
+            <span className="text-xs text-muted-foreground">Лого алга</span>
+          )}
+        </div>
+        <div className="flex-1 space-y-2">
+          <Label>Дэлгүүрийн лого</Label>
+          <div className="flex flex-wrap gap-2">
+            <label className="cursor-pointer">
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                disabled={uploading}
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) uploadLogo(f);
+                  e.target.value = "";
+                }}
+              />
+              <span className="inline-flex h-9 items-center rounded-md border px-3 text-sm hover:bg-muted">
+                {uploading ? "Байршуулж байна..." : "Зураг сонгож upload"}
+              </span>
+            </label>
+            {logoUrl && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={async () => {
+                  setLogoUrl("");
+                  await supabase.from("merchants").update({ logo_url: null }).eq("id", merchantId);
+                  qc.invalidateQueries({ queryKey: ["merchant-profile", merchantId] });
+                  toast.success("Лого устгагдлаа");
+                }}
+              >
+                <Trash2 className="mr-1 h-4 w-4" /> Лого устгах
+              </Button>
+            )}
+          </div>
+          <Input
+            placeholder="Эсвэл лого URL шууд оруулах"
+            value={logoUrl ?? ""}
+            onChange={(e) => setLogoUrl(e.target.value)}
+          />
+        </div>
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-2">
+        <div>
+          <Label>Дэлгүүрийн нэр</Label>
+          <Input value={name ?? ""} onChange={(e) => setName(e.target.value)} className="mt-1" />
+        </div>
+        <div className="md:col-span-2">
+          <Label>Тайлбар</Label>
+          <Textarea rows={3} value={description ?? ""} onChange={(e) => setDescription(e.target.value)} className="mt-1" />
+        </div>
+      </div>
+
+      <div className="flex justify-end">
+        <Button onClick={() => save.mutate()} disabled={save.isPending}>
+          {save.isPending ? "Хадгалж байна..." : "Хадгалах"}
+        </Button>
+      </div>
+    </Card>
+  );
+}
+
+
+
 function ImportTab() {
   const { primaryMerchantId } = useAuth();
   const [jsonInput, setJsonInput] = useState("");
