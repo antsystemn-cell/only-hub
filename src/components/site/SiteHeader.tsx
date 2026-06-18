@@ -40,10 +40,10 @@ export function SiteHeader({ showSearch = true, rightOfLogo, cartHref = "/stores
       <div className="container mx-auto flex h-14 items-center gap-2 px-3 sm:h-16 sm:gap-4 sm:px-4">
         <Link to="/" className="flex shrink-0 items-center gap-1.5">
           {platformLogo ? (
-            <img src={platformLogo} alt="Logo" className="h-8 w-8 rounded-lg object-contain" />
+            <img src={platformLogo} alt="Logo" className="h-10 w-10 rounded-xl object-contain" />
           ) : (
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-orange-500 text-white">
-              <ShoppingBag className="h-4 w-4" />
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-orange-500 text-white">
+              <ShoppingBag className="h-5 w-5" />
             </div>
           )}
           <div className="hidden flex-col leading-none sm:flex">
