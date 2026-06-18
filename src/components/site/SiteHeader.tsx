@@ -1,7 +1,10 @@
 import { Link } from "@tanstack/react-router";
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { Button } from "@/components/ui/button";
 import { AccountNav } from "@/components/AccountNav";
+import { getPublicBrandingFn } from "@/lib/branding.functions";
 import {
   Heart, Menu, Search, ShoppingBag, ShoppingCart, X,
 } from "lucide-react";
