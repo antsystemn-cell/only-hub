@@ -209,7 +209,7 @@ function ProductCard({
   onQuickView,
 }: {
   p: any;
-  merchant?: { slug: string; name: string };
+  merchant?: { slug: string; name: string; logo_url?: string | null };
   onQuickView: (p: any) => void;
 }) {
   const discount = Number(p.discount) > 0
