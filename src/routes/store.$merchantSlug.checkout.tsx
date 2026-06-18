@@ -386,6 +386,7 @@ function CheckoutPage() {
         onClick={handleSubmit}
       />
       <div className="h-20 lg:hidden" />
+      <SiteFooter />
     </div>
   );
 }
