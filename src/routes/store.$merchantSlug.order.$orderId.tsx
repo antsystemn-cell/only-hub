@@ -421,6 +421,7 @@ function OrderConfirmationPage() {
 
         {paid && <DeliveryTrackingCard orderId={orderId} />}
       </div>
+      <SiteFooter />
     </div>
   );
 }
