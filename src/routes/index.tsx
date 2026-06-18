@@ -13,6 +13,8 @@ import {
 import { fmtMnt } from "@/lib/format";
 import { QuickViewDialog, type QuickViewProduct } from "@/components/QuickViewDialog";
 import { AccountNav } from "@/components/AccountNav";
+import { useServerFn } from "@tanstack/react-start";
+import { getPublicBrandingFn } from "@/lib/branding.functions";
 
 const PAGE_SIZE = 12;
 
