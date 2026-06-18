@@ -13,10 +13,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Settings2, Send, Download, MessageSquare, ChevronLeft, ChevronRight } from "lucide-react";
+import { Settings2, Send, Download, MessageSquare, ChevronLeft, ChevronRight, Image as ImageIcon, Upload } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { importEasyshopProducts } from "@/lib/import-easyshop.functions";
 import { sendTestSmsFn, listSmsTestLogsFn } from "@/lib/admin-message-test.functions";
+import { supabase } from "@/integrations/supabase/client";
 
 const SETTING_KEYS = ["default_delivery_fee", "delivery_fee_rules", "default_commission_rate", "platform_logo_url"] as const;
 
