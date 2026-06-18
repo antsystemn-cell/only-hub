@@ -684,7 +684,7 @@ function Index() {
         <div className="mb-4 flex items-end justify-between gap-3">
           <div>
             <h2 className="flex items-center gap-2 text-base font-bold sm:text-lg md:text-xl">
-              <span>🆕</span> Шинээр нэмэгдсэн
+              <Grid3x3 className="h-5 w-5 text-orange-600" /> Бүх бараа
             </h2>
             {total > 0 && <p className="mt-0.5 text-[11px] text-muted-foreground sm:text-xs">{items.length} / {total}</p>}
           </div>
