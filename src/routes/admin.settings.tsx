@@ -221,6 +221,53 @@ function AdminSettingsPage() {
 
         <TabsContent value="general" className="space-y-4">
           <Card className="mt-4 rounded-2xl p-6">
+            <div className="flex items-center gap-2">
+              <ImageIcon className="h-5 w-5" />
+              <h2 className="text-lg font-semibold">Платформын лого</h2>
+            </div>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Сайтын толгой хэсэгт "Only Merchants Hub" текстийн урд харагдана. URL оруулах эсвэл зураг байршуулах боломжтой.
+            </p>
+            <div className="mt-4 flex items-center gap-4">
+              <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-xl border bg-muted/40 overflow-hidden">
+                {logoUrl ? (
+                  <img src={logoUrl} alt="logo" className="h-full w-full object-contain" />
+                ) : (
+                  <ImageIcon className="h-6 w-6 text-muted-foreground" />
+                )}
+              </div>
+              <div className="flex-1 space-y-2">
+                <Input
+                  placeholder="https://..."
+                  value={logoUrl}
+                  onChange={(e) => setLogoUrl(e.target.value)}
+                />
+                <div className="flex flex-wrap items-center gap-2">
+                  <label className="cursor-pointer">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => {
+                        const f = e.target.files?.[0];
+                        if (f) handleLogoUpload(f);
+                        e.target.value = "";
+                      }}
+                    />
+                    <span className="inline-flex h-9 items-center rounded-md border px-3 text-sm hover:bg-muted">
+                      <Upload className="mr-1 h-4 w-4" /> {uploadingLogo ? "Байршуулж байна..." : "Файл оруулах"}
+                    </span>
+                  </label>
+                  {logoUrl && (
+                    <Button variant="ghost" size="sm" onClick={() => setLogoUrl("")}>Цэвэрлэх</Button>
+                  )}
+                </div>
+              </div>
+            </div>
+          </Card>
+
+
+          <Card className="mt-4 rounded-2xl p-6">
             <h2 className="text-lg font-semibold">Хүргэлтийн стандарт төлбөр</h2>
             <p className="mt-1 text-xs text-muted-foreground">
               Дэлгүүр өөрийн delivery option бүртгээгүй үед энэ хэрэглэгдэнэ.
