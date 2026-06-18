@@ -527,9 +527,9 @@ function Index() {
     },
   });
 
-  // Paged "new products" list (infinite)
+  // All products list (infinite) — shuffled randomly per page
   const productsQ = useInfiniteQuery({
-    queryKey: ["home-products-paged"],
+    queryKey: ["home-products-all-random"],
     initialPageParam: 0,
     queryFn: async ({ pageParam }) => {
       const from = (pageParam as number) * PAGE_SIZE;
@@ -541,7 +541,8 @@ function Index() {
         .order("created_at", { ascending: false })
         .order("id", { ascending: false })
         .range(from, to);
-      return { items: data ?? [], count: count ?? 0, page: pageParam as number };
+      const shuffled = [...(data ?? [])].sort(() => Math.random() - 0.5);
+      return { items: shuffled, count: count ?? 0, page: pageParam as number };
     },
     getNextPageParam: (last) => {
       const loaded = (last.page + 1) * PAGE_SIZE;
