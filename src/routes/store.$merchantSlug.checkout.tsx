@@ -115,6 +115,19 @@ function CheckoutPage() {
     if (!deliveryOptionId && deliveryOptions.length) setDeliveryOptionId(deliveryOptions[0].id);
   }, [deliveryOptions, deliveryOptionId]);
 
+  // Auto-fill from saved profile (once, when loaded)
+  useEffect(() => {
+    if (profileLoaded || !profile) return;
+    setForm((f) => ({
+      ...f,
+      customerName: f.customerName || profile.full_name || "",
+      phone: f.phone || profile.phone || "",
+      shippingAddress: f.shippingAddress || profile.shipping_address || "",
+      branch: f.branch || profile.branch || "",
+    }));
+    setProfileLoaded(true);
+  }, [profile, profileLoaded]);
+
   const subtotal = items.reduce((s, i) => {
     const p = productMap.get(i.productId);
     return s + Number(p?.price ?? i.price) * i.quantity;
