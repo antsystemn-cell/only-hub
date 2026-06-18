@@ -22,6 +22,8 @@ import { useShipping } from "@/lib/shipping/use-shipping";
 import { FreeShippingProgress } from "@/components/cart/FreeShippingProgress";
 import { StickyCheckoutBar } from "@/components/cart/StickyCheckoutBar";
 import { ArrowLeft, Minus, Plus, ShoppingBag, Tag, Trash2, X } from "lucide-react";
+import { SiteHeader } from "@/components/site/SiteHeader";
+import { SiteFooter } from "@/components/site/SiteFooter";
 
 export const Route = createFileRoute("/store/$merchantSlug/cart")({
   component: CartPage,
@@ -187,20 +189,21 @@ function CartPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-30 border-b border-border bg-background/80 backdrop-blur">
-        <div className="container mx-auto flex h-16 items-center gap-3 px-4">
-          <Link to="/" className="text-xl font-bold">Only</Link>
-          <span className="text-muted-foreground">/</span>
-          {merchant && (
-            <Link to="/store/$merchantSlug" params={{ merchantSlug }} className="font-semibold hover:underline">
-              {merchant.name}
-            </Link>
-          )}
-          <span className="text-muted-foreground">/</span>
-          <span className="font-medium">Сагс</span>
-        </div>
-      </header>
+    <div className="min-h-screen bg-[#fafafa]">
+      <SiteHeader
+        cartHref={`/store/${merchantSlug}/cart`}
+        rightOfLogo={
+          merchant ? (
+            <span className="flex items-center gap-2">
+              <Link to="/store/$merchantSlug" params={{ merchantSlug }} className="font-semibold hover:text-orange-600">
+                {merchant.name}
+              </Link>
+              <span className="text-muted-foreground/60">/</span>
+              <span className="font-medium text-foreground">Сагс</span>
+            </span>
+          ) : null
+        }
+      />
 
       <div className="container mx-auto px-4 py-6">
         <Link
@@ -432,6 +435,7 @@ function CartPage() {
         onClick={goCheckout}
       />
       {totalQty > 0 && <div className="h-20 lg:hidden" />}
+      <SiteFooter />
     </div>
   );
 }

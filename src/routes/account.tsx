@@ -4,6 +4,8 @@ import { useAuth } from "@/hooks/use-auth";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { LayoutDashboard, LogOut, ShieldCheck, Package } from "lucide-react";
+import { SiteHeader } from "@/components/site/SiteHeader";
+import { SiteFooter } from "@/components/site/SiteFooter";
 
 export const Route = createFileRoute("/account")({
   head: () => ({ meta: [{ title: "Миний бүртгэл — Only" }] }),
@@ -23,13 +25,8 @@ function AccountPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b border-border">
-        <div className="container mx-auto flex h-16 items-center justify-between px-4">
-          <Link to="/" className="text-2xl font-bold">Only</Link>
-          <Link to="/stores"><Button variant="ghost" size="sm">Дэлгүүрүүд</Button></Link>
-        </div>
-      </header>
+    <div className="min-h-screen bg-[#fafafa]">
+      <SiteHeader showSearch={false} />
       <div className="container mx-auto max-w-2xl px-4 py-10">
         <h1 className="text-3xl font-bold">Миний бүртгэл</h1>
         <Card className="mt-6 rounded-2xl p-6">
@@ -82,6 +79,7 @@ function AccountPage() {
           </Button>
         </Card>
       </div>
+      <SiteFooter />
     </div>
   );
 }

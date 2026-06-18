@@ -13,6 +13,8 @@ import {
   Minus, Plus, ShoppingCart, ChevronRight, Check, ChevronLeft, Heart,
   Share2, Truck, Shield, Store as StoreIcon, Play,
 } from "lucide-react";
+import { SiteHeader } from "@/components/site/SiteHeader";
+import { SiteFooter } from "@/components/site/SiteFooter";
 
 export const Route = createFileRoute("/store/$merchantSlug/product/$productSlug")({
   component: ProductDetailPage,
@@ -167,32 +169,20 @@ function ProductDetailPage() {
   const currentMedia = gallery[activeImg];
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="sticky top-0 z-30 border-b border-border bg-background/85 backdrop-blur">
-        <div className="container mx-auto flex h-14 items-center gap-2 px-3 sm:h-16 sm:px-4">
-          <Link to="/" className="text-lg font-bold sm:text-xl">Only</Link>
-          <span className="hidden text-muted-foreground sm:inline">/</span>
-          <Link to="/store/$merchantSlug" params={{ merchantSlug }} className="hidden truncate text-sm font-semibold hover:underline sm:inline-block">
+    <div className="min-h-screen bg-[#fafafa]">
+      <SiteHeader
+        cartHref={`/store/${merchantSlug}/cart`}
+        rightOfLogo={
+          <Link to="/store/$merchantSlug" params={{ merchantSlug }} className="font-semibold hover:text-orange-600">
             {merchant.name}
           </Link>
-          <div className="ml-auto flex items-center gap-1">
-            <Button variant="ghost" size="icon" aria-label="Хуваалцах" onClick={handleShare}>
-              <Share2 className="h-5 w-5" />
-            </Button>
-            <Link to="/store/$merchantSlug/cart" params={{ merchantSlug }}>
-              <Button variant="ghost" size="icon" className="relative" aria-label="Сагс">
-                <ShoppingCart className="h-5 w-5" />
-                {cartCount > 0 && (
-                  <span className="absolute -right-0.5 -top-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1 text-xs font-medium text-primary-foreground">
-                    {cartCount}
-                  </span>
-                )}
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </header>
+        }
+        trailing={
+          <Button variant="ghost" size="icon" aria-label="Хуваалцах" onClick={handleShare} className="rounded-full">
+            <Share2 className="h-5 w-5" />
+          </Button>
+        }
+      />
 
       <div className="container mx-auto px-3 py-3 sm:px-4 sm:py-5">
         {/* Breadcrumb */}
@@ -320,7 +310,7 @@ function ProductDetailPage() {
             )}
 
             <div className="mt-4 flex flex-wrap items-baseline gap-x-3 gap-y-1">
-              <span className="text-2xl font-bold text-primary sm:text-3xl">{fmtMnt(Number(product.price))}</span>
+              <span className="text-2xl font-bold text-orange-600 sm:text-3xl">{fmtMnt(Number(product.price))}</span>
               {hasDiscount && (
                 <>
                   <span className="text-base text-muted-foreground line-through sm:text-lg">{fmtMnt(Number(product.original_price))}</span>
@@ -493,6 +483,10 @@ function ProductDetailPage() {
           </section>
         )}
       </div>
+
+      <SiteFooter />
+
+
 
       {/* Mobile sticky CTA */}
       <div className="sticky bottom-0 z-30 mt-8 border-t border-border bg-background/95 px-3 py-2.5 backdrop-blur lg:hidden">
