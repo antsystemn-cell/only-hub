@@ -18,7 +18,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { importEasyshopProducts } from "@/lib/import-easyshop.functions";
 import { sendTestSmsFn, listSmsTestLogsFn } from "@/lib/admin-message-test.functions";
 
-const SETTING_KEYS = ["default_delivery_fee", "delivery_fee_rules", "default_commission_rate"] as const;
+const SETTING_KEYS = ["default_delivery_fee", "delivery_fee_rules", "default_commission_rate", "platform_logo_url"] as const;
 
 const getPlatformSettings = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
