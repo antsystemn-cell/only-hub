@@ -1,12 +1,15 @@
-// Auto SMS-ийг жолооч "оноогдсон" болсон үед явуулна. Идемпотент.
+// Auto SMS-ийг "хүргэлтэнд гарсан" болсон үед явуулна. Идемпотент.
+// Латин үсэг богино темплэйт. CallPro verified link (QPay богино URL) ашиглана.
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { sendCallproSms } from "@/lib/payment-collection/callpro.server";
 import { getOrCreateTrackingToken, buildTrackingUrl } from "./tracking.server";
 
+// Богино латин темплэйт. Төгсгөлд # — Sender ID "ONLY"-г тусгаарлана.
 const DEFAULT_TEMPLATE =
-  "Tanii zahialgiig hurgeltend huleelgej ugluu.\n\n" +
-  "Ta daraah linkeer orj zahialga bolon hurgeltiin medeellee hyanaarai.\n" +
-  "{tracking_link}";
+  "Tanii {merchant_name}-s hiisen zahialga belen.\n" +
+  "Dun: {total}MNT\n" +
+  "Tulbur: {payment_link}\n" +
+  "Bayarlalaa #";
 
 async function loadTemplate(): Promise<string> {
   const { data: row } = await supabaseAdmin
@@ -22,11 +25,19 @@ function render(tpl: string, vars: Record<string, string>): string {
   return tpl.replace(/\{(\w+)\}/g, (_, k) => vars[k] ?? "");
 }
 
+function formatAmount(n: number): string {
+  try {
+    return new Intl.NumberFormat("en-US").format(Math.round(n));
+  } catch {
+    return String(Math.round(n));
+  }
+}
+
 export async function sendTrackingLinkSms(orderId: string): Promise<
   | { ok: true; skipped?: boolean; phone?: string }
   | { ok: false; error: string }
 > {
-  // Check delivery_request marker for idempotency
+  // Idempotency marker
   const { data: dr } = await supabaseAdmin
     .from("delivery_requests")
     .select("id, tracking_sms_sent_at")
@@ -38,25 +49,46 @@ export async function sendTrackingLinkSms(orderId: string): Promise<
 
   const { data: order } = await supabaseAdmin
     .from("orders")
-    .select("id, phone, external_ref, merchant_id")
+    .select(
+      "id, phone, external_ref, merchant_id, total, payment_status, qpay_short_url",
+    )
     .eq("id", orderId)
     .maybeSingle();
   if (!order) return { ok: false, error: "Захиалга олдсонгүй" };
   if (!order.phone) return { ok: false, error: "Утасны дугаар байхгүй" };
 
-  const tok = await getOrCreateTrackingToken(orderId);
-  const link = buildTrackingUrl(tok.public_token);
+  // Payment link priority: QPay short URL → payment_request invoice → tracking link fallback
+  let paymentLink: string | null = (order as any).qpay_short_url ?? null;
+  if (!paymentLink) {
+    const { data: pr } = await supabaseAdmin
+      .from("payment_requests")
+      .select("invoice_url")
+      .eq("order_id", orderId)
+      .maybeSingle();
+    paymentLink = (pr as any)?.invoice_url ?? null;
+  }
+  if (!paymentLink) {
+    const tok = await getOrCreateTrackingToken(orderId);
+    paymentLink = buildTrackingUrl(tok.public_token);
+  }
+
   const { data: merchant } = await supabaseAdmin
     .from("merchants")
-    .select("name")
+    .select("name, slug")
     .eq("id", order.merchant_id)
     .maybeSingle();
 
+  // Merchant name: prefer slug (латин), fallback to name
+  const merchantLabel =
+    (merchant as any)?.slug || (merchant as any)?.name || "Only";
+
   const tpl = await loadTemplate();
   const message = render(tpl, {
-    tracking_link: link,
+    payment_link: paymentLink,
+    tracking_link: paymentLink, // backward-compat: хуучин template-ууд
+    total: formatAmount(Number(order.total ?? 0)),
     order_number: order.external_ref ?? order.id.slice(0, 8),
-    merchant_name: merchant?.name ?? "Only Hub",
+    merchant_name: String(merchantLabel),
   });
 
   const res = await sendCallproSms({ phone: order.phone, message });
