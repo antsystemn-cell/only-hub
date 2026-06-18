@@ -453,8 +453,9 @@ function Index() {
     },
   });
 
-  const merchantById: Record<string, { slug: string; name: string }> = {};
-  (merchants ?? []).forEach((m: any) => { merchantById[m.id] = { slug: m.slug, name: m.name }; });
+  const merchantById: Record<string, { slug: string; name: string; logo_url?: string | null }> = {};
+  (merchants ?? []).forEach((m: any) => { merchantById[m.id] = { slug: m.slug, name: m.name, logo_url: m.logo_url }; });
+
 
   // Featured (is_new flag used as featured marker — schema has no is_featured)
   const { data: featured } = useQuery({
