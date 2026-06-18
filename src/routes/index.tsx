@@ -558,7 +558,6 @@ function Index() {
                 <ShoppingBag className="h-4 w-4" />
               </div>
             )}
-            </div>
             <div className="hidden flex-col leading-none sm:flex">
               <span className="text-base font-extrabold tracking-tight">ONLY</span>
               <span className="text-[9px] font-semibold tracking-wider text-orange-600">MERCHANTS HUB</span>
