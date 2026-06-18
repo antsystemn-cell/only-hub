@@ -435,6 +435,7 @@ function CartPage() {
         onClick={goCheckout}
       />
       {totalQty > 0 && <div className="h-20 lg:hidden" />}
+      <SiteFooter />
     </div>
   );
 }
