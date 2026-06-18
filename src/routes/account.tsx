@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { LayoutDashboard, LogOut, ShieldCheck, Package } from "lucide-react";
 import { SiteHeader } from "@/components/site/SiteHeader";
 import { SiteFooter } from "@/components/site/SiteFooter";
+import { ProfileForm } from "@/components/account/ProfileForm";
 
 export const Route = createFileRoute("/account")({
   head: () => ({ meta: [{ title: "Миний бүртгэл — Only" }] }),
