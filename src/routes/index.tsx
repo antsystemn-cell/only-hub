@@ -209,7 +209,7 @@ function ProductCard({
   onQuickView,
 }: {
   p: any;
-  merchant?: { slug: string; name: string };
+  merchant?: { slug: string; name: string; logo_url?: string | null };
   onQuickView: (p: any) => void;
 }) {
   const discount = Number(p.discount) > 0
@@ -274,6 +274,18 @@ function ProductCard({
             </span>
           )}
         </div>
+        {merchant && (
+          <div className="mt-0.5 flex items-center gap-1 text-[10px] text-muted-foreground sm:text-[11px]">
+            {merchant.logo_url ? (
+              <img src={merchant.logo_url} alt="" className="h-3.5 w-3.5 rounded-full object-cover ring-1 ring-orange-100" />
+            ) : (
+              <span className="inline-flex h-3.5 w-3.5 items-center justify-center rounded-full bg-orange-100 text-[8px] font-semibold text-orange-700">
+                {merchant.name.charAt(0)}
+              </span>
+            )}
+            <span className="truncate">{merchant.name}</span>
+          </div>
+        )}
         <div className="mt-0.5 flex items-center gap-1 text-[10px] text-muted-foreground sm:text-[11px]">
           <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
           <span>{rating.toFixed(1)}</span>
@@ -281,6 +293,7 @@ function ProductCard({
           <span>{sold}+ борлуулсан</span>
         </div>
       </div>
+
     </Card>
   );
 
@@ -315,7 +328,7 @@ function ProductRail({
   title: string;
   icon: React.ReactNode;
   items: any[];
-  merchantById: Record<string, { slug: string; name: string }>;
+  merchantById: Record<string, { slug: string; name: string; logo_url?: string | null }>;
   onQuickView: (p: any) => void;
 }) {
   if (items.length === 0) return null;
@@ -440,8 +453,9 @@ function Index() {
     },
   });
 
-  const merchantById: Record<string, { slug: string; name: string }> = {};
-  (merchants ?? []).forEach((m: any) => { merchantById[m.id] = { slug: m.slug, name: m.name }; });
+  const merchantById: Record<string, { slug: string; name: string; logo_url?: string | null }> = {};
+  (merchants ?? []).forEach((m: any) => { merchantById[m.id] = { slug: m.slug, name: m.name, logo_url: m.logo_url }; });
+
 
   // Featured (is_new flag used as featured marker — schema has no is_featured)
   const { data: featured } = useQuery({
