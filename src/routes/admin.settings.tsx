@@ -13,12 +13,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Settings2, Send, Download, MessageSquare, ChevronLeft, ChevronRight } from "lucide-react";
+import { Settings2, Send, Download, MessageSquare, ChevronLeft, ChevronRight, Image as ImageIcon, Upload } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { importEasyshopProducts } from "@/lib/import-easyshop.functions";
 import { sendTestSmsFn, listSmsTestLogsFn } from "@/lib/admin-message-test.functions";
+import { supabase } from "@/integrations/supabase/client";
 
-const SETTING_KEYS = ["default_delivery_fee", "delivery_fee_rules", "default_commission_rate"] as const;
+const SETTING_KEYS = ["default_delivery_fee", "delivery_fee_rules", "default_commission_rate", "platform_logo_url"] as const;
 
 const getPlatformSettings = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -145,12 +146,16 @@ function AdminSettingsPage() {
   const [flat, setFlat] = useState<string>("5000");
   const [freeOver, setFreeOver] = useState<string>("0");
   const [commission, setCommission] = useState<string>("3");
+  const [logoUrl, setLogoUrl] = useState<string>("");
+  const [uploadingLogo, setUploadingLogo] = useState(false);
 
   useEffect(() => {
     const rules = settings.delivery_fee_rules ?? {};
     setFlat(String(rules.flat ?? settings.default_delivery_fee ?? 5000));
     setFreeOver(String(rules.free_over ?? 0));
     setCommission(String(settings.default_commission_rate ?? 3));
+    const lg = settings.platform_logo_url;
+    setLogoUrl(typeof lg === "string" ? lg : (lg?.url ?? ""));
   }, [data]);
 
   const save = useMutation({
@@ -167,10 +172,34 @@ function AdminSettingsPage() {
       await saveFn({
         data: { key: "default_commission_rate", value: Number(commission) || 0 },
       });
+      await saveFn({
+        data: { key: "platform_logo_url", value: logoUrl.trim() || null },
+      });
     },
     onSuccess: () => { toast.success("Хадгалагдлаа"); refetch(); },
     onError: (e: any) => toast.error(e?.message ?? "Алдаа"),
   });
+
+  const handleLogoUpload = async (file: File) => {
+    setUploadingLogo(true);
+    try {
+      const ext = file.name.split(".").pop() || "png";
+      const path = `platform/logo-${Date.now()}.${ext}`;
+      const { error: upErr } = await supabase.storage
+        .from("brand-logos")
+        .upload(path, file, { upsert: true, contentType: file.type });
+      if (upErr) throw upErr;
+      const { data: pub } = supabase.storage.from("brand-logos").getPublicUrl(path);
+      setLogoUrl(pub.publicUrl);
+      await saveFn({ data: { key: "platform_logo_url", value: pub.publicUrl } });
+      toast.success("Лого байршуулагдлаа");
+      refetch();
+    } catch (e: any) {
+      toast.error(e?.message ?? "Алдаа");
+    } finally {
+      setUploadingLogo(false);
+    }
+  };
 
   return (
     <div className="container mx-auto max-w-3xl px-4 py-8 md:px-8">
@@ -191,6 +220,53 @@ function AdminSettingsPage() {
         </TabsList>
 
         <TabsContent value="general" className="space-y-4">
+          <Card className="mt-4 rounded-2xl p-6">
+            <div className="flex items-center gap-2">
+              <ImageIcon className="h-5 w-5" />
+              <h2 className="text-lg font-semibold">Платформын лого</h2>
+            </div>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Сайтын толгой хэсэгт "Only Merchants Hub" текстийн урд харагдана. URL оруулах эсвэл зураг байршуулах боломжтой.
+            </p>
+            <div className="mt-4 flex items-center gap-4">
+              <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-xl border bg-muted/40 overflow-hidden">
+                {logoUrl ? (
+                  <img src={logoUrl} alt="logo" className="h-full w-full object-contain" />
+                ) : (
+                  <ImageIcon className="h-6 w-6 text-muted-foreground" />
+                )}
+              </div>
+              <div className="flex-1 space-y-2">
+                <Input
+                  placeholder="https://..."
+                  value={logoUrl}
+                  onChange={(e) => setLogoUrl(e.target.value)}
+                />
+                <div className="flex flex-wrap items-center gap-2">
+                  <label className="cursor-pointer">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => {
+                        const f = e.target.files?.[0];
+                        if (f) handleLogoUpload(f);
+                        e.target.value = "";
+                      }}
+                    />
+                    <span className="inline-flex h-9 items-center rounded-md border px-3 text-sm hover:bg-muted">
+                      <Upload className="mr-1 h-4 w-4" /> {uploadingLogo ? "Байршуулж байна..." : "Файл оруулах"}
+                    </span>
+                  </label>
+                  {logoUrl && (
+                    <Button variant="ghost" size="sm" onClick={() => setLogoUrl("")}>Цэвэрлэх</Button>
+                  )}
+                </div>
+              </div>
+            </div>
+          </Card>
+
+
           <Card className="mt-4 rounded-2xl p-6">
             <h2 className="text-lg font-semibold">Хүргэлтийн стандарт төлбөр</h2>
             <p className="mt-1 text-xs text-muted-foreground">
