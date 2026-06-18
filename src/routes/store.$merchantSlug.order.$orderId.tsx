@@ -15,6 +15,8 @@ import { getPaymentRequestByOrderFn } from "@/lib/payment-collection/collection.
 import { DeliveryTimeline } from "@/components/DeliveryTimeline";
 import { PaymentIntentPanel } from "@/components/checkout/PaymentIntentPanel";
 import { AlertTriangle, CheckCircle2, Clock, Loader2, RefreshCw, Banknote } from "lucide-react";
+import { SiteHeader } from "@/components/site/SiteHeader";
+import { SiteFooter } from "@/components/site/SiteFooter";
 
 export const Route = createFileRoute("/store/$merchantSlug/order/$orderId")({
   component: OrderConfirmationPage,
@@ -126,16 +128,16 @@ function OrderConfirmationPage() {
   const paid = order.payment_status === "confirmed";
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b border-border">
-        <div className="container mx-auto flex h-16 items-center gap-3 px-4">
-          <Link to="/" className="text-xl font-bold">Only</Link>
-          <span className="text-muted-foreground">/</span>
-          <Link to="/store/$merchantSlug" params={{ merchantSlug }} className="font-semibold hover:underline">
+    <div className="min-h-screen bg-[#fafafa]">
+      <SiteHeader
+        cartHref={`/store/${merchantSlug}/cart`}
+        showSearch={false}
+        rightOfLogo={
+          <Link to="/store/$merchantSlug" params={{ merchantSlug }} className="font-semibold hover:text-orange-600">
             Дэлгүүр
           </Link>
-        </div>
-      </header>
+        }
+      />
 
       <div className="container mx-auto max-w-2xl px-4 py-10">
         <Card className="rounded-2xl p-8 text-center">
