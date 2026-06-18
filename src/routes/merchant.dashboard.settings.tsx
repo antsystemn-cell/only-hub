@@ -25,8 +25,9 @@ function SettingsPage() {
   return (
     <div className="space-y-6">
       <h1 className="text-3xl font-bold">Тохиргоо</h1>
-      <Tabs defaultValue="categories">
+      <Tabs defaultValue="store">
         <TabsList className="flex flex-wrap">
+          <TabsTrigger value="store">Дэлгүүр</TabsTrigger>
           <TabsTrigger value="categories">Ангилал</TabsTrigger>
           <TabsTrigger value="brands">Брэнд</TabsTrigger>
           <TabsTrigger value="delivery">Хүргэлт</TabsTrigger>
@@ -34,7 +35,9 @@ function SettingsPage() {
           <TabsTrigger value="banners">Баннер</TabsTrigger>
           <TabsTrigger value="import">📥 Импорт</TabsTrigger>
         </TabsList>
+        <TabsContent value="store"><StoreProfileTab /></TabsContent>
         <TabsContent value="categories"><CrudList table="categories" fields={[{ k: "name", l: "Нэр" }, { k: "icon", l: "Icon (emoji)" }]} /></TabsContent>
+
         <TabsContent value="brands"><CrudList table="brands" fields={[{ k: "name", l: "Нэр" }, { k: "logo_url", l: "Лого URL" }]} /></TabsContent>
         <TabsContent value="delivery">
           <div className="space-y-5">
