@@ -328,7 +328,7 @@ function ProductRail({
   title: string;
   icon: React.ReactNode;
   items: any[];
-  merchantById: Record<string, { slug: string; name: string }>;
+  merchantById: Record<string, { slug: string; name: string; logo_url?: string | null }>;
   onQuickView: (p: any) => void;
 }) {
   if (items.length === 0) return null;
