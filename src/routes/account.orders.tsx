@@ -138,6 +138,7 @@ function AccountOrdersPage() {
           </div>
         )}
       </div>
+      <SiteFooter />
     </div>
   );
 }
