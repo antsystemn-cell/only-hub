@@ -79,6 +79,7 @@ function AccountPage() {
           </Button>
         </Card>
       </div>
+      <SiteFooter />
     </div>
   );
 }

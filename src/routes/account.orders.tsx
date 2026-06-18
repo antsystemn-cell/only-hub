@@ -9,6 +9,8 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Package } from "lucide-react";
 import { fmtMnt, STATUS_LABELS, PAYMENT_STATUS_LABELS } from "@/lib/format";
 import { DeliveryStatusBadge } from "@/components/DeliveryTimeline";
+import { SiteHeader } from "@/components/site/SiteHeader";
+import { SiteFooter } from "@/components/site/SiteFooter";
 
 export const Route = createFileRoute("/account/orders")({
   head: () => ({ meta: [{ title: "Миний захиалгууд — Only" }] }),
@@ -57,18 +59,13 @@ function AccountOrdersPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b border-border">
-        <div className="container mx-auto flex h-16 items-center justify-between px-4">
-          <Link to="/account" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
-            <ArrowLeft className="h-4 w-4" /> Бүртгэл
-          </Link>
-          <Link to="/" className="text-2xl font-bold">Only</Link>
-          <span className="w-16" />
-        </div>
-      </header>
+    <div className="min-h-screen bg-[#fafafa]">
+      <SiteHeader showSearch={false} />
 
       <div className="container mx-auto max-w-4xl px-4 py-8">
+        <Link to="/account" className="mb-4 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
+          <ArrowLeft className="h-4 w-4" /> Бүртгэл рүү буцах
+        </Link>
         <h1 className="text-2xl font-bold sm:text-3xl">Миний захиалгууд</h1>
 
         <div className="mt-4 flex flex-wrap gap-2">
