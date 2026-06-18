@@ -235,6 +235,19 @@ function CheckoutPage() {
       }
       cart.clear(merchantSlug);
       toast.success("Захиалга үүслээ");
+
+      // If user is logged in and profile is empty / different, ask to save
+      const hasProfileData = !!(profile?.full_name || profile?.phone || profile?.shipping_address);
+      const profileMatches =
+        profile &&
+        (profile.full_name ?? "") === parsed.data.customerName &&
+        (profile.phone ?? "") === parsed.data.phone &&
+        (profile.shipping_address ?? "") === parsed.data.shippingAddress;
+      if (user && !hasProfileData && !profileMatches) {
+        setPendingOrderId(r.order.id);
+        setSavePromptOpen(true);
+        return;
+      }
       navigate({ to: "/store/$merchantSlug/order/$orderId", params: { merchantSlug, orderId: r.order.id } });
     } catch (e: any) {
       toast.error(e?.message ?? "Захиалга үүсгэхэд алдаа");
