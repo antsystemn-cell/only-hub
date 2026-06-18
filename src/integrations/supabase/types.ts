@@ -1357,6 +1357,36 @@ export type Database = {
           },
         ]
       }
+      profiles: {
+        Row: {
+          branch: string | null
+          created_at: string
+          full_name: string | null
+          id: string
+          phone: string | null
+          shipping_address: string | null
+          updated_at: string
+        }
+        Insert: {
+          branch?: string | null
+          created_at?: string
+          full_name?: string | null
+          id: string
+          phone?: string | null
+          shipping_address?: string | null
+          updated_at?: string
+        }
+        Update: {
+          branch?: string | null
+          created_at?: string
+          full_name?: string | null
+          id?: string
+          phone?: string | null
+          shipping_address?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       promo_banners: {
         Row: {
           banner_image: string | null

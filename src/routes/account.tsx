@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { LayoutDashboard, LogOut, ShieldCheck, Package } from "lucide-react";
 import { SiteHeader } from "@/components/site/SiteHeader";
 import { SiteFooter } from "@/components/site/SiteFooter";
+import { ProfileForm } from "@/components/account/ProfileForm";
 
 export const Route = createFileRoute("/account")({
   head: () => ({ meta: [{ title: "Миний бүртгэл — Only" }] }),
@@ -38,6 +39,16 @@ function AccountPage() {
               <p className="truncate font-semibold">{user.email}</p>
               <p className="text-xs text-muted-foreground">Хэрэглэгчийн ID: {user.id.slice(0, 8)}…</p>
             </div>
+          </div>
+        </Card>
+
+        <Card className="mt-4 rounded-2xl p-6">
+          <h2 className="font-semibold">Хүргэлтийн мэдээлэл</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Нэр, утасны дугаар болон хүргэлтийн хаягаа хадгалснаар захиалга өгөх үед мэдээлэл автоматаар бөглөгдөнө.
+          </p>
+          <div className="mt-4">
+            <ProfileForm userId={user.id} />
           </div>
         </Card>
 

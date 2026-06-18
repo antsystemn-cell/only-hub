@@ -23,6 +23,18 @@ import { StickyCheckoutBar } from "@/components/cart/StickyCheckoutBar";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import { SiteHeader } from "@/components/site/SiteHeader";
 import { SiteFooter } from "@/components/site/SiteFooter";
+import { useAuth } from "@/hooks/use-auth";
+import { useProfile, saveProfile } from "@/components/account/ProfileForm";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export const Route = createFileRoute("/store/$merchantSlug/checkout")({
   component: CheckoutPage,
@@ -52,6 +64,11 @@ function CheckoutPage() {
     queryFn: async () =>
       (await supabase.from("merchants").select("id,name,slug").eq("slug", merchantSlug).maybeSingle()).data,
   });
+  const { user } = useAuth();
+  const { data: profile } = useProfile(user?.id);
+  const [profileLoaded, setProfileLoaded] = useState(false);
+  const [savePromptOpen, setSavePromptOpen] = useState(false);
+  const [pendingOrderId, setPendingOrderId] = useState<string | null>(null);
 
   const productIds = useMemo(() => Array.from(new Set(items.map((i) => i.productId))), [items]);
   const { data: products = [] } = useQuery({
@@ -97,6 +114,19 @@ function CheckoutPage() {
   useEffect(() => {
     if (!deliveryOptionId && deliveryOptions.length) setDeliveryOptionId(deliveryOptions[0].id);
   }, [deliveryOptions, deliveryOptionId]);
+
+  // Auto-fill from saved profile (once, when loaded)
+  useEffect(() => {
+    if (profileLoaded || !profile) return;
+    setForm((f) => ({
+      ...f,
+      customerName: f.customerName || profile.full_name || "",
+      phone: f.phone || profile.phone || "",
+      shippingAddress: f.shippingAddress || profile.shipping_address || "",
+      branch: f.branch || profile.branch || "",
+    }));
+    setProfileLoaded(true);
+  }, [profile, profileLoaded]);
 
   const subtotal = items.reduce((s, i) => {
     const p = productMap.get(i.productId);
@@ -205,6 +235,19 @@ function CheckoutPage() {
       }
       cart.clear(merchantSlug);
       toast.success("Захиалга үүслээ");
+
+      // If user is logged in and profile is empty / different, ask to save
+      const hasProfileData = !!(profile?.full_name || profile?.phone || profile?.shipping_address);
+      const profileMatches =
+        profile &&
+        (profile.full_name ?? "") === parsed.data.customerName &&
+        (profile.phone ?? "") === parsed.data.phone &&
+        (profile.shipping_address ?? "") === parsed.data.shippingAddress;
+      if (user && !hasProfileData && !profileMatches) {
+        setPendingOrderId(r.order.id);
+        setSavePromptOpen(true);
+        return;
+      }
       navigate({ to: "/store/$merchantSlug/order/$orderId", params: { merchantSlug, orderId: r.order.id } });
     } catch (e: any) {
       toast.error(e?.message ?? "Захиалга үүсгэхэд алдаа");
@@ -387,6 +430,64 @@ function CheckoutPage() {
       />
       <div className="h-20 lg:hidden" />
       <SiteFooter />
+
+      <AlertDialog
+        open={savePromptOpen}
+        onOpenChange={(open) => {
+          if (!open && pendingOrderId) {
+            // Closing without choosing — just continue to order
+            const id = pendingOrderId;
+            setPendingOrderId(null);
+            setSavePromptOpen(false);
+            navigate({ to: "/store/$merchantSlug/order/$orderId", params: { merchantSlug, orderId: id } });
+          } else {
+            setSavePromptOpen(open);
+          }
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Мэдээллээ хадгалах уу?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Та эдгээр мэдээллээ өөрийн бүртгэлдээ хадгалах уу? Хадгалснаар та дараагийн захиалгууддаа дахин бөглөх шаардлагагүй болно.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              onClick={() => {
+                const id = pendingOrderId;
+                setPendingOrderId(null);
+                setSavePromptOpen(false);
+                if (id) navigate({ to: "/store/$merchantSlug/order/$orderId", params: { merchantSlug, orderId: id } });
+              }}
+            >
+              Үгүй
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={async () => {
+                if (!user) return;
+                try {
+                  await saveProfile(user.id, {
+                    full_name: form.customerName,
+                    phone: form.phone,
+                    shipping_address: form.shippingAddress,
+                    branch: form.branch || null,
+                  });
+                  toast.success("Мэдээлэл бүртгэлд хадгалагдлаа");
+                } catch (e: any) {
+                  toast.error(e?.message ?? "Хадгалахад алдаа");
+                }
+                const id = pendingOrderId;
+                setPendingOrderId(null);
+                setSavePromptOpen(false);
+                if (id) navigate({ to: "/store/$merchantSlug/order/$orderId", params: { merchantSlug, orderId: id } });
+              }}
+            >
+              Тийм, хадгалах
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
