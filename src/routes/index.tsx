@@ -443,6 +443,14 @@ function Index() {
   const [searchQ, setSearchQ] = useState("");
   const sentinelRef = useRef<HTMLDivElement>(null);
 
+  const brandingFn = useServerFn(getPublicBrandingFn);
+  const { data: branding } = useQuery({
+    queryKey: ["public-branding"],
+    queryFn: () => brandingFn({ data: undefined as any }),
+    staleTime: 5 * 60 * 1000,
+  });
+  const platformLogo = branding?.logoUrl || null;
+
   const { data: merchants } = useQuery({
     queryKey: ["home-merchants-all"],
     queryFn: async () => {
