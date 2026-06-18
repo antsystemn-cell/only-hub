@@ -27,14 +27,25 @@ type Props = {
 export function SiteHeader({ showSearch = true, rightOfLogo, cartHref = "/stores", trailing }: Props) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [q, setQ] = useState("");
+  const brandingFn = useServerFn(getPublicBrandingFn);
+  const { data: branding } = useQuery({
+    queryKey: ["public-branding"],
+    queryFn: () => brandingFn({ data: undefined as any }),
+    staleTime: 5 * 60 * 1000,
+  });
+  const platformLogo = branding?.logoUrl || null;
 
   return (
     <header className="sticky top-0 z-30 border-b border-border bg-background/95 backdrop-blur">
       <div className="container mx-auto flex h-14 items-center gap-2 px-3 sm:h-16 sm:gap-4 sm:px-4">
         <Link to="/" className="flex shrink-0 items-center gap-1.5">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-orange-500 text-white">
-            <ShoppingBag className="h-4 w-4" />
-          </div>
+          {platformLogo ? (
+            <img src={platformLogo} alt="Logo" className="h-8 w-8 rounded-lg object-contain" />
+          ) : (
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-orange-500 text-white">
+              <ShoppingBag className="h-4 w-4" />
+            </div>
+          )}
           <div className="hidden flex-col leading-none sm:flex">
             <span className="text-base font-extrabold tracking-tight">ONLY</span>
             <span className="text-[9px] font-semibold tracking-wider text-orange-600">MERCHANTS HUB</span>
