@@ -333,6 +333,13 @@ function ProductRail({
   merchantById: Record<string, { slug: string; name: string; logo_url?: string | null }>;
   onQuickView: (p: any) => void;
 }) {
+  const scrollerRef = useRef<HTMLDivElement>(null);
+  const scrollBy = (dir: 1 | -1) => {
+    const el = scrollerRef.current;
+    if (!el) return;
+    const amt = Math.max(280, el.clientWidth * 0.8);
+    el.scrollBy({ left: dir * amt, behavior: "smooth" });
+  };
   if (items.length === 0) return null;
   return (
     <section className="container mx-auto px-3 pt-6 sm:px-4 sm:pt-8">
@@ -341,11 +348,34 @@ function ProductRail({
           <span>{icon}</span>
           <span>{title}</span>
         </h2>
-        <Link to="/stores" className="shrink-0 text-xs font-medium text-orange-600 hover:underline sm:text-sm">
-          Бүгдийг харах →
-        </Link>
+        <div className="flex items-center gap-2">
+          <div className="hidden items-center gap-1 md:flex">
+            <button
+              type="button"
+              aria-label="Зүүн тийш"
+              onClick={() => scrollBy(-1)}
+              className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-border bg-background text-foreground transition hover:border-orange-300 hover:text-orange-600"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </button>
+            <button
+              type="button"
+              aria-label="Баруун тийш"
+              onClick={() => scrollBy(1)}
+              className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-border bg-background text-foreground transition hover:border-orange-300 hover:text-orange-600"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </button>
+          </div>
+          <Link to="/stores" className="shrink-0 text-xs font-medium text-orange-600 hover:underline sm:text-sm">
+            Бүгдийг харах →
+          </Link>
+        </div>
       </div>
-      <div className="-mx-3 overflow-x-auto px-3 pb-2 scrollbar-none sm:mx-0 sm:px-0">
+      <div
+        ref={scrollerRef}
+        className="-mx-3 overflow-x-auto scroll-smooth px-3 pb-2 scrollbar-none sm:mx-0 sm:px-0"
+      >
         <div className="grid auto-cols-[44%] grid-flow-col gap-2.5 sm:auto-cols-[28%] sm:gap-3 md:auto-cols-[19%] lg:auto-cols-[15.5%]">
           {items.slice(0, 12).map((p) => (
             <ProductCard
@@ -497,9 +527,9 @@ function Index() {
     },
   });
 
-  // Paged "new products" list (infinite)
+  // All products list (infinite) — shuffled randomly per page
   const productsQ = useInfiniteQuery({
-    queryKey: ["home-products-paged"],
+    queryKey: ["home-products-all-random"],
     initialPageParam: 0,
     queryFn: async ({ pageParam }) => {
       const from = (pageParam as number) * PAGE_SIZE;
@@ -511,7 +541,8 @@ function Index() {
         .order("created_at", { ascending: false })
         .order("id", { ascending: false })
         .range(from, to);
-      return { items: data ?? [], count: count ?? 0, page: pageParam as number };
+      const shuffled = [...(data ?? [])].sort(() => Math.random() - 0.5);
+      return { items: shuffled, count: count ?? 0, page: pageParam as number };
     },
     getNextPageParam: (last) => {
       const loaded = (last.page + 1) * PAGE_SIZE;
@@ -653,7 +684,7 @@ function Index() {
         <div className="mb-4 flex items-end justify-between gap-3">
           <div>
             <h2 className="flex items-center gap-2 text-base font-bold sm:text-lg md:text-xl">
-              <span>🆕</span> Шинээр нэмэгдсэн
+              <Grid3x3 className="h-5 w-5 text-orange-600" /> Бүх бараа
             </h2>
             {total > 0 && <p className="mt-0.5 text-[11px] text-muted-foreground sm:text-xs">{items.length} / {total}</p>}
           </div>
