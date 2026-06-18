@@ -146,12 +146,16 @@ function AdminSettingsPage() {
   const [flat, setFlat] = useState<string>("5000");
   const [freeOver, setFreeOver] = useState<string>("0");
   const [commission, setCommission] = useState<string>("3");
+  const [logoUrl, setLogoUrl] = useState<string>("");
+  const [uploadingLogo, setUploadingLogo] = useState(false);
 
   useEffect(() => {
     const rules = settings.delivery_fee_rules ?? {};
     setFlat(String(rules.flat ?? settings.default_delivery_fee ?? 5000));
     setFreeOver(String(rules.free_over ?? 0));
     setCommission(String(settings.default_commission_rate ?? 3));
+    const lg = settings.platform_logo_url;
+    setLogoUrl(typeof lg === "string" ? lg : (lg?.url ?? ""));
   }, [data]);
 
   const save = useMutation({
@@ -168,10 +172,34 @@ function AdminSettingsPage() {
       await saveFn({
         data: { key: "default_commission_rate", value: Number(commission) || 0 },
       });
+      await saveFn({
+        data: { key: "platform_logo_url", value: logoUrl.trim() || null },
+      });
     },
     onSuccess: () => { toast.success("Хадгалагдлаа"); refetch(); },
     onError: (e: any) => toast.error(e?.message ?? "Алдаа"),
   });
+
+  const handleLogoUpload = async (file: File) => {
+    setUploadingLogo(true);
+    try {
+      const ext = file.name.split(".").pop() || "png";
+      const path = `platform/logo-${Date.now()}.${ext}`;
+      const { error: upErr } = await supabase.storage
+        .from("brand-logos")
+        .upload(path, file, { upsert: true, contentType: file.type });
+      if (upErr) throw upErr;
+      const { data: pub } = supabase.storage.from("brand-logos").getPublicUrl(path);
+      setLogoUrl(pub.publicUrl);
+      await saveFn({ data: { key: "platform_logo_url", value: pub.publicUrl } });
+      toast.success("Лого байршуулагдлаа");
+      refetch();
+    } catch (e: any) {
+      toast.error(e?.message ?? "Алдаа");
+    } finally {
+      setUploadingLogo(false);
+    }
+  };
 
   return (
     <div className="container mx-auto max-w-3xl px-4 py-8 md:px-8">
