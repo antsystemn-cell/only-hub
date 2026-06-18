@@ -43,6 +43,16 @@ function AccountPage() {
         </Card>
 
         <Card className="mt-4 rounded-2xl p-6">
+          <h2 className="font-semibold">Хүргэлтийн мэдээлэл</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Нэр, утасны дугаар болон хүргэлтийн хаягаа хадгалснаар захиалга өгөх үед мэдээлэл автоматаар бөглөгдөнө.
+          </p>
+          <div className="mt-4">
+            <ProfileForm userId={user.id} />
+          </div>
+        </Card>
+
+        <Card className="mt-4 rounded-2xl p-6">
           <h2 className="font-semibold">Миний захиалгууд</h2>
           <p className="mt-1 text-sm text-muted-foreground">Захиалгуудаа болон хүргэлтийн төлвөө хянах</p>
           <Link to="/account/orders">
