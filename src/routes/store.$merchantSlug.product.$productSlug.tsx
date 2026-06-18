@@ -310,7 +310,7 @@ function ProductDetailPage() {
             )}
 
             <div className="mt-4 flex flex-wrap items-baseline gap-x-3 gap-y-1">
-              <span className="text-2xl font-bold text-primary sm:text-3xl">{fmtMnt(Number(product.price))}</span>
+              <span className="text-2xl font-bold text-orange-600 sm:text-3xl">{fmtMnt(Number(product.price))}</span>
               {hasDiscount && (
                 <>
                   <span className="text-base text-muted-foreground line-through sm:text-lg">{fmtMnt(Number(product.original_price))}</span>
