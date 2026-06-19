@@ -17,6 +17,7 @@ import { PaymentIntentPanel } from "@/components/checkout/PaymentIntentPanel";
 import { AlertTriangle, CheckCircle2, Clock, Loader2, RefreshCw, Banknote } from "lucide-react";
 import { SiteHeader } from "@/components/site/SiteHeader";
 import { SiteFooter } from "@/components/site/SiteFooter";
+import { ForeignOrderTrackingCard } from "@/components/product/ForeignOrderTrackingCard";
 
 export const Route = createFileRoute("/store/$merchantSlug/order/$orderId")({
   component: OrderConfirmationPage,

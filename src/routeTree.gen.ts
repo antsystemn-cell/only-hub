@@ -33,6 +33,7 @@ import { Route as AdminOrdersRouteImport } from './routes/admin.orders'
 import { Route as AdminNotificationsRouteImport } from './routes/admin.notifications'
 import { Route as AdminMessageTestRouteImport } from './routes/admin.message-test'
 import { Route as AdminMerchantsRouteImport } from './routes/admin.merchants'
+import { Route as AdminForeignOrdersRouteImport } from './routes/admin.foreign-orders'
 import { Route as AdminDeliveryRouteImport } from './routes/admin.delivery'
 import { Route as AdminBannersRouteImport } from './routes/admin.banners'
 import { Route as AdminBackupOldDeliveryRouteImport } from './routes/admin.backup-old-delivery'
@@ -184,6 +185,11 @@ const AdminMessageTestRoute = AdminMessageTestRouteImport.update({
 const AdminMerchantsRoute = AdminMerchantsRouteImport.update({
   id: '/merchants',
   path: '/merchants',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminForeignOrdersRoute = AdminForeignOrdersRouteImport.update({
+  id: '/foreign-orders',
+  path: '/foreign-orders',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminDeliveryRoute = AdminDeliveryRouteImport.update({
@@ -377,6 +383,7 @@ export interface FileRoutesByFullPath {
   '/admin/backup-old-delivery': typeof AdminBackupOldDeliveryRoute
   '/admin/banners': typeof AdminBannersRoute
   '/admin/delivery': typeof AdminDeliveryRoute
+  '/admin/foreign-orders': typeof AdminForeignOrdersRoute
   '/admin/merchants': typeof AdminMerchantsRoute
   '/admin/message-test': typeof AdminMessageTestRoute
   '/admin/notifications': typeof AdminNotificationsRoute
@@ -434,6 +441,7 @@ export interface FileRoutesByTo {
   '/admin/backup-old-delivery': typeof AdminBackupOldDeliveryRoute
   '/admin/banners': typeof AdminBannersRoute
   '/admin/delivery': typeof AdminDeliveryRoute
+  '/admin/foreign-orders': typeof AdminForeignOrdersRoute
   '/admin/merchants': typeof AdminMerchantsRoute
   '/admin/message-test': typeof AdminMessageTestRoute
   '/admin/notifications': typeof AdminNotificationsRoute
@@ -492,6 +500,7 @@ export interface FileRoutesById {
   '/admin/backup-old-delivery': typeof AdminBackupOldDeliveryRoute
   '/admin/banners': typeof AdminBannersRoute
   '/admin/delivery': typeof AdminDeliveryRoute
+  '/admin/foreign-orders': typeof AdminForeignOrdersRoute
   '/admin/merchants': typeof AdminMerchantsRoute
   '/admin/message-test': typeof AdminMessageTestRoute
   '/admin/notifications': typeof AdminNotificationsRoute
@@ -552,6 +561,7 @@ export interface FileRouteTypes {
     | '/admin/backup-old-delivery'
     | '/admin/banners'
     | '/admin/delivery'
+    | '/admin/foreign-orders'
     | '/admin/merchants'
     | '/admin/message-test'
     | '/admin/notifications'
@@ -609,6 +619,7 @@ export interface FileRouteTypes {
     | '/admin/backup-old-delivery'
     | '/admin/banners'
     | '/admin/delivery'
+    | '/admin/foreign-orders'
     | '/admin/merchants'
     | '/admin/message-test'
     | '/admin/notifications'
@@ -666,6 +677,7 @@ export interface FileRouteTypes {
     | '/admin/backup-old-delivery'
     | '/admin/banners'
     | '/admin/delivery'
+    | '/admin/foreign-orders'
     | '/admin/merchants'
     | '/admin/message-test'
     | '/admin/notifications'
@@ -906,6 +918,13 @@ declare module '@tanstack/react-router' {
       path: '/merchants'
       fullPath: '/admin/merchants'
       preLoaderRoute: typeof AdminMerchantsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/foreign-orders': {
+      id: '/admin/foreign-orders'
+      path: '/foreign-orders'
+      fullPath: '/admin/foreign-orders'
+      preLoaderRoute: typeof AdminForeignOrdersRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/delivery': {
@@ -1151,6 +1170,7 @@ interface AdminRouteChildren {
   AdminBackupOldDeliveryRoute: typeof AdminBackupOldDeliveryRoute
   AdminBannersRoute: typeof AdminBannersRoute
   AdminDeliveryRoute: typeof AdminDeliveryRoute
+  AdminForeignOrdersRoute: typeof AdminForeignOrdersRoute
   AdminMerchantsRoute: typeof AdminMerchantsRoute
   AdminMessageTestRoute: typeof AdminMessageTestRoute
   AdminNotificationsRoute: typeof AdminNotificationsRoute
@@ -1170,6 +1190,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminBackupOldDeliveryRoute: AdminBackupOldDeliveryRoute,
   AdminBannersRoute: AdminBannersRoute,
   AdminDeliveryRoute: AdminDeliveryRoute,
+  AdminForeignOrdersRoute: AdminForeignOrdersRoute,
   AdminMerchantsRoute: AdminMerchantsRoute,
   AdminMessageTestRoute: AdminMessageTestRoute,
   AdminNotificationsRoute: AdminNotificationsRoute,
