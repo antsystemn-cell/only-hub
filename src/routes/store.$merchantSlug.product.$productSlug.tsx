@@ -146,6 +146,21 @@ function ProductDetailPage() {
     } catch { /* cancelled */ }
   };
 
+  const wished = useIsWishlisted(product?.id);
+  const toggleWish = () => {
+    if (!product) return;
+    const added = wishlist.toggle({
+      productId: product.id,
+      name: product.name,
+      price: Number(product.price),
+      image: product.thumbnail_url || product.image_url,
+      merchantSlug,
+      productSlug: product.slug ?? product.id,
+    });
+    toast.success(added ? "Хүссэн жагсаалтад нэмэгдлээ" : "Хүссэн жагсаалтаас хасагдлаа");
+  };
+
+
   const cartCount = cartItems.reduce((s, i) => s + i.quantity, 0);
   const hasDiscount = product.original_price != null && Number(product.original_price) > Number(product.price);
   const discountPct = hasDiscount
