@@ -54,7 +54,7 @@ export async function confirmOrderPayment(opts: ConfirmOptions): Promise<Confirm
   // 1. Load order
   const { data: order, error: loadErr } = await supabaseAdmin
     .from("orders")
-    .select("id,merchant_id,payment_status,paid_at,delivery_status")
+    .select("id,merchant_id,payment_status,paid_at,delivery_status,items,has_foreign_order_items,has_ready_stock_items")
     .eq("id", orderId)
     .maybeSingle();
   if (loadErr || !order) {
