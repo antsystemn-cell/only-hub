@@ -53,25 +53,16 @@ function WishlistPage() {
           <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
             {items.map((it) => (
               <Card key={it.productId} className="group overflow-hidden rounded-2xl border-border/60 bg-white">
-                <Link
-                  to="/store/$merchantSlug/product/$productSlug"
-                  params={{ merchantSlug: it.merchantSlug ?? "", productSlug: it.productSlug ?? it.productId }}
-                  disabled={!it.merchantSlug}
-                >
-                  <div className="relative aspect-square bg-muted">
-                    {it.image ? (
-                      <img src={it.image} alt={it.name} className="h-full w-full object-cover transition group-hover:scale-105" loading="lazy" />
-                    ) : (
-                      <div className="flex h-full w-full items-center justify-center text-muted-foreground">
-                        <ShoppingBag className="h-8 w-8" />
-                      </div>
-                    )}
-                  </div>
-                  <div className="p-2.5">
-                    <h3 className="line-clamp-2 min-h-[2.25rem] text-xs font-medium leading-tight group-hover:text-orange-600 sm:text-[13px]">{it.name}</h3>
-                    <div className="mt-1 text-sm font-bold text-orange-600">{fmtMnt(it.price)}</div>
-                  </div>
-                </Link>
+                {it.merchantSlug ? (
+                  <Link
+                    to="/store/$merchantSlug/product/$productSlug"
+                    params={{ merchantSlug: it.merchantSlug, productSlug: it.productSlug ?? it.productId }}
+                  >
+                    <ProductBody item={it} />
+                  </Link>
+                ) : (
+                  <ProductBody item={it} />
+                )}
                 <div className="border-t border-border/40 px-2.5 py-1.5">
                   <button
                     onClick={() => wishlist.remove(it.productId)}
