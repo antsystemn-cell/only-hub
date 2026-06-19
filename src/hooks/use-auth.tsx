@@ -32,9 +32,9 @@ const AuthContext = createContext<AuthState | undefined>(undefined);
 
 const AUTH_TIMEOUT_MS = 8_000;
 
-function withTimeout<T>(promise: Promise<T>, label: string): Promise<T> {
+function withTimeout<T>(promise: PromiseLike<T>, label: string): Promise<T> {
   return Promise.race([
-    promise,
+    Promise.resolve(promise),
     new Promise<T>((_, reject) => {
       window.setTimeout(() => reject(new Error(`${label} timeout`)), AUTH_TIMEOUT_MS);
     }),
