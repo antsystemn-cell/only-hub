@@ -2255,6 +2255,7 @@ export type Database = {
         | "UNAVAILABLE"
         | "UNKNOWN"
         | "NEEDS_REVIEW"
+        | "LOW_STOCK"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -2423,6 +2424,7 @@ export const Constants = {
         "UNAVAILABLE",
         "UNKNOWN",
         "NEEDS_REVIEW",
+        "LOW_STOCK",
       ],
     },
   },
