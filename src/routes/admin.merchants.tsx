@@ -18,7 +18,7 @@ import {
 import { fmtMnt } from "@/lib/format";
 import { toast } from "sonner";
 import { Check, X, Search, UserPlus, Pencil, ExternalLink, Globe2 } from "lucide-react";
-import { createMerchantAdminUser } from "@/lib/admin-merchant.functions";
+import { createMerchantAdminUser, assignMerchantAdminByUserId, listAuthUsersLite } from "@/lib/admin-merchant.functions";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
 import { FOREIGN_SOURCES } from "@/lib/foreign-orders/sources";
@@ -36,10 +36,21 @@ function AdminMerchantsPage() {
   const [rejectReason, setRejectReason] = useState("");
 
   const [assignModal, setAssignModal] = useState<{ merchantId: string; merchantName: string } | null>(null);
+  const [assignMode, setAssignMode] = useState<"create" | "existing">("create");
   const [newAdminEmail, setNewAdminEmail] = useState("");
   const [newAdminPassword, setNewAdminPassword] = useState("");
+  const [existingUserId, setExistingUserId] = useState<string | null>(null);
+  const [existingSearch, setExistingSearch] = useState("");
 
   const createAdminFn = useServerFn(createMerchantAdminUser);
+  const assignExistingFn = useServerFn(assignMerchantAdminByUserId);
+  const listUsersFn = useServerFn(listAuthUsersLite);
+
+  const { data: authUsers = [] } = useQuery({
+    queryKey: ["admin-auth-users-lite"],
+    enabled: isPlatformAdmin && !!assignModal && assignMode === "existing",
+    queryFn: async () => (await listUsersFn({} as any)).users,
+  });
 
   const { data: merchants = [], isLoading } = useQuery({
     queryKey: ["admin-merchants-full"],
@@ -114,11 +125,16 @@ function AdminMerchantsPage() {
   const assignMutation = useMutation({
     mutationFn: async () => {
       if (!assignModal) throw new Error("Modal not open");
-      return createAdminFn({ data: { merchantId: assignModal.merchantId, email: newAdminEmail, password: newAdminPassword } });
+      if (assignMode === "create") {
+        return createAdminFn({ data: { merchantId: assignModal.merchantId, email: newAdminEmail, password: newAdminPassword } });
+      }
+      if (!existingUserId) throw new Error("Хэрэглэгч сонгоно уу");
+      return assignExistingFn({ data: { merchantId: assignModal.merchantId, userId: existingUserId } });
     },
-    onSuccess: () => {
-      toast.success(`${newAdminEmail} → "${assignModal?.merchantName}" Admin болгогдлоо`);
-      setAssignModal(null); setNewAdminEmail(""); setNewAdminPassword("");
+    onSuccess: (res: any) => {
+      const who = assignMode === "create" ? newAdminEmail : (res?.email ?? "Хэрэглэгч");
+      toast.success(`${who} → "${assignModal?.merchantName}" Admin болгогдлоо`);
+      setAssignModal(null); setNewAdminEmail(""); setNewAdminPassword(""); setExistingUserId(null); setExistingSearch(""); setAssignMode("create");
     },
     onError: (e: any) => toast.error(e?.message ?? "Алдаа"),
   });
@@ -232,7 +248,7 @@ function AdminMerchantsPage() {
                     pending={updateMerchant.isPending}
                   />
 
-                  <Button size="sm" variant="outline" onClick={() => { setAssignModal({ merchantId: m.id, merchantName: m.name }); setNewAdminEmail(""); setNewAdminPassword(""); }}>
+                  <Button size="sm" variant="outline" onClick={() => { setAssignModal({ merchantId: m.id, merchantName: m.name }); setAssignMode("create"); setNewAdminEmail(""); setNewAdminPassword(""); setExistingUserId(null); setExistingSearch(""); }}>
                     <UserPlus className="mr-1 h-3.5 w-3.5" /> Admin томилох
                   </Button>
 
@@ -257,23 +273,71 @@ function AdminMerchantsPage() {
 
       {assignModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <Card className="w-full max-w-md rounded-2xl p-6">
+          <Card className="w-full max-w-lg rounded-2xl p-6">
             <h3 className="text-lg font-semibold">Admin хэрэглэгч томилох</h3>
-            <p className="mt-1 text-sm text-muted-foreground">"{assignModal.merchantName}" дэлгүүрт шинэ admin хэрэглэгч үүсгэж томилно.</p>
-            <div className="mt-4 space-y-3">
-              <div>
-                <label className="text-sm font-medium">Имэйл *</label>
-                <Input type="email" value={newAdminEmail} onChange={(e) => setNewAdminEmail(e.target.value)} placeholder="admin@example.com" className="mt-1" />
+            <p className="mt-1 text-sm text-muted-foreground">"{assignModal.merchantName}" дэлгүүрт admin хэрэглэгч томилно.</p>
+
+            <Tabs value={assignMode} onValueChange={(v: any) => setAssignMode(v)} className="mt-4">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="create">Шинээр үүсгэх</TabsTrigger>
+                <TabsTrigger value="existing">Одоогийн хэрэглэгчээс</TabsTrigger>
+              </TabsList>
+            </Tabs>
+
+            {assignMode === "create" ? (
+              <div className="mt-4 space-y-3">
+                <div>
+                  <label className="text-sm font-medium">Имэйл *</label>
+                  <Input type="email" value={newAdminEmail} onChange={(e) => setNewAdminEmail(e.target.value)} placeholder="admin@example.com" className="mt-1" />
+                </div>
+                <div>
+                  <label className="text-sm font-medium">Нууц үг * (хэрэглэгч дараа өөрчилнө)</label>
+                  <Input type="password" value={newAdminPassword} onChange={(e) => setNewAdminPassword(e.target.value)} placeholder="Хамгийн багадаа 6 тэмдэгт" className="mt-1" />
+                </div>
               </div>
-              <div>
-                <label className="text-sm font-medium">Нууц үг * (хэрэглэгч дараа өөрчилнө)</label>
-                <Input type="password" value={newAdminPassword} onChange={(e) => setNewAdminPassword(e.target.value)} placeholder="Хамгийн багадаа 6 тэмдэгт" className="mt-1" />
+            ) : (
+              <div className="mt-4 space-y-3">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input value={existingSearch} onChange={(e) => setExistingSearch(e.target.value)} placeholder="Имэйлээр хайх..." className="pl-9" />
+                </div>
+                <div className="max-h-64 overflow-y-auto rounded-lg border">
+                  {(authUsers as any[])
+                    .filter((u) => !existingSearch || (u.email ?? "").toLowerCase().includes(existingSearch.toLowerCase()))
+                    .slice(0, 100)
+                    .map((u) => (
+                      <button
+                        key={u.id}
+                        type="button"
+                        onClick={() => setExistingUserId(u.id)}
+                        className={`flex w-full items-center justify-between border-b px-3 py-2 text-left text-sm last:border-b-0 hover:bg-muted ${existingUserId === u.id ? "bg-primary/10" : ""}`}
+                      >
+                        <div className="min-w-0">
+                          <div className="truncate font-medium">{u.email ?? "(имэйлгүй)"}</div>
+                          <div className="text-[11px] text-muted-foreground">{new Date(u.created_at).toLocaleDateString()}</div>
+                        </div>
+                        {existingUserId === u.id && <Check className="h-4 w-4 text-primary" />}
+                      </button>
+                    ))}
+                  {(authUsers as any[]).length === 0 && (
+                    <div className="px-3 py-6 text-center text-sm text-muted-foreground">Уншиж байна...</div>
+                  )}
+                </div>
               </div>
-            </div>
+            )}
+
             <div className="mt-5 flex justify-end gap-2">
               <Button variant="outline" onClick={() => setAssignModal(null)}>Болих</Button>
-              <Button onClick={() => assignMutation.mutate()} disabled={assignMutation.isPending || !newAdminEmail || newAdminPassword.length < 6}>
-                {assignMutation.isPending ? "Үүсгэж байна..." : "Томилох"}
+              <Button
+                onClick={() => assignMutation.mutate()}
+                disabled={
+                  assignMutation.isPending ||
+                  (assignMode === "create"
+                    ? !newAdminEmail || newAdminPassword.length < 6
+                    : !existingUserId)
+                }
+              >
+                {assignMutation.isPending ? "Хадгалж байна..." : "Томилох"}
               </Button>
             </div>
           </Card>
