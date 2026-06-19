@@ -537,7 +537,14 @@ function VariantsEditor({
               ? calculateVariantPricing({ sourcePrice: v.sourcePrice }, settings)
               : null;
           return (
-            <div key={i} className="grid grid-cols-12 items-center gap-2 rounded-xl border p-2.5">
+            <div
+              key={i}
+              className={`grid grid-cols-12 items-center gap-2 rounded-xl border p-2.5 ${
+                v.availabilityStatus === "UNAVAILABLE" ? "bg-red-50/50 border-red-200" :
+                v.availabilityStatus === "LOW_STOCK" ? "bg-amber-50/50 border-amber-200" :
+                v.availabilityStatus === "UNKNOWN" ? "bg-muted/40" : ""
+              }`}
+            >
               <Input
                 className="col-span-3"
                 placeholder="Хэмжээ (e.g. 250)"
@@ -550,7 +557,7 @@ function VariantsEditor({
                 value={v.colorLabel ?? ""}
                 onChange={(e) => update(i, { colorLabel: e.target.value || null })}
               />
-              <div className="col-span-3 flex items-center gap-1">
+              <div className="col-span-2 flex items-center gap-1">
                 <Input
                   type="number"
                   placeholder={`Үнэ ${currency}`}
@@ -559,7 +566,27 @@ function VariantsEditor({
                 />
                 <span className="text-xs text-muted-foreground">{currency}</span>
               </div>
-              <div className="col-span-3 text-right text-sm font-semibold">
+              <div className="col-span-2 flex flex-col items-start gap-1">
+                <AvailabilityBadge status={v.availabilityStatus} />
+                <label className="flex items-center gap-1 text-[11px] text-muted-foreground">
+                  <input
+                    type="checkbox"
+                    checked={v.isPurchasable}
+                    onChange={(e) => {
+                      const next = e.target.checked;
+                      if (next && v.availabilityStatus === "UNAVAILABLE") {
+                        const ok = window.confirm(
+                          "Энэ сонголт Poizon Korea дээр боломжгүй гэж уншигдсан. Гараар идэвхжүүлэх үү?",
+                        );
+                        if (!ok) return;
+                      }
+                      update(i, { isPurchasable: next });
+                    }}
+                  />
+                  Зарагдана
+                </label>
+              </div>
+              <div className="col-span-2 text-right text-sm font-semibold">
                 {pricing ? (
                   <span className="text-orange-600">{fmtMnt(pricing.roundedCustomerPriceMnt)}</span>
                 ) : (
@@ -580,6 +607,18 @@ function VariantsEditor({
       )}
     </div>
   );
+}
+
+function AvailabilityBadge({ status }: { status: AvailabilityStatus }) {
+  const map: Record<AvailabilityStatus, { label: string; cls: string }> = {
+    AVAILABLE: { label: "Боломжтой", cls: "bg-emerald-100 text-emerald-700" },
+    LOW_STOCK: { label: "Үлдэгдэл бага", cls: "bg-amber-100 text-amber-800" },
+    UNAVAILABLE: { label: "Түр дууссан", cls: "bg-red-100 text-red-700" },
+    UNKNOWN: { label: "Шалгах", cls: "bg-slate-100 text-slate-700" },
+    NEEDS_REVIEW: { label: "Хяналт", cls: "bg-orange-100 text-orange-700" },
+  };
+  const m = map[status] ?? map.UNKNOWN;
+  return <span className={`rounded px-1.5 py-0.5 text-[10px] font-semibold ${m.cls}`}>{m.label}</span>;
 }
 
 function SettingsQuickForm({
