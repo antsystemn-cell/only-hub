@@ -277,6 +277,16 @@ function CartPage() {
         ) : (
           <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
             <div className="space-y-3">
+              {foreignIssues.length > 0 && (
+                <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+                  <div className="mb-1 font-semibold">Анхааруулга</div>
+                  <ul className="list-disc space-y-1 pl-5">
+                    {foreignIssues.map((it, idx) => (
+                      <li key={idx}>{it.reason}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
               {items.map((item) => {
                 const k = cart.keyOf(item);
                 const product = productMap.get(item.productId);
