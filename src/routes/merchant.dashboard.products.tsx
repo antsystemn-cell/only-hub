@@ -66,6 +66,7 @@ function ProductsPage() {
   const qc = useQueryClient();
   const [showForm, setShowForm] = useState(false);
   const [showTypePicker, setShowTypePicker] = useState(false);
+  const [foreignImporterSource, setForeignImporterSource] = useState<ForeignSource | null>(null);
   const [editing, setEditing] = useState<Product>(blank);
   const [editId, setEditId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
