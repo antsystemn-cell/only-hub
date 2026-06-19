@@ -297,6 +297,18 @@ function AdminSettingsPage() {
             />
           </Card>
 
+          <Card className="rounded-2xl p-6">
+            <h2 className="text-lg font-semibold">Глобал хүргэлтийн нөхцөл</h2>
+            <p className="mt-1 mb-3 text-xs text-muted-foreground">Дэлгүүр өөрийн нөхцөл бичээгүй үед барааны хуудсанд харагдана.</p>
+            <TiptapEditor value={policyShip} onChange={setPolicyShip} minHeight={200} placeholder="Хүргэлтийн ерөнхий нөхцөл..." />
+          </Card>
+
+          <Card className="rounded-2xl p-6">
+            <h2 className="text-lg font-semibold">Глобал буцаалтын нөхцөл</h2>
+            <p className="mt-1 mb-3 text-xs text-muted-foreground">Дэлгүүр өөрийн нөхцөл бичээгүй үед барааны хуудсанд харагдана.</p>
+            <TiptapEditor value={policyReturn} onChange={setPolicyReturn} minHeight={200} placeholder="Буцаалтын ерөнхий нөхцөл..." />
+          </Card>
+
           <div className="flex justify-end">
             <Button onClick={() => save.mutate()} disabled={save.isPending}>
               {save.isPending ? "Хадгалж байна..." : "Хадгалах"}
