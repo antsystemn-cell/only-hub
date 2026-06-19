@@ -404,16 +404,15 @@ function ProductDetailPage() {
               onTouchStart={onMainTouchStart}
               onTouchEnd={onMainTouchEnd}
             >
-              <div className="relative aspect-square bg-muted">
+              <div className="relative flex min-h-[260px] max-h-[60vh] items-center justify-center bg-muted sm:max-h-[580px]">
                 {currentMedia?.url ? (
                   currentMedia.type === "video" ? (
-                    <video src={currentMedia.url} controls className="h-full w-full object-cover" />
+                    <video src={currentMedia.url} controls className="h-auto w-full max-h-full object-contain" />
                   ) : (
-                    <img src={currentMedia.url} alt={product.name}
-                      className="h-full w-full object-cover" />
+                    <img src={currentMedia.url} alt={product.name} className="h-auto w-full max-h-full object-contain" />
                   )
                 ) : (
-                  <div className="flex h-full items-center justify-center text-muted-foreground">Зураг алга</div>
+                  <div className="flex h-full min-h-[260px] items-center justify-center text-muted-foreground">Зураг алга</div>
                 )}
 
                 {/* Badges top-left */}
