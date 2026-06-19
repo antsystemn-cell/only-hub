@@ -101,6 +101,7 @@ function ProductDetailPage() {
   const needsColor = colors.length > 0 && !color;
   const needsSize = sizes.length > 0 && !size;
   const outOfStock = hasTrackedStock && stockForVariant <= 0;
+  const wished = useIsWishlisted(product?.id);
 
   if (isLoading || !merchant) {
     return (
