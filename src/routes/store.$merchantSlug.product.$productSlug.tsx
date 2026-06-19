@@ -68,18 +68,29 @@ function ProductDetailPage() {
     staleTime: 5 * 60 * 1000,
   });
 
-  // Enabled payment providers (merchant + platform-managed)
+  // Enabled payment providers (merchant's verified providers; platform-managed as fallback per provider_type)
   const { data: payments = [] } = useQuery({
     queryKey: ["pdp-payments", merchant?.id],
     enabled: !!merchant?.id,
     queryFn: async () => {
       const { data } = await supabase
         .from("payment_providers")
-        .select("id,name,provider_type,icon,logo_url,is_active,is_platform_managed,merchant_id,position")
+        .select("id,name,provider_type,icon,logo_url,description,is_active,is_platform_managed,merchant_id,config_status,position")
         .eq("is_active", true)
+        .eq("config_status", "verified")
         .or(`merchant_id.eq.${merchant!.id},is_platform_managed.eq.true`)
         .order("position", { ascending: true });
-      return data ?? [];
+      // Dedupe by provider_type: prefer merchant's own row over the platform-managed fallback.
+      const byType = new Map<string, any>();
+      for (const row of data ?? []) {
+        const key = String(row.provider_type ?? "").toLowerCase();
+        const existing = byType.get(key);
+        if (!existing) { byType.set(key, row); continue; }
+        const rowIsMerchant = row.merchant_id === merchant!.id;
+        const existingIsMerchant = existing.merchant_id === merchant!.id;
+        if (rowIsMerchant && !existingIsMerchant) byType.set(key, row);
+      }
+      return Array.from(byType.values());
     },
   });
 
