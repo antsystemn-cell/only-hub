@@ -12,11 +12,12 @@ import { cart, useCart } from "@/lib/cart";
 import { wishlist, useIsWishlisted } from "@/lib/wishlist";
 import {
   Minus, Plus, ShoppingCart, ChevronRight, Check, ChevronLeft, Heart,
-  Share2, Truck, Shield, ShieldCheck, Store as StoreIcon, Play, Star,
-  RotateCcw, BadgeCheck, Zap,
+  Truck, Shield, ShieldCheck, Store as StoreIcon, Play, Star,
+  RotateCcw, BadgeCheck, Zap, CreditCard,
 } from "lucide-react";
 import { SiteHeader } from "@/components/site/SiteHeader";
 import { SiteFooter } from "@/components/site/SiteFooter";
+import { ShareMenu } from "@/components/product/ShareMenu";
 
 export const Route = createFileRoute("/store/$merchantSlug/product/$productSlug")({
   component: ProductDetailPage,
