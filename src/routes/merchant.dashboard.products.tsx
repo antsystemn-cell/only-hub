@@ -18,6 +18,7 @@ import { toast } from "sonner";
 import { Plus, Edit, Copy, Trash2, Search, ImageIcon, X, Upload } from "lucide-react";
 import { fmtMnt, slugify } from "@/lib/format";
 import { uploadOptimized } from "@/lib/image";
+import { AddProductTypeDialog, notifyImporterComingSoon } from "@/components/merchant/AddProductTypeDialog";
 
 export const Route = createFileRoute("/merchant/dashboard/products")({
   component: ProductsPage,
@@ -60,6 +61,7 @@ function ProductsPage() {
   const merchantId = primaryMerchantId!;
   const qc = useQueryClient();
   const [showForm, setShowForm] = useState(false);
+  const [showTypePicker, setShowTypePicker] = useState(false);
   const [editing, setEditing] = useState<Product>(blank);
   const [editId, setEditId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
@@ -148,10 +150,25 @@ function ProductsPage() {
           <h1 className="text-3xl font-bold">Бүтээгдэхүүн</h1>
           <p className="text-sm text-muted-foreground">Нийт {products.length}</p>
         </div>
-        <Button onClick={() => { setShowForm(!showForm); setEditing(blank); setEditId(null); }}>
+        <Button onClick={() => { setShowTypePicker(true); }}>
           <Plus className="mr-2 h-4 w-4" /> Шинэ бүтээгдэхүүн
         </Button>
       </div>
+
+      <AddProductTypeDialog
+        open={showTypePicker}
+        onOpenChange={setShowTypePicker}
+        merchantId={merchantId}
+        onPickReadyStock={() => {
+          setEditing(blank);
+          setEditId(null);
+          setShowForm(true);
+        }}
+        onPickForeignSource={(source) => {
+          // Phase 2: route to dedicated importer screen.
+          notifyImporterComingSoon(source);
+        }}
+      />
 
       {showForm && (
         <Card className="rounded-2xl p-6">
