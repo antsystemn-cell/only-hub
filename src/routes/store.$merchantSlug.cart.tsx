@@ -485,7 +485,7 @@ function CartPage() {
                 <span className="font-medium">Нийт дүн</span>
                 <span className="text-2xl font-bold">{fmtMnt(total + (shipping.freeShippingReached ? 0 : shipping.deliveryFee))}</span>
               </div>
-              <Button className="mt-4 hidden w-full lg:flex" size="lg" onClick={goCheckout}>Худалдан авах</Button>
+              <Button className="mt-4 hidden w-full lg:flex" size="lg" onClick={goCheckout} disabled={foreignIssues.length > 0}>Худалдан авах</Button>
             </Card>
           </div>
         )}
