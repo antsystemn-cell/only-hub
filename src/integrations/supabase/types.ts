@@ -624,13 +624,17 @@ export type Database = {
           delivery_mode: string
           delivery_webhook_secret: string | null
           description: string | null
+          followers_count: number
           id: string
           is_active: boolean
           logo_url: string | null
           name: string
           owner_id: string | null
+          policy_return: string | null
+          policy_shipping: string | null
           register_number: string | null
           rejection_reason: string | null
+          shipping_config: Json
           slug: string
           social_facebook: string | null
           social_instagram: string | null
@@ -652,13 +656,17 @@ export type Database = {
           delivery_mode?: string
           delivery_webhook_secret?: string | null
           description?: string | null
+          followers_count?: number
           id?: string
           is_active?: boolean
           logo_url?: string | null
           name: string
           owner_id?: string | null
+          policy_return?: string | null
+          policy_shipping?: string | null
           register_number?: string | null
           rejection_reason?: string | null
+          shipping_config?: Json
           slug: string
           social_facebook?: string | null
           social_instagram?: string | null
@@ -680,13 +688,17 @@ export type Database = {
           delivery_mode?: string
           delivery_webhook_secret?: string | null
           description?: string | null
+          followers_count?: number
           id?: string
           is_active?: boolean
           logo_url?: string | null
           name?: string
           owner_id?: string | null
+          policy_return?: string | null
+          policy_shipping?: string | null
           register_number?: string | null
           rejection_reason?: string | null
+          shipping_config?: Json
           slug?: string
           social_facebook?: string | null
           social_instagram?: string | null
@@ -1481,6 +1493,73 @@ export type Database = {
           },
         ]
       }
+      reviews: {
+        Row: {
+          comment: string | null
+          created_at: string
+          id: string
+          images: Json
+          is_hidden: boolean
+          merchant_id: string
+          order_id: string | null
+          product_id: string
+          rating: number
+          updated_at: string
+          user_id: string
+          verified_purchase: boolean
+        }
+        Insert: {
+          comment?: string | null
+          created_at?: string
+          id?: string
+          images?: Json
+          is_hidden?: boolean
+          merchant_id: string
+          order_id?: string | null
+          product_id: string
+          rating: number
+          updated_at?: string
+          user_id: string
+          verified_purchase?: boolean
+        }
+        Update: {
+          comment?: string | null
+          created_at?: string
+          id?: string
+          images?: Json
+          is_hidden?: boolean
+          merchant_id?: string
+          order_id?: string | null
+          product_id?: string
+          rating?: number
+          updated_at?: string
+          user_id?: string
+          verified_purchase?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reviews_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reviews_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reviews_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       shipping_rules: {
         Row: {
           base_fee: number
@@ -1613,6 +1692,35 @@ export type Database = {
             columns: ["order_id"]
             isOneToOne: false
             referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      wishlist_items: {
+        Row: {
+          created_at: string
+          id: string
+          product_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          product_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          product_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wishlist_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
             referencedColumns: ["id"]
           },
         ]
