@@ -445,13 +445,11 @@ function ProductDetailPage() {
                 <Heart className={`h-4 w-4 ${wished ? "fill-current" : ""}`} />
                 {wished ? "Хүссэнд хадгалсан" : "Хүссэнд нэмэх"}
               </button>
-              <button
-                type="button"
-                onClick={handleShare}
-                className="inline-flex items-center gap-1.5 text-muted-foreground transition hover:text-foreground"
-              >
-                <Share2 className="h-4 w-4" /> Хуваалцах
-              </button>
+              <ShareMenu
+                url={typeof window !== "undefined" ? window.location.href : ""}
+                title={product.name}
+                text={product.description ?? undefined}
+              />
             </div>
 
             {/* Trust strip */}
