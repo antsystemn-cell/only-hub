@@ -146,7 +146,6 @@ function ProductDetailPage() {
     } catch { /* cancelled */ }
   };
 
-  const wished = useIsWishlisted(product?.id);
   const toggleWish = () => {
     if (!product) return;
     const added = wishlist.toggle({
@@ -159,6 +158,8 @@ function ProductDetailPage() {
     });
     toast.success(added ? "Хүссэн жагсаалтад нэмэгдлээ" : "Хүссэн жагсаалтаас хасагдлаа");
   };
+
+
 
 
   const cartCount = cartItems.reduce((s, i) => s + i.quantity, 0);
