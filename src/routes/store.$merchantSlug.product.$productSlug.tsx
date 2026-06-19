@@ -597,12 +597,16 @@ function ProductDetailPage() {
                 </TabsContent>
               )}
               <TabsContent value="delivery" className="mt-4">
-                <ul className="space-y-2 text-sm text-muted-foreground">
-                  <li>• Захиалгыг ажлын өдөр 24 цагийн дотор бэлтгэж хүргэлтэнд гаргана.</li>
-                  <li>• Улаанбаатар хотод 1-3 хоногт, орон нутагт 3-7 хоногт хүрнэ.</li>
-                  <li>• Бараа гэмтэлтэй ирвэл хүлээн авснаас хойш 24 цагт мэдэгдэнэ үү.</li>
-                  <li>• 7 хоногийн дотор буцаалт, солилт боломжтой.</li>
-                </ul>
+                <PolicyBlock
+                  title="Хүргэлтийн нөхцөл"
+                  html={merchant.policy_shipping || platformDefaults?.policy_shipping_default || ""}
+                />
+                <div className="mt-4">
+                  <PolicyBlock
+                    title="Буцаалтын нөхцөл"
+                    html={merchant.policy_return || platformDefaults?.policy_return_default || ""}
+                  />
+                </div>
               </TabsContent>
             </Tabs>
           </Card>
