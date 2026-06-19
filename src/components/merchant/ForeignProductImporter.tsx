@@ -41,6 +41,20 @@ type VariantDraft = {
   isPurchasable: boolean;
 };
 
+type OptionGroupPreview = {
+  name: string;
+  level: number;
+  prefix?: string | null;
+  values: Array<{ propertyValueId: string; value: string; sizeHint?: string | null }>;
+};
+
+type DeliveryOptionPreview = {
+  type: string;
+  estimatedDays: string | null;
+  displayedPrice: number | null;
+  domesticDeliveryFee: number | null;
+};
+
 type ParsedPreview = {
   status: string;
   warnings: string[];
@@ -48,9 +62,16 @@ type ParsedPreview = {
   sourceProductId: string;
   title: string;
   brand: string;
+  category: string;
   description: string;
   coverImage: string;
   gallery: string[];
+  baseSourcePrice: number | null;
+  productInfo: Array<{ label: string; value: string }>;
+  productIntroSections: Array<{ title: string; content: string }>;
+  optionGroups: OptionGroupPreview[];
+  deliveryOptions: DeliveryOptionPreview[];
+  extractionMethod: string;
 };
 
 type Props = {
