@@ -11,6 +11,8 @@ import {
   Facebook, Instagram, Mail, Phone, MapPin,
 } from "lucide-react";
 import { fmtMnt } from "@/lib/format";
+import { wishlist, useIsWishlisted } from "@/lib/wishlist";
+import { toast } from "sonner";
 import { QuickViewDialog, type QuickViewProduct } from "@/components/QuickViewDialog";
 import { AccountNav } from "@/components/AccountNav";
 import { useServerFn } from "@tanstack/react-start";
