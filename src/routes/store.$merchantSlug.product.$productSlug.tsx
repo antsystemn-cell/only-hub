@@ -445,6 +445,9 @@ function ProductDetailPage() {
               )}
             </div>
 
+            <ForeignOrderPanel product={product as any} />
+
+
             {/* Colors */}
             {colors.length > 0 && (
               <div className="mt-5">
