@@ -78,7 +78,7 @@ export const getMerchantForeignSettings = createServerFn({ method: "GET" })
       .from("merchant_foreign_source_settings")
       .select("*")
       .eq("merchant_id", data.merchantId);
-    if (data.source) q = q.eq("source", data.source);
+    if (data.source) q = q.eq("source", data.source as any);
     const { data: rows, error } = await q;
     if (error) throw new Error(error.message);
     return rows ?? [];
