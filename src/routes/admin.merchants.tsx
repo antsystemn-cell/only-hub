@@ -18,7 +18,7 @@ import {
 import { fmtMnt } from "@/lib/format";
 import { toast } from "sonner";
 import { Check, X, Search, UserPlus, Pencil, ExternalLink, Globe2 } from "lucide-react";
-import { createMerchantAdminUser } from "@/lib/admin-merchant.functions";
+import { createMerchantAdminUser, assignMerchantAdminByUserId, listAuthUsersLite } from "@/lib/admin-merchant.functions";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
 import { FOREIGN_SOURCES } from "@/lib/foreign-orders/sources";
