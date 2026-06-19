@@ -611,38 +611,12 @@ function ProductDetailPage() {
             </Tabs>
           </Card>
 
-          {/* Reviews summary */}
-          <Card className="rounded-2xl border-border/60 bg-white p-4 sm:p-5">
-            <div className="flex items-center justify-between">
-              <h3 className="text-sm font-semibold">Хэрэглэгчийн үнэлгээ ({reviewCount})</h3>
-              <button className="text-xs font-medium text-orange-600 hover:underline">Бүх үнэлгээг харах</button>
-            </div>
-            <div className="mt-3 flex items-center gap-5">
-              <div className="text-center">
-                <div className="text-3xl font-extrabold">{rating}</div>
-                <div className="mt-1 flex justify-center">
-                  {[1, 2, 3, 4, 5].map((n) => (
-                    <Star key={n} className={`h-4 w-4 ${n <= Math.round(Number(rating)) ? "fill-amber-400 text-amber-400" : "text-muted"}`} />
-                  ))}
-                </div>
-                <div className="mt-1 text-xs text-muted-foreground">{reviewCount} үнэлгээ</div>
-              </div>
-              <div className="flex-1 space-y-1.5">
-                {[5, 4, 3, 2, 1].map((star) => {
-                  const pct = star === 5 ? 78 : star === 4 ? 14 : star === 3 ? 5 : star === 2 ? 2 : 1;
-                  return (
-                    <div key={star} className="flex items-center gap-2 text-xs">
-                      <span className="w-6 text-muted-foreground">{star} ★</span>
-                      <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-muted">
-                        <div className="h-full rounded-full bg-amber-400" style={{ width: `${pct}%` }} />
-                      </div>
-                      <span className="w-8 text-right text-muted-foreground">{Math.round(reviewCount * pct / 100)}</span>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </Card>
+          {/* Reviews summary (real) */}
+          <ReviewSummaryCard
+            count={reviewCount}
+            avg={Number(rating)}
+            dist={reviewStats?.dist ?? { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 }}
+          />
         </div>
 
         {/* === Mobile-only: store card === */}
