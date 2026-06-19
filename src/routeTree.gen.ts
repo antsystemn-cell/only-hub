@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as WishlistRouteImport } from './routes/wishlist'
 import { Route as StoresRouteImport } from './routes/stores'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as LoginRouteImport } from './routes/login'
@@ -63,6 +64,11 @@ import { Route as ApiPublicPaymentsStorepayWebhookRouteImport } from './routes/a
 import { Route as ApiPublicPaymentsPocketWebhookRouteImport } from './routes/api.public.payments.pocket.webhook'
 import { Route as ApiPublicPaymentsOmniwayWebhookRouteImport } from './routes/api.public.payments.omniway.webhook'
 
+const WishlistRoute = WishlistRouteImport.update({
+  id: '/wishlist',
+  path: '/wishlist',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const StoresRoute = StoresRouteImport.update({
   id: '/stores',
   path: '/stores',
@@ -351,6 +357,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/stores': typeof StoresRoute
+  '/wishlist': typeof WishlistRoute
   '/account/orders': typeof AccountOrdersRoute
   '/admin/analytics': typeof AdminAnalyticsRoute
   '/admin/backup-old-delivery': typeof AdminBackupOldDeliveryRoute
@@ -405,6 +412,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/stores': typeof StoresRoute
+  '/wishlist': typeof WishlistRoute
   '/account/orders': typeof AccountOrdersRoute
   '/admin/analytics': typeof AdminAnalyticsRoute
   '/admin/backup-old-delivery': typeof AdminBackupOldDeliveryRoute
@@ -460,6 +468,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/stores': typeof StoresRoute
+  '/wishlist': typeof WishlistRoute
   '/account/orders': typeof AccountOrdersRoute
   '/admin/analytics': typeof AdminAnalyticsRoute
   '/admin/backup-old-delivery': typeof AdminBackupOldDeliveryRoute
@@ -517,6 +526,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/register'
     | '/stores'
+    | '/wishlist'
     | '/account/orders'
     | '/admin/analytics'
     | '/admin/backup-old-delivery'
@@ -571,6 +581,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/register'
     | '/stores'
+    | '/wishlist'
     | '/account/orders'
     | '/admin/analytics'
     | '/admin/backup-old-delivery'
@@ -625,6 +636,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/register'
     | '/stores'
+    | '/wishlist'
     | '/account/orders'
     | '/admin/analytics'
     | '/admin/backup-old-delivery'
@@ -681,6 +693,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   RegisterRoute: typeof RegisterRoute
   StoresRoute: typeof StoresRoute
+  WishlistRoute: typeof WishlistRoute
   BlogSlugRoute: typeof BlogSlugRoute
   MerchantDashboardRoute: typeof MerchantDashboardRouteWithChildren
   MerchantLoginRoute: typeof MerchantLoginRoute
@@ -700,6 +713,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/wishlist': {
+      id: '/wishlist'
+      path: '/wishlist'
+      fullPath: '/wishlist'
+      preLoaderRoute: typeof WishlistRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/stores': {
       id: '/stores'
       path: '/stores'
@@ -1181,6 +1201,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   RegisterRoute: RegisterRoute,
   StoresRoute: StoresRoute,
+  WishlistRoute: WishlistRoute,
   BlogSlugRoute: BlogSlugRoute,
   MerchantDashboardRoute: MerchantDashboardRouteWithChildren,
   MerchantLoginRoute: MerchantLoginRoute,
