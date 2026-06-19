@@ -553,18 +553,9 @@ function ProductDetailPage() {
               </Link>
             </Card>
 
-            {/* Secure payment */}
-            <Card className="rounded-2xl border-border/60 bg-white p-4">
-              <h3 className="mb-3 text-sm font-semibold">Аюулгүй төлбөр</h3>
-              <div className="flex flex-wrap gap-2">
-                {["StorePay", "QPay", "Pocket", "VISA", "Master"].map((m) => (
-                  <span key={m} className="rounded-md border border-border/60 bg-muted/40 px-2.5 py-1 text-[11px] font-semibold text-muted-foreground">
-                    {m}
-                  </span>
-                ))}
-              </div>
-              <p className="mt-2 text-xs text-muted-foreground">Таны төлбөр 100% хамгаалагдсан.</p>
-            </Card>
+            {/* Secure payment (dynamic from payment_providers) */}
+            <PaymentMethodsCard providers={payments} />
+
           </aside>
         </div>
 
