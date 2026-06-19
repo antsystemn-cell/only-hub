@@ -18,6 +18,7 @@ import { toast } from "sonner";
 import { Plus, Edit, Copy, Trash2, Search, ImageIcon, X, Upload } from "lucide-react";
 import { fmtMnt, slugify } from "@/lib/format";
 import { uploadOptimized } from "@/lib/image";
+import { AddProductTypeDialog, notifyImporterComingSoon } from "@/components/merchant/AddProductTypeDialog";
 
 export const Route = createFileRoute("/merchant/dashboard/products")({
   component: ProductsPage,
