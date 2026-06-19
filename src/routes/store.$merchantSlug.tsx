@@ -9,6 +9,7 @@ import { Search, ShoppingBag } from "lucide-react";
 import { fmtMnt } from "@/lib/format";
 import { SiteHeader } from "@/components/site/SiteHeader";
 import { SiteFooter } from "@/components/site/SiteFooter";
+import { ForeignOrderInlineBadge, isForeignOrder } from "@/components/product/ForeignOrderBadge";
 
 export const Route = createFileRoute("/store/$merchantSlug")({ component: StorePage });
 
