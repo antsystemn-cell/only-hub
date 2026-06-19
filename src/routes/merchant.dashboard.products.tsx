@@ -18,7 +18,11 @@ import { toast } from "sonner";
 import { Plus, Edit, Copy, Trash2, Search, ImageIcon, X, Upload } from "lucide-react";
 import { fmtMnt, slugify } from "@/lib/format";
 import { uploadOptimized } from "@/lib/image";
-import { AddProductTypeDialog, notifyImporterComingSoon } from "@/components/merchant/AddProductTypeDialog";
+import { AddProductTypeDialog } from "@/components/merchant/AddProductTypeDialog";
+import { ForeignProductImporter } from "@/components/merchant/ForeignProductImporter";
+import type { Database } from "@/integrations/supabase/types";
+
+type ForeignSource = Database["public"]["Enums"]["foreign_source"];
 
 export const Route = createFileRoute("/merchant/dashboard/products")({
   component: ProductsPage,
@@ -62,6 +66,7 @@ function ProductsPage() {
   const qc = useQueryClient();
   const [showForm, setShowForm] = useState(false);
   const [showTypePicker, setShowTypePicker] = useState(false);
+  const [foreignImporterSource, setForeignImporterSource] = useState<ForeignSource | null>(null);
   const [editing, setEditing] = useState<Product>(blank);
   const [editId, setEditId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
@@ -165,10 +170,18 @@ function ProductsPage() {
           setShowForm(true);
         }}
         onPickForeignSource={(source) => {
-          // Phase 2: route to dedicated importer screen.
-          notifyImporterComingSoon(source);
+          setShowForm(false);
+          setForeignImporterSource(source);
         }}
       />
+
+      {foreignImporterSource && (
+        <ForeignProductImporter
+          merchantId={merchantId}
+          source={foreignImporterSource}
+          onClose={() => setForeignImporterSource(null)}
+        />
+      )}
 
       {showForm && (
         <Card className="rounded-2xl p-6">
