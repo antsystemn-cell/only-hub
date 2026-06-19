@@ -510,12 +510,3 @@ function SettingsQuickForm({
   );
 }
 
-// Tiny helper because TanStack's useServerFn returns a function-of-options;
-// we want the loaded settings inline without wrapping in another hook.
-function useServerFnFetch<TFn extends (...args: any) => Promise<any>>(
-  fn: TFn,
-  args: Parameters<TFn>[0] extends { data: infer D } ? D : never,
-): ReturnType<TFn> {
-  const f = useServerFn(fn as any);
-  return f({ data: args } as any);
-}
