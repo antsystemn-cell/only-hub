@@ -226,14 +226,6 @@ function ProductDetailPage() {
     navigate({ to: "/store/$merchantSlug/cart", params: { merchantSlug } });
   };
 
-  const handleShare = async () => {
-    const url = typeof window !== "undefined" ? window.location.href : "";
-    try {
-      if (navigator.share) await navigator.share({ title: product.name, url });
-      else { await navigator.clipboard.writeText(url); toast.success("Холбоос хуулагдлаа"); }
-    } catch { /* cancelled */ }
-  };
-
   const toggleWish = () => {
     const added = wishlist.toggle({
       productId: product.id,
@@ -251,11 +243,10 @@ function ProductDetailPage() {
     ? Math.round((1 - Number(product.price) / Number(product.original_price)) * 100)
     : 0;
 
-  // Demo rating/sold derived from product id (graceful fallback — no real ratings table)
-  const idHash = Math.abs(hashStr(product.id));
-  const rating = (4.3 + (idHash % 7) / 10).toFixed(1);
-  const reviewCount = 12 + (idHash % 240);
-  const soldCount = 30 + (idHash % 500);
+  // Real rating from reviews; fallback display when no reviews yet
+  const reviewCount = reviewStats?.count ?? 0;
+  const rating = reviewCount > 0 ? (reviewStats!.avg).toFixed(1) : "5.0";
+  const soldCount = Number(product.sales ?? 0);
 
   const onMainTouchStart = (e: React.TouchEvent) => { touchStartX.current = e.touches[0].clientX; };
   const onMainTouchEnd = (e: React.TouchEvent) => {
