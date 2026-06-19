@@ -226,6 +226,12 @@ function AdminMerchantsPage() {
                     </>
                   )}
 
+                  <ForeignPermissionEditor
+                    merchant={m}
+                    onSave={(patch) => updateMerchant.mutate({ id: m.id, patch })}
+                    pending={updateMerchant.isPending}
+                  />
+
                   <Button size="sm" variant="outline" onClick={() => { setAssignModal({ merchantId: m.id, merchantName: m.name }); setNewAdminEmail(""); setNewAdminPassword(""); }}>
                     <UserPlus className="mr-1 h-3.5 w-3.5" /> Admin томилох
                   </Button>
