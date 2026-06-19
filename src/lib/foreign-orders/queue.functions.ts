@@ -52,7 +52,7 @@ export const updateSourcePurchaseQueueItem = createServerFn({ method: "POST" })
     if (data.notes !== undefined) patch.notes = data.notes;
     const { data: row, error } = await supabase
       .from("source_purchase_queue")
-      .update(patch)
+      .update(patch as any)
       .eq("id", data.id)
       .select()
       .single();
