@@ -178,10 +178,15 @@ function StorePage() {
                         -{discount}%
                       </span>
                     )}
-                    {p.is_new && discount === 0 && (
+                    {p.is_new && discount === 0 && !isForeignOrder(p) && (
                       <span className="absolute left-2 top-2 rounded-md bg-emerald-500 px-1.5 py-0.5 text-[10px] font-bold text-white shadow-sm">
                         ШИНЭ
                       </span>
+                    )}
+                    {isForeignOrder(p) && (
+                      <div className="absolute left-2 top-2">
+                        <ForeignOrderInlineBadge product={p} />
+                      </div>
                     )}
                   </div>
                   <div className="flex flex-1 flex-col gap-1 p-2.5 sm:p-3">
