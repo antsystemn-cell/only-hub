@@ -18,6 +18,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { testPaymentConnection, getPaymentProviderCredentials } from "@/lib/payments.functions";
 import { saveMerchantProvider, testMerchantProvider } from "@/lib/payments/providers.functions";
 import { getMerchantDeliveryConfig, updateMerchantDeliveryConfig } from "@/lib/merchant-delivery.functions";
+import { TiptapEditor } from "@/components/admin/TiptapEditor";
 
 export const Route = createFileRoute("/merchant/dashboard/settings")({ component: SettingsPage });
 
