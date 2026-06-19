@@ -17,8 +17,13 @@ import {
 } from "@/components/ui/alert-dialog";
 import { fmtMnt } from "@/lib/format";
 import { toast } from "sonner";
-import { Check, X, Search, UserPlus, Pencil, ExternalLink } from "lucide-react";
+import { Check, X, Search, UserPlus, Pencil, ExternalLink, Globe2 } from "lucide-react";
 import { createMerchantAdminUser } from "@/lib/admin-merchant.functions";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Checkbox } from "@/components/ui/checkbox";
+import { FOREIGN_SOURCES } from "@/lib/foreign-orders/sources";
+import type { Database } from "@/integrations/supabase/types";
+type ForeignSource = Database["public"]["Enums"]["foreign_source"];
 
 export const Route = createFileRoute("/admin/merchants")({ component: AdminMerchantsPage });
 
