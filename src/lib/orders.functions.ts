@@ -207,6 +207,8 @@ export const createOrder = createServerFn({ method: "POST" })
     }
 
     // 5. Insert order
+    const hasForeign = normalized.some((i: any) => i?.foreign);
+    const hasReady = normalized.some((i: any) => i && !i.foreign);
     const { data: order, error: orderErr } = await supabaseAdmin
       .from("orders")
       .insert({
@@ -226,7 +228,9 @@ export const createOrder = createServerFn({ method: "POST" })
         payment_status: "unpaid",
         status: "pending",
         coupon_id: couponId,
-      })
+        has_foreign_order_items: hasForeign,
+        has_ready_stock_items: hasReady,
+      } as any)
       .select("*")
       .single();
     if (orderErr || !order) {
