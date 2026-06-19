@@ -41,7 +41,7 @@ function ProductDetailPage() {
   const { data: merchant } = useQuery({
     queryKey: ["merchant", merchantSlug],
     queryFn: async () =>
-      (await supabase.from("merchants").select("id,name,slug,logo_url,description").eq("slug", merchantSlug).maybeSingle()).data,
+      (await supabase.from("merchants").select("id,name,slug,logo_url,description,shipping_config,policy_shipping,policy_return,followers_count").eq("slug", merchantSlug).maybeSingle()).data,
   });
 
   const { data: product, isLoading } = useQuery({
@@ -55,16 +55,83 @@ function ProductDetailPage() {
     },
   });
 
+  // Platform default policies (public read whitelist)
+  const { data: platformDefaults } = useQuery({
+    queryKey: ["platform-defaults"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("platform_settings")
+        .select("key,value")
+        .in("key", ["policy_shipping_default", "policy_return_default"]);
+      const out: Record<string, string> = {};
+      for (const r of data ?? []) {
+        const v = (r as any).value;
+        out[(r as any).key] = typeof v === "string" ? v : (v?.content ?? "");
+      }
+      return out;
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
+  // Enabled payment providers (merchant + platform-managed)
+  const { data: payments = [] } = useQuery({
+    queryKey: ["pdp-payments", merchant?.id],
+    enabled: !!merchant?.id,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("payment_providers")
+        .select("id,name,provider_type,icon,logo_url,is_active,is_platform_managed,merchant_id,position")
+        .eq("is_active", true)
+        .or(`merchant_id.eq.${merchant!.id},is_platform_managed.eq.true`)
+        .order("position", { ascending: true });
+      return data ?? [];
+    },
+  });
+
+  // Reviews aggregate
+  const { data: reviewStats } = useQuery({
+    queryKey: ["pdp-reviews", product?.id],
+    enabled: !!product?.id,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("reviews")
+        .select("rating")
+        .eq("product_id", product!.id)
+        .eq("is_hidden", false);
+      const ratings = (data ?? []).map((r: any) => r.rating as number);
+      const count = ratings.length;
+      const avg = count > 0 ? ratings.reduce((a, b) => a + b, 0) / count : 0;
+      const dist: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+      for (const r of ratings) dist[r] = (dist[r] ?? 0) + 1;
+      return { count, avg, dist };
+    },
+  });
+
+  // Similar products: same store first, then same category across platform, then featured
   const { data: related = [] } = useQuery({
-    queryKey: ["related", merchant?.id, product?.id, product?.category],
+    queryKey: ["related-v2", merchant?.id, product?.id, product?.category],
     enabled: !!merchant?.id && !!product?.id,
     queryFn: async () => {
-      let q = supabase.from("products")
-        .select("id,name,price,original_price,thumbnail_url,image_url,slug,is_new,is_on_sale")
+      const cols = "id,name,price,original_price,thumbnail_url,image_url,slug,is_new,is_on_sale,merchant_id";
+      const seen = new Set<string>([product!.id]);
+      const pick = (rows: any[]) => rows.filter((r) => !seen.has(r.id) && seen.add(r.id));
+      // Tier 1: same store
+      const t1 = await supabase.from("products").select(cols)
         .eq("merchant_id", merchant!.id).eq("is_active", true).neq("id", product!.id).limit(12);
-      if (product?.category) q = q.eq("category", product.category);
-      const { data } = await q;
-      return data ?? [];
+      const out = pick(t1.data ?? []);
+      // Tier 2: same category across platform
+      if (out.length < 12 && product?.category) {
+        const t2 = await supabase.from("products").select(cols)
+          .eq("category", product.category).eq("is_active", true).neq("id", product!.id).limit(12);
+        out.push(...pick(t2.data ?? []));
+      }
+      // Tier 3: featured / new
+      if (out.length < 12) {
+        const t3 = await supabase.from("products").select(cols)
+          .eq("is_active", true).eq("is_on_sale", true).neq("id", product!.id).limit(12);
+        out.push(...pick(t3.data ?? []));
+      }
+      return out.slice(0, 12);
     },
   });
 
