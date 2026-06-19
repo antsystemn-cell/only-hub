@@ -641,10 +641,10 @@ function ProductDetailPage() {
                 <div className="mt-0.5 flex items-center gap-2 text-xs text-muted-foreground">
                   <span className="inline-flex items-center gap-0.5">
                     <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
-                    <span className="font-semibold text-foreground">4.9</span>
+                    <span className="font-semibold text-foreground">{rating}</span>
                   </span>
                   <span>•</span>
-                  <span>Итгэмжлэгдсэн дэлгүүр</span>
+                  <span>{merchant.followers_count ?? 0} дагагч</span>
                 </div>
               </div>
               <ChevronRight className="h-4 w-4 text-muted-foreground" />
