@@ -420,6 +420,7 @@ function OrderConfirmationPage() {
           </div>
         </Card>
 
+        {paid && <ForeignOrderTrackingCard orderId={orderId} />}
         {paid && <DeliveryTrackingCard orderId={orderId} />}
       </div>
       <SiteFooter />
