@@ -1,84 +1,76 @@
-## Public Order Tracking Portal — хэрэгжүүлэх төлөвлөгөө
+# Poizon Korea Availability + Scheduled Sync
 
-### 1. DB migration
-Шинэ хүснэгт `public_order_tokens`:
-- `id uuid pk`, `order_id uuid unique → orders(id) on delete cascade`
-- `public_token text unique not null` (32-byte base64url)
-- `customer_phone text`, `expires_at timestamptz` (default now()+30d)
-- `is_active boolean default true`
-- `open_count int default 0`, `last_accessed_at timestamptz`
-- `created_at`, `updated_at`
-- RLS: staff (has_merchant_access) manage; service_role full; **NO anon policy** — токеноор public серверийн фн дамжуулж унших.
-- `delivery_requests`: `tracking_sms_sent_at timestamptz` нэмэх (auto SMS-ийг 1 удаа явуулахын тулд).
+Scope is large. I'll deliver it in 4 implementation phases inside one work session, each phase fully shippable. Confirm and I start with Phase 1.
 
-### 2. Token service (server-only)
-`src/lib/tracking/tracking.server.ts`:
-- `getOrCreateTrackingToken(orderId)` — байхгүй бол үүсгэнэ.
-- `resolveOrderByToken(token)` — токеноор аюулгүй фильтр хийсэн `OrderPublicView` буцаана (id, external_ref, items[name/qty/price], total, delivery_fee, payment_status, payment_method, delivery_status, qpay_*, merchant{name,slug,logo,phone}, driver{name,phone,vehicle}, delivery_request{status, timestamps, external_ref/tracking}, payment_request{provider, invoice_url, qr, amount}). Cost_price, user_id, internal note, supplier мэдээлэл хасна. Expire/disabled бол `expired`/`disabled` буцаана.
-- `regenerateTrackingToken(orderId)` / `disableTrackingToken(orderId)`.
+## Phase 1 — Parser: option-price-based availability
 
-### 3. Server functions
-`src/lib/tracking/tracking.functions.ts`:
-- `getPublicOrderByTokenFn` — public (no auth), 1 sec cache, увеличивает open_count + last_accessed_at, лог access.
-- `regenerateTrackingTokenFn`, `disableTrackingTokenFn` — staff/admin only.
-- `getTrackingLinkFn` — staff/admin: токен авч "https://only.mn/track/{token}" буцаана.
+**File:** `src/lib/foreign-orders/providers/poizon-korea.server.ts` + `types.ts`
 
-### 4. Auto SMS on driver assignment
-`src/lib/tracking/tracking-notify.server.ts`:
-- `sendTrackingLinkSms(orderId)`: токеноо үүсгээд, CallPro-аар тогтсон message явуулж, `delivery_requests.tracking_sms_sent_at` суулгана. Идемпотент.
-- `platform_settings` key `tracking_sms_template` (default Mongolian message). Vars: `{tracking_link}`, `{order_number}`, `{merchant_name}`.
+- Add availability enum `AVAILABLE | LOW_STOCK | UNAVAILABLE | UNKNOWN | NEEDS_REVIEW`.
+- Extend `ParsedVariant` with: `availabilityStatus`, `isPurchasable`, `unavailableReason`, `sourceAvailabilityRawText`, `lastAvailabilitySyncAt`, `optionSignature`.
+- New extraction layer **after** `__NEXT_DATA__` JSON pass: walk SKU list, classify by `status` + `price.minUnitVal`:
+  - valid KRW > 0 + status==1 → `AVAILABLE`, purchasable
+  - status != 1 OR price missing/zero → `UNAVAILABLE` (`POIZON_OPTION_PRICE_MISSING`)
+  - SKU absent from `propertyMap` combination → `UNKNOWN`
+- Add **HTML option-block fallback** for when JSON SKU list misses rows. Scan between option-group labels (`에디션|사이즈|용량|스타일|박스|색상|컬러|옵션|구성`) and stop markers (`배송 선택|구매|DELIVERY|EASY RETURN|관련 브랜드`). Inside block:
+  - valid price regex `\b\d{1,3}(,\d{3})*원\b` → AVAILABLE
+  - `--\s*원` → UNAVAILABLE
+  - blacklist `구매 …원`, `… 할인`, delivery fees, `거래|만|천` transaction counts
+- Detect `품절 임박` → product-level `lowStockWarning = true`; do NOT flip variants to unavailable.
+- Build stable `optionSignature` per variant (`size:KR 295|box:블랙 박스`, normalized).
+- Add diagnostics: `optionBlockFound`, `unavailableMarkersFound`, `lowStockMarkerFound`, `variantsAvailable|Unavailable|Unknown`.
+- Add warnings when full combination matrix can't be reconstructed.
 
-Trigger points (delivery_request status → `assigned` болсон үед):
-1. `src/lib/delivery/delivery.service.ts` → `updateDeliveryStatus` (driver/staff status change)
-2. `src/lib/delivery/delivery.service.ts` → `syncDeliveryStatusFromExternal` (Swift webhook)
-Хоёуланд: `if next === "assigned" && prev !== "assigned"` → `sendTrackingLinkSms(orderId)` (try/catch background).
+## Phase 2 — Persistence + import/preview UI
 
-### 5. Public route `/track/$token`
-`src/routes/track.$token.tsx`:
-- Public route (top-level, no auth gate). `head()` with noindex.
-- Loader: `getPublicOrderByTokenFn` дуудна. Expired → friendly error page. Notfound → 404.
-- UI sections (reuse `DeliveryTimeline`, `PaymentIntentPanel` (read-only бол shadcn cards):
-  - Header: merchant logo + name, order number, "Хүргэлтийн төлөв" badge.
-  - **Order summary**: items table, subtotal, delivery_fee, total.
-  - **Delivery timeline** (DeliveryTimeline компонентыг token-аас ирсэн history-р re-use).
-  - **Driver card** (name, phone with `tel:` call button, vehicle) — driver_id-р profiles+merchant_users, fallback delivery_webhooks raw payload.
-  - **Payment panel**:
-    - `payment_status == confirmed` → green "✓ Төлбөр төлөгдсөн" + paid_at.
-    - Else → "Төлбөр төлөх" button. Open inline payment intent (reuse `PaymentIntentPanel` with token-based session) OR redirect to existing `/store/{slug}/order/{id}` (per Q2 user wants both pages; the simplest secure path is reuse PaymentIntentPanel via a token-scoped server fn).
-    - delivered + unpaid → дээр нь "⚠ Төлбөр хүлээгдэж байна" banner.
-- Auto refresh: Supabase realtime channel `tracking:{orderId}` for orders/delivery_requests/payment_requests rows (anon publishable client subscribes by id only — RLS will block unauthorized read; instead poll every 8s via React Query refetchInterval — simpler + works without RLS changes).
-- "Сүүлд шинэчилсэн" timestamp.
+- **Migration** — extend `product_variants`:
+  - `source_availability_status text`, `is_purchasable bool default true`,
+  - `unavailable_reason text`, `source_availability_raw_text text`,
+  - `last_availability_sync_at timestamptz`, `last_price_sync_at timestamptz`,
+  - `previous_source_price int`, `price_review_required bool default false`,
+  - `manual_availability_override bool default false`,
+  - `manual_availability_status text`, `manual_override_reason text`,
+  - `manual_override_by uuid`, `manual_override_at timestamptz`,
+  - `option_signature text` (indexed per product).
+- Extend `products`:
+  - `sync_enabled bool default true`, `sync_frequency_hours int default 24`,
+  - `next_sync_at timestamptz`, `last_source_sync_at`, `source_sync_status`, `source_sync_error`,
+  - `low_stock_warning bool default false`.
+- Extend `merchant_foreign_source_settings`:
+  - `price_sync_mode text default 'REVIEW_BEFORE_UPDATE'` (`AUTO_UPDATE_CUSTOMER_PRICE|REVIEW_BEFORE_UPDATE|AVAILABILITY_ONLY`),
+  - `checkout_freshness_required_hours int default 6`,
+  - `default_sync_frequency_hours int default 24`.
+- New table `foreign_source_sync_jobs` with all fields listed in spec + RLS + grants.
+- **Importer UI** (`ForeignProductImporter.tsx`): variant table with columns Option / KRW / Availability badge / Purchasable / MNT / Warning. Uncheck unavailable variants from "publish selected" by default. Confirmation dialog when toggling unavailable → purchasable (requires `foreign_product_price_manage`/`publish`).
+- Save `option_signature` on import.
 
-### 6. Payment from public page
-Шинэ server fn `payByTrackingTokenFn`: token + chosen providerType → token-аар order-аа resolve хийгээд, дотроо existing payment intent service-ийг дуудна. Returns invoice/QR/redirect URL. Webhook flow (QPay/Storepay/etc.) аль хэдийн `confirmOrderPayment`-аар paid болгоно — өөрчлөх шаардлагагүй.
+## Phase 3 — Customer storefront + cart/checkout enforcement
 
-### 7. Admin / merchant management
-`src/components/admin/TrackingLinkCard.tsx` — merchant/admin order detail дотор:
-- "Tracking холбоос: …" + Copy товч
-- "Шинээр үүсгэх" (regenerate)
-- "Идэвхгүй болгох"
-- "Хандалт: {open_count}, сүүлд: {last_accessed_at}"
+- Product detail page: read variant `availability_status` + `is_purchasable`; render disabled options with `Түр дууссан` / `Үлдэгдэл бага` / `Шалгах шаардлагатай` labels. Disable Add to Cart / Buy Now for non-purchasable.
+- **Backend enforcement** in `addToCart` / `createOrder` / `confirmOrderPayment` server functions: re-check `is_purchasable && availability_status in ('AVAILABLE','LOW_STOCK')` and product/merchant active.
+- Cart freshness check before payment: if `last_availability_sync_at` older than merchant `checkout_freshness_required_hours`, trigger inline re-sync for those variants; block payment on UNAVAILABLE/UNKNOWN with Mongolian message from spec.
+- Price-change handling per merchant `price_sync_mode`.
 
-`src/routes/store.$merchantSlug.order.$orderId.tsx` болон merchant/admin orders дэлгэрэнгүй дотор багц нэмнэ.
+## Phase 4 — Scheduled sync, dashboard, notifications
 
-### 8. Anti-duplicate / security
-- Token = `crypto.randomBytes(32).toString("base64url")`.
-- `tracking_sms_sent_at` болон notifications_log-аар дамжуулан давхар SMS-ээс хамгаална.
-- public response-д зөвхөн safe whitelist талбар.
-- expired/disabled response: 410-similar payload, UI Mongolian мессеж.
+- Server function `runForeignSourceSync(productId)` — fetches, parses, matches by `option_signature`, updates variants (UNKNOWN for disappeared rows, UNAVAILABLE for `--원`, new rows hidden + flagged), recomputes MNT prices via existing pricing engine, writes `foreign_source_sync_jobs` row, sets `next_sync_at`.
+- **Cron endpoint** `src/routes/api.public.hooks.foreign-source-sync.ts` (apikey-protected): picks due products (`syncEnabled && nextSyncAt <= now`), processes batch (cap ~20), respects featured/orders-last-7d priority for shorter intervals.
+- `pg_cron` job hourly via supabase insert tool.
+- Notifications: insert into `notifications_log` on AVAILABLE↔UNAVAILABLE / LOW_STOCK transitions and repeated sync failure.
+- **Sync dashboard** `src/routes/merchant.dashboard.foreign-sync.tsx`: per-product status, last/next sync, counts, actions (Re-check now / Approve price update / Pause / View log). Admin variant at `src/routes/admin.foreign-sync.tsx`.
+- Product edit page: "Poizon Korea дээр дахин шалгах" button calling the same server fn.
 
-### Файл өөрчлөлт (товчоор)
-**Шинэ:**
-- supabase migration: `public_order_tokens` + `delivery_requests.tracking_sms_sent_at`
-- `src/lib/tracking/tracking.server.ts`
-- `src/lib/tracking/tracking.functions.ts`
-- `src/lib/tracking/tracking-notify.server.ts`
-- `src/routes/track.$token.tsx`
-- `src/components/admin/TrackingLinkCard.tsx`
+## Acceptance verification
 
-**Засах:**
-- `src/lib/delivery/delivery.service.ts` (assigned trigger 2 газар)
-- `src/lib/payment-collection/collection.service.ts` (paid SMS-д tracking_link солих сонголт — өнөөгийн template ашигладаг)
-- `src/routes/store.$merchantSlug.order.$orderId.tsx` + admin/merchant order pages (TrackingLinkCard embed)
+Test all 3 URLs against parser unit test (`pricing.test.ts` style) asserting:
+- NB sneakers: KR 295/320/340 → UNAVAILABLE; others AVAILABLE; product `low_stock_warning=true` if `품절 임박` present.
+- Gucci sunglasses: `블랙 박스` UNAVAILABLE, other boxes AVAILABLE w/ correct KRW.
+- Gucci perfume: 3 box rows AVAILABLE w/ exact prices 90810 / 100920 / 102720.
 
-Алхам 1–4 backend, 5–6 frontend public, 7 admin UI. Дуусахад би dev сервэр болон invoke-server-function-аар sanity test хийнэ.
+## Notes / non-goals
+
+- Reuses existing pricing engine (`src/lib/foreign-orders/pricing.ts`) — no formula changes.
+- Existing paid orders untouched (sync writes to variant rows, not `orders` snapshots).
+- Mixed cart, ready-stock flow unchanged.
+
+Reply **"эхэл"** to start Phase 1, or tell me to adjust scope / merge phases.
