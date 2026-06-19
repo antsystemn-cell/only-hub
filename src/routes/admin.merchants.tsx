@@ -304,3 +304,101 @@ function CommissionRateEdit({ value, onSave }: { value: number; onSave: (v: numb
     </button>
   );
 }
+
+function ForeignPermissionEditor({
+  merchant,
+  onSave,
+  pending,
+}: {
+  merchant: any;
+  onSave: (patch: { can_create_foreign_order_products: boolean; allowed_foreign_sources: ForeignSource[] }) => void;
+  pending: boolean;
+}) {
+  const initialCan = !!merchant.can_create_foreign_order_products;
+  const initialSources: ForeignSource[] = (merchant.allowed_foreign_sources as ForeignSource[] | null) ?? [];
+  const [open, setOpen] = useState(false);
+  const [can, setCan] = useState(initialCan);
+  const [sources, setSources] = useState<ForeignSource[]>(initialSources);
+
+  // Re-sync when popover opens or merchant row changes
+  function onOpenChange(o: boolean) {
+    if (o) {
+      setCan(initialCan);
+      setSources(initialSources);
+    }
+    setOpen(o);
+  }
+
+  const toggleSource = (key: ForeignSource) =>
+    setSources((prev) => (prev.includes(key) ? prev.filter((s) => s !== key) : [...prev, key]));
+
+  const count = initialSources.length;
+  return (
+    <Popover open={open} onOpenChange={onOpenChange}>
+      <PopoverTrigger asChild>
+        <Button
+          size="sm"
+          variant={initialCan ? "default" : "outline"}
+          className={initialCan ? "bg-indigo-600 hover:bg-indigo-700" : ""}
+        >
+          <Globe2 className="mr-1 h-3.5 w-3.5" />
+          Гадаад захиалга
+          {initialCan && <span className="ml-1.5 rounded-full bg-white/20 px-1.5 text-[10px]">{count}</span>}
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent align="end" className="w-80 p-4">
+        <div className="space-y-3">
+          <div>
+            <div className="text-sm font-semibold">Гадаадаас захиалах эрх</div>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              Энэ дэлгүүр гадны эх сурвалжаас бараа импортлох эсэх, ямар эх сурвалж зөвшөөрөгдсөн зэргийг тохируулна.
+            </p>
+          </div>
+          <label className="flex items-center gap-2 text-sm">
+            <Switch checked={can} onCheckedChange={setCan} />
+            <span>Гадаад захиалгын бараа нэмэхийг зөвшөөрөх</span>
+          </label>
+          <div className={`space-y-2 rounded-lg border p-2 ${can ? "" : "opacity-50"}`}>
+            <div className="text-xs font-medium text-muted-foreground">Зөвшөөрөгдсөн эх сурвалжууд</div>
+            {Object.values(FOREIGN_SOURCES).map((s) => (
+              <label key={s.key} className="flex items-start gap-2 text-sm">
+                <Checkbox
+                  checked={sources.includes(s.key)}
+                  disabled={!can || !s.active}
+                  onCheckedChange={() => toggleSource(s.key)}
+                />
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-medium">{s.name}</span>
+                    {!s.active && (
+                      <Badge variant="outline" className="text-[9px]">удахгүй</Badge>
+                    )}
+                  </div>
+                  <div className="text-[11px] text-muted-foreground">
+                    {s.country} · {s.currency} · {s.defaultDeliveryMinDays}-{s.defaultDeliveryMaxDays} өдөр
+                  </div>
+                </div>
+              </label>
+            ))}
+          </div>
+          <div className="flex justify-end gap-2 pt-1">
+            <Button size="sm" variant="ghost" onClick={() => setOpen(false)}>Болих</Button>
+            <Button
+              size="sm"
+              disabled={pending}
+              onClick={() => {
+                onSave({
+                  can_create_foreign_order_products: can,
+                  allowed_foreign_sources: can ? sources : [],
+                });
+                setOpen(false);
+              }}
+            >
+              Хадгалах
+            </Button>
+          </div>
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
