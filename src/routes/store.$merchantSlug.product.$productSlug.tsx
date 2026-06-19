@@ -806,21 +806,32 @@ function PaymentMethodsCard({ providers }: { providers: any[] }) {
       {visible.length === 0 ? (
         <p className="text-xs text-muted-foreground">Төлбөрийн сонголт удахгүй нэмэгдэнэ.</p>
       ) : (
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           {visible.map((p) => {
             const label = p.name || PROVIDER_LABELS[(p.provider_type ?? "").toLowerCase()] || p.provider_type;
+            const iconStr = typeof p.icon === "string" ? p.icon.trim() : "";
+            const isIconUrl = /^https?:\/\//i.test(iconStr);
+            const imgSrc = p.logo_url || (isIconUrl ? iconStr : "");
+            const emoji = !isIconUrl ? iconStr : "";
             return (
               <span
                 key={p.id}
-                className="inline-flex items-center gap-1.5 rounded-md border border-border/60 bg-muted/40 px-2.5 py-1 text-[11px] font-semibold text-muted-foreground"
+                className="inline-flex h-9 w-14 items-center justify-center rounded-md border border-border/60 bg-white px-1.5"
                 title={label}
+                aria-label={label}
               >
-                {p.logo_url ? (
-                  <img src={p.logo_url} alt={label} className="h-4 w-auto object-contain" loading="lazy" />
+                {imgSrc ? (
+                  <img
+                    src={imgSrc}
+                    alt={label}
+                    className="max-h-6 max-w-full object-contain"
+                    loading="lazy"
+                  />
+                ) : emoji ? (
+                  <span className="text-lg leading-none" aria-hidden>{emoji}</span>
                 ) : (
-                  <span aria-hidden>{p.icon || <CreditCard className="h-3 w-3" />}</span>
+                  <CreditCard className="h-4 w-4 text-muted-foreground" aria-hidden />
                 )}
-                {label}
               </span>
             );
           })}
