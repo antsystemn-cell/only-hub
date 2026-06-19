@@ -191,7 +191,7 @@ function ProductDetailPage() {
     queryFn: async () => {
       const { data } = await supabase
         .from("product_variants")
-        .select("size_label,color_label,availability_status,is_purchasable,price_review_required")
+        .select("size_label,color_label,availability_status,is_purchasable,price_review_required,rounded_customer_price_mnt,final_customer_price_mnt")
         .eq("product_id", product!.id);
       return data ?? [];
     },
@@ -252,6 +252,34 @@ function ProductDetailPage() {
     isForeign &&
     (foreignVariants as any[]).some((v) => v.price_review_required === true);
 
+  // Compute the active display price: variant override (foreign) → product.price
+  const variantPriceCandidates = useMemo(() => {
+    if (!isForeign) return [] as number[];
+    const matches = (foreignVariants as any[]).filter(
+      (v) =>
+        (size ? v.size_label === size : true) &&
+        (color ? v.color_label === color : true),
+    );
+    return matches
+      .map((v) => Number(v.rounded_customer_price_mnt ?? v.final_customer_price_mnt ?? 0))
+      .filter((n) => n > 0);
+  }, [foreignVariants, isForeign, size, color]);
+
+  const activePrice = useMemo(() => {
+    if (variantPriceCandidates.length === 0) return Number(product?.price ?? 0);
+    // If a unique variant is matched (or all candidates share the same price), use it.
+    const min = Math.min(...variantPriceCandidates);
+    const max = Math.max(...variantPriceCandidates);
+    return min === max ? min : min;
+  }, [variantPriceCandidates, product?.price]);
+
+  const activePriceMax = useMemo(() => {
+    if (variantPriceCandidates.length === 0) return null;
+    const min = Math.min(...variantPriceCandidates);
+    const max = Math.max(...variantPriceCandidates);
+    return min === max ? null : max;
+  }, [variantPriceCandidates]);
+
   const variantKey = color && size ? `${color}|${size}` : color || size || "";
   const hasTrackedStock = !!variantKey && typeof variantStock[variantKey] === "number";
   const stockForVariant = hasTrackedStock ? variantStock[variantKey] : Number.MAX_SAFE_INTEGER;
@@ -292,7 +320,7 @@ function ProductDetailPage() {
     if (needsSize) return toast.error("Хэмжээ сонгоно уу");
     if (outOfStock) return toast.error("Нөөц дууссан");
     cart.add(merchantSlug, {
-      productId: product.id, name: product.name, price: Number(product.price),
+      productId: product.id, name: product.name, price: Number(activePrice || product.price),
       image: product.thumbnail_url || product.image_url, color, size, quantity: qty,
     });
     toast.success("Сагсанд нэмэгдлээ");
@@ -303,7 +331,7 @@ function ProductDetailPage() {
     if (needsSize) return toast.error("Хэмжээ сонгоно уу");
     if (outOfStock) return toast.error("Нөөц дууссан");
     cart.add(merchantSlug, {
-      productId: product.id, name: product.name, price: Number(product.price),
+      productId: product.id, name: product.name, price: Number(activePrice || product.price),
       image: product.thumbnail_url || product.image_url, color, size, quantity: qty,
     });
     navigate({ to: "/store/$merchantSlug/cart", params: { merchantSlug } });
@@ -511,7 +539,10 @@ function ProductDetailPage() {
 
             {/* Price */}
             <div className="mt-4 flex flex-wrap items-baseline gap-x-3 gap-y-1">
-              <span className="text-2xl font-extrabold text-orange-600 sm:text-3xl">{fmtMnt(Number(product.price))}</span>
+              <span className="text-2xl font-extrabold text-orange-600 sm:text-3xl">
+                {fmtMnt(Number(activePrice || product.price))}
+                {activePriceMax ? ` – ${fmtMnt(activePriceMax)}` : ""}
+              </span>
               {hasDiscount && (
                 <>
                   <span className="text-base text-muted-foreground line-through sm:text-lg">{fmtMnt(Number(product.original_price))}</span>
