@@ -184,11 +184,39 @@ export const createForeignProduct = createServerFn({ method: "POST" })
 
     const slug = `${slugify(data.title)}-${data.sourceProductId.slice(-6)}`;
 
+    // Build a rich HTML description that includes intro sections (size table,
+    // care, story, etc.) so the customer PDP can render the full Poizon content.
+    const stripScripts = (h: string) =>
+      String(h ?? "")
+        .replace(/<script[\s\S]*?<\/script>/gi, "")
+        .replace(/<style[\s\S]*?<\/style>/gi, "")
+        .replace(/ on\w+="[^"]*"/gi, "");
+    const introHtml = (data.productIntroSections ?? [])
+      .map((s) => {
+        const title = s.title?.trim();
+        const body = stripScripts(s.content ?? "").trim();
+        if (!title && !body) return "";
+        return `<section class="foreign-intro-section">${
+          title ? `<h3>${title}</h3>` : ""
+        }${body}</section>`;
+      })
+      .filter(Boolean)
+      .join("\n");
+    const baseDesc = (data.description ?? "").trim();
+    const richDescription =
+      [baseDesc, introHtml].filter(Boolean).join("\n\n") || null;
+
+    // Gallery → detail_media so the PDP carousel renders ALL images.
+    const detailMedia = (data.gallery ?? []).map((url) => ({
+      url,
+      type: "image" as const,
+    }));
+
     const productPayload: any = {
       merchant_id: data.merchantId,
       name: data.title,
       slug,
-      description: data.description ?? null,
+      description: richDescription,
       price: minPrice,
       original_price: null,
       discount: 0,
@@ -204,8 +232,8 @@ export const createForeignProduct = createServerFn({ method: "POST" })
       gallery_images: data.gallery,
       colors: [],
       sizes: data.variants.map((v) => v.sizeLabel ?? "").filter(Boolean),
-      specifications: [],
-      detail_media: [],
+      specifications: data.productInfo ?? [],
+      detail_media: detailMedia,
       variant_stock: {},
       // Foreign-order specific columns
       product_type: "FOREIGN_ORDER",
