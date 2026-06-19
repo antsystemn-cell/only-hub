@@ -163,6 +163,14 @@ function ProductDetailPage() {
     const arr: Media[] = Array.isArray(detail)
       ? detail.map((m) => (typeof m === "string" ? { url: m } : { url: m?.url, type: m?.type })).filter((m) => m.url)
       : [];
+    // Also include gallery_images (used by the foreign-order importer) so all
+    // imported photos surface in the carousel — not just the cover image.
+    const galleryImages = (product as any).gallery_images;
+    if (Array.isArray(galleryImages)) {
+      for (const url of galleryImages) {
+        if (typeof url === "string" && url) arr.push({ url, type: "image" });
+      }
+    }
     if (product.image_url) arr.unshift({ url: product.image_url, type: "image" });
     const seen = new Set<string>();
     return arr.filter((m) => (seen.has(m.url) ? false : (seen.add(m.url), true)));
