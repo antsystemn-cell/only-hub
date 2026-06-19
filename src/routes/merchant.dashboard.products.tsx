@@ -170,10 +170,18 @@ function ProductsPage() {
           setShowForm(true);
         }}
         onPickForeignSource={(source) => {
-          // Phase 2: route to dedicated importer screen.
-          notifyImporterComingSoon(source);
+          setShowForm(false);
+          setForeignImporterSource(source);
         }}
       />
+
+      {foreignImporterSource && (
+        <ForeignProductImporter
+          merchantId={merchantId}
+          source={foreignImporterSource}
+          onClose={() => setForeignImporterSource(null)}
+        />
+      )}
 
       {showForm && (
         <Card className="rounded-2xl p-6">
