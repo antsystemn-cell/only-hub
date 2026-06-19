@@ -41,6 +41,20 @@ type VariantDraft = {
   isPurchasable: boolean;
 };
 
+type OptionGroupPreview = {
+  name: string;
+  level: number;
+  prefix?: string | null;
+  values: Array<{ propertyValueId: string; value: string; sizeHint?: string | null }>;
+};
+
+type DeliveryOptionPreview = {
+  type: string;
+  estimatedDays: string | null;
+  displayedPrice: number | null;
+  domesticDeliveryFee: number | null;
+};
+
 type ParsedPreview = {
   status: string;
   warnings: string[];
@@ -48,9 +62,16 @@ type ParsedPreview = {
   sourceProductId: string;
   title: string;
   brand: string;
+  category: string;
   description: string;
   coverImage: string;
   gallery: string[];
+  baseSourcePrice: number | null;
+  productInfo: Array<{ label: string; value: string }>;
+  productIntroSections: Array<{ title: string; content: string }>;
+  optionGroups: OptionGroupPreview[];
+  deliveryOptions: DeliveryOptionPreview[];
+  extractionMethod: string;
 };
 
 type Props = {
@@ -111,16 +132,24 @@ export function ForeignProductImporter({ merchantId, source, onClose }: Props) {
         return;
       }
       const p = res.parsed;
+      const introDesc = (p as any).productIntroSections?.[0]?.content as string | undefined;
       setPreview({
         status: res.status,
         warnings: res.warnings ?? [],
         sourceUrl: p.sourceUrl,
         sourceProductId: p.sourceProductId ?? "",
         title: p.title ?? "",
-        brand: p.brand ?? "",
-        description: p.description ?? "",
+        brand: (p as any).brand ?? "",
+        category: (p as any).category ?? "",
+        description: p.description ?? introDesc ?? "",
         coverImage: p.coverImage ?? "",
         gallery: p.gallery ?? [],
+        baseSourcePrice: (p as any).baseSourcePrice ?? null,
+        productInfo: (p as any).productInfo ?? [],
+        productIntroSections: (p as any).productIntroSections ?? [],
+        optionGroups: (p as any).optionGroups ?? [],
+        deliveryOptions: (p as any).deliveryOptions ?? [],
+        extractionMethod: (p as any).extractionMethod ?? "META_FALLBACK",
       });
       const seeded: VariantDraft[] = (p.variants ?? []).map((v: any) => ({
         sourceVariantId: v.sourceVariantId ?? null,
@@ -317,7 +346,100 @@ export function ForeignProductImporter({ merchantId, source, onClose }: Props) {
             </div>
           )}
 
+          {(preview.category || preview.baseSourcePrice != null) && (
+            <div className="flex flex-wrap items-center gap-3 rounded-xl border bg-muted/30 p-3 text-sm">
+              {preview.category && (
+                <Badge variant="secondary">Ангилал: {preview.category}</Badge>
+              )}
+              {preview.baseSourcePrice != null && (
+                <Badge variant="secondary">
+                  Үндсэн үнэ: {preview.baseSourcePrice.toLocaleString()} KRW
+                </Badge>
+              )}
+              <Badge variant="outline" className="text-xs">
+                Эх сурвалж: {preview.extractionMethod}
+              </Badge>
+            </div>
+          )}
+
+          {preview.optionGroups.length > 0 && (
+            <div className="rounded-xl border p-3">
+              <Label className="mb-2 block">Сонголтын бүлгүүд</Label>
+              <div className="space-y-2">
+                {preview.optionGroups.map((g, i) => (
+                  <div key={i} className="flex flex-wrap items-center gap-1.5">
+                    <span className="text-sm font-medium">
+                      {g.name}
+                      {g.prefix ? `: ${g.prefix}` : ""}
+                    </span>
+                    {g.values.map((v) => (
+                      <Badge key={v.propertyValueId} variant="outline" className="text-xs">
+                        {v.value}
+                        {v.sizeHint ? ` (${v.sizeHint})` : ""}
+                      </Badge>
+                    ))}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {preview.productInfo.length > 0 && (
+            <div className="rounded-xl border p-3">
+              <Label className="mb-2 block">Барааны мэдээлэл</Label>
+              <div className="grid gap-1.5 sm:grid-cols-2">
+                {preview.productInfo.map((row, i) => (
+                  <div key={i} className="flex justify-between gap-2 text-sm">
+                    <span className="text-muted-foreground">{row.label}</span>
+                    <span className="font-medium">{row.value}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {preview.productIntroSections.length > 0 && (
+            <div className="rounded-xl border p-3">
+              <Label className="mb-2 block">Танилцуулга</Label>
+              <div className="space-y-3">
+                {preview.productIntroSections.map((s, i) => (
+                  <div key={i}>
+                    <div className="text-sm font-semibold">{s.title}</div>
+                    <p className="whitespace-pre-line text-sm text-muted-foreground">
+                      {s.content}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {preview.deliveryOptions.length > 0 && (
+            <div className="rounded-xl border p-3">
+              <Label className="mb-2 block">Эх сурвалжийн хүргэлт</Label>
+              <div className="space-y-1.5">
+                {preview.deliveryOptions.map((d, i) => (
+                  <div key={i} className="flex flex-wrap items-center gap-2 text-sm">
+                    <Badge variant="secondary">{d.type}</Badge>
+                    {d.estimatedDays && (
+                      <span className="text-muted-foreground">{d.estimatedDays}</span>
+                    )}
+                    {d.displayedPrice != null && (
+                      <span>{d.displayedPrice.toLocaleString()} KRW</span>
+                    )}
+                    {d.domesticDeliveryFee != null && (
+                      <span className="text-xs text-muted-foreground">
+                        Дотоодын хүргэлт: {d.domesticDeliveryFee.toLocaleString()} KRW
+                      </span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           <Separator />
+
 
           <VariantsEditor
             variants={variants}
