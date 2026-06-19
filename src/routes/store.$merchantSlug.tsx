@@ -87,8 +87,13 @@ function StorePage() {
           )}
           <div className="min-w-0">
             <h1 className="truncate text-xl font-bold sm:text-2xl">{merchant.name}</h1>
+            <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground sm:text-sm">
+              <span><span className="font-semibold text-foreground">{products.length}</span> бараа</span>
+              <span>•</span>
+              <span><span className="font-semibold text-foreground">{(merchant as any).followers_count ?? 0}</span> дагагч</span>
+            </div>
             {merchant.description && (
-              <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground sm:text-sm">{merchant.description}</p>
+              <p className="mt-1 line-clamp-2 text-xs text-muted-foreground sm:text-sm">{merchant.description}</p>
             )}
           </div>
         </div>
