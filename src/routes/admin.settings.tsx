@@ -19,7 +19,7 @@ import { importEasyshopProducts } from "@/lib/import-easyshop.functions";
 import { sendTestSmsFn, listSmsTestLogsFn } from "@/lib/admin-message-test.functions";
 import { supabase } from "@/integrations/supabase/client";
 
-const SETTING_KEYS = ["default_delivery_fee", "delivery_fee_rules", "default_commission_rate", "platform_logo_url"] as const;
+const SETTING_KEYS = ["default_delivery_fee", "delivery_fee_rules", "default_commission_rate", "platform_logo_url", "policy_shipping_default", "policy_return_default"] as const;
 
 const getPlatformSettings = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
