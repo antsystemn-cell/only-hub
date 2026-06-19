@@ -175,7 +175,7 @@ function ProductDetailPage() {
   const [qty, setQty] = useState(1);
   const touchStartX = useRef<number | null>(null);
 
-  // Foreign-order variant availability: fetch from product_variants and disable unavailable options.
+  useEffect(() => { setActiveImg(0); setColor(null); setSize(null); setQty(1); }, [product?.id]);
   const isForeign = product?.product_type === "FOREIGN_ORDER";
   const { data: foreignVariants = [] } = useQuery({
     queryKey: ["pdp-foreign-variants", product?.id],
