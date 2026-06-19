@@ -16,6 +16,7 @@ import { fmtMnt } from "@/lib/format";
 import { cart, useCart } from "@/lib/cart";
 import { validateCoupon } from "@/lib/coupons.functions";
 import { createOrder } from "@/lib/orders.functions";
+import { validateForeignCart } from "@/lib/foreign-orders/checkout-validation.functions";
 import { getCheckoutMethodsForStore } from "@/lib/payments/providers.functions";
 import { useShipping } from "@/lib/shipping/use-shipping";
 import { FreeShippingProgress } from "@/components/cart/FreeShippingProgress";
@@ -58,6 +59,7 @@ function CheckoutPage() {
   const items = useCart(merchantSlug);
   const validateFn = useServerFn(validateCoupon);
   const createOrderFn = useServerFn(createOrder);
+  const validateForeignFn = useServerFn(validateForeignCart);
 
   const { data: merchant } = useQuery({
     queryKey: ["merchant", merchantSlug],
@@ -203,7 +205,28 @@ function CheckoutPage() {
     if (!parsed.success) return toast.error(parsed.error.issues[0].message);
     const stockIssue = clientStockCheck();
     if (stockIssue) return toast.error(stockIssue);
-    
+
+    // Final foreign-order availability + price-review re-check before payment.
+    try {
+      const fr = await validateForeignFn({
+        data: {
+          merchantSlug,
+          items: items.map((i) => ({
+            productId: i.productId,
+            color: i.color ?? null,
+            size: i.size ?? null,
+            quantity: i.quantity,
+          })),
+        },
+      });
+      if (!fr.ok) {
+        toast.error(fr.issues[0]?.reason ?? "Зарим хувилбар одоогоор боломжгүй.");
+        return;
+      }
+    } catch (e: any) {
+      toast.error(e?.message ?? "Боломжит байдлыг шалгаж чадсангүй");
+      return;
+    }
 
     setSubmitting(true);
     try {

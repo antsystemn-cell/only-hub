@@ -33,6 +33,7 @@ import { Route as AdminOrdersRouteImport } from './routes/admin.orders'
 import { Route as AdminNotificationsRouteImport } from './routes/admin.notifications'
 import { Route as AdminMessageTestRouteImport } from './routes/admin.message-test'
 import { Route as AdminMerchantsRouteImport } from './routes/admin.merchants'
+import { Route as AdminForeignSyncRouteImport } from './routes/admin.foreign-sync'
 import { Route as AdminForeignOrdersRouteImport } from './routes/admin.foreign-orders'
 import { Route as AdminDeliveryRouteImport } from './routes/admin.delivery'
 import { Route as AdminBannersRouteImport } from './routes/admin.banners'
@@ -187,6 +188,11 @@ const AdminMessageTestRoute = AdminMessageTestRouteImport.update({
 const AdminMerchantsRoute = AdminMerchantsRouteImport.update({
   id: '/merchants',
   path: '/merchants',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminForeignSyncRoute = AdminForeignSyncRouteImport.update({
+  id: '/foreign-sync',
+  path: '/foreign-sync',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminForeignOrdersRoute = AdminForeignOrdersRouteImport.update({
@@ -398,6 +404,7 @@ export interface FileRoutesByFullPath {
   '/admin/banners': typeof AdminBannersRoute
   '/admin/delivery': typeof AdminDeliveryRoute
   '/admin/foreign-orders': typeof AdminForeignOrdersRoute
+  '/admin/foreign-sync': typeof AdminForeignSyncRoute
   '/admin/merchants': typeof AdminMerchantsRoute
   '/admin/message-test': typeof AdminMessageTestRoute
   '/admin/notifications': typeof AdminNotificationsRoute
@@ -458,6 +465,7 @@ export interface FileRoutesByTo {
   '/admin/banners': typeof AdminBannersRoute
   '/admin/delivery': typeof AdminDeliveryRoute
   '/admin/foreign-orders': typeof AdminForeignOrdersRoute
+  '/admin/foreign-sync': typeof AdminForeignSyncRoute
   '/admin/merchants': typeof AdminMerchantsRoute
   '/admin/message-test': typeof AdminMessageTestRoute
   '/admin/notifications': typeof AdminNotificationsRoute
@@ -519,6 +527,7 @@ export interface FileRoutesById {
   '/admin/banners': typeof AdminBannersRoute
   '/admin/delivery': typeof AdminDeliveryRoute
   '/admin/foreign-orders': typeof AdminForeignOrdersRoute
+  '/admin/foreign-sync': typeof AdminForeignSyncRoute
   '/admin/merchants': typeof AdminMerchantsRoute
   '/admin/message-test': typeof AdminMessageTestRoute
   '/admin/notifications': typeof AdminNotificationsRoute
@@ -582,6 +591,7 @@ export interface FileRouteTypes {
     | '/admin/banners'
     | '/admin/delivery'
     | '/admin/foreign-orders'
+    | '/admin/foreign-sync'
     | '/admin/merchants'
     | '/admin/message-test'
     | '/admin/notifications'
@@ -642,6 +652,7 @@ export interface FileRouteTypes {
     | '/admin/banners'
     | '/admin/delivery'
     | '/admin/foreign-orders'
+    | '/admin/foreign-sync'
     | '/admin/merchants'
     | '/admin/message-test'
     | '/admin/notifications'
@@ -702,6 +713,7 @@ export interface FileRouteTypes {
     | '/admin/banners'
     | '/admin/delivery'
     | '/admin/foreign-orders'
+    | '/admin/foreign-sync'
     | '/admin/merchants'
     | '/admin/message-test'
     | '/admin/notifications'
@@ -945,6 +957,13 @@ declare module '@tanstack/react-router' {
       path: '/merchants'
       fullPath: '/admin/merchants'
       preLoaderRoute: typeof AdminMerchantsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/foreign-sync': {
+      id: '/admin/foreign-sync'
+      path: '/foreign-sync'
+      fullPath: '/admin/foreign-sync'
+      preLoaderRoute: typeof AdminForeignSyncRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/foreign-orders': {
@@ -1212,6 +1231,7 @@ interface AdminRouteChildren {
   AdminBannersRoute: typeof AdminBannersRoute
   AdminDeliveryRoute: typeof AdminDeliveryRoute
   AdminForeignOrdersRoute: typeof AdminForeignOrdersRoute
+  AdminForeignSyncRoute: typeof AdminForeignSyncRoute
   AdminMerchantsRoute: typeof AdminMerchantsRoute
   AdminMessageTestRoute: typeof AdminMessageTestRoute
   AdminNotificationsRoute: typeof AdminNotificationsRoute
@@ -1232,6 +1252,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminBannersRoute: AdminBannersRoute,
   AdminDeliveryRoute: AdminDeliveryRoute,
   AdminForeignOrdersRoute: AdminForeignOrdersRoute,
+  AdminForeignSyncRoute: AdminForeignSyncRoute,
   AdminMerchantsRoute: AdminMerchantsRoute,
   AdminMessageTestRoute: AdminMessageTestRoute,
   AdminNotificationsRoute: AdminNotificationsRoute,

@@ -176,13 +176,80 @@ function ProductDetailPage() {
   const touchStartX = useRef<number | null>(null);
 
   useEffect(() => { setActiveImg(0); setColor(null); setSize(null); setQty(1); }, [product?.id]);
+  const isForeign = product?.product_type === "FOREIGN_ORDER";
+  const { data: foreignVariants = [] } = useQuery({
+    queryKey: ["pdp-foreign-variants", product?.id],
+    enabled: !!product?.id && !!isForeign,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("product_variants")
+        .select("size_label,color_label,availability_status,is_purchasable,price_review_required")
+        .eq("product_id", product!.id);
+      return data ?? [];
+    },
+  });
+
+  const unavailableColors = useMemo(() => {
+    if (!isForeign) return new Set<string>();
+    // Color is unavailable iff EVERY variant matching that color is not purchasable.
+    const byColor = new Map<string, { total: number; bad: number }>();
+    for (const v of foreignVariants as any[]) {
+      if (!v.color_label) continue;
+      const k = String(v.color_label);
+      const cur = byColor.get(k) ?? { total: 0, bad: 0 };
+      cur.total++;
+      if (v.is_purchasable === false || v.availability_status === "UNAVAILABLE") cur.bad++;
+      byColor.set(k, cur);
+    }
+    return new Set([...byColor.entries()].filter(([, c]) => c.total > 0 && c.bad === c.total).map(([k]) => k));
+  }, [foreignVariants, isForeign]);
+
+  const unavailableSizes = useMemo(() => {
+    if (!isForeign) return new Set<string>();
+    // If a color is chosen, a size is unavailable iff that specific (color,size) combo is not purchasable.
+    // Otherwise it's unavailable iff every variant with that size is not purchasable.
+    const out = new Set<string>();
+    const sizesAll = new Map<string, { total: number; bad: number }>();
+    for (const v of foreignVariants as any[]) {
+      if (!v.size_label) continue;
+      const k = String(v.size_label);
+      if (color && v.color_label && v.color_label !== color) continue;
+      const cur = sizesAll.get(k) ?? { total: 0, bad: 0 };
+      cur.total++;
+      if (v.is_purchasable === false || v.availability_status === "UNAVAILABLE") cur.bad++;
+      sizesAll.set(k, cur);
+    }
+    for (const [k, c] of sizesAll) if (c.total > 0 && c.bad === c.total) out.add(k);
+    return out;
+  }, [foreignVariants, isForeign, color]);
+
+  const selectedForeignVariant = useMemo(() => {
+    if (!isForeign) return null;
+    return (
+      (foreignVariants as any[]).find(
+        (v) =>
+          (size ? v.size_label === size : true) &&
+          (color ? v.color_label === color : true),
+      ) ?? null
+    );
+  }, [foreignVariants, isForeign, size, color]);
+
+  const foreignBlocked =
+    isForeign &&
+    !!selectedForeignVariant &&
+    (selectedForeignVariant.is_purchasable === false ||
+      selectedForeignVariant.availability_status === "UNAVAILABLE");
+
+  const foreignPriceReview =
+    isForeign &&
+    (foreignVariants as any[]).some((v) => v.price_review_required === true);
 
   const variantKey = color && size ? `${color}|${size}` : color || size || "";
   const hasTrackedStock = !!variantKey && typeof variantStock[variantKey] === "number";
   const stockForVariant = hasTrackedStock ? variantStock[variantKey] : Number.MAX_SAFE_INTEGER;
   const needsColor = colors.length > 0 && !color;
   const needsSize = sizes.length > 0 && !size;
-  const outOfStock = hasTrackedStock && stockForVariant <= 0;
+  const outOfStock = (hasTrackedStock && stockForVariant <= 0) || foreignBlocked;
   const wished = useIsWishlisted(product?.id);
 
   if (isLoading || !merchant) {
@@ -447,18 +514,40 @@ function ProductDetailPage() {
 
             <ForeignOrderPanel product={product as any} />
 
+            {foreignPriceReview && (
+              <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                ⚠ Эх сурвалж дээр энэ барааны үнэ өөрчлөгдсөн байж болзошгүй. Мерчант шинэ үнийг
+                хянаж буй учир сонгосон хувилбарын эцсийн үнэ захиалга баталгаажих үед өөрчлөгдөж болно.
+              </div>
+            )}
+            {foreignBlocked && (
+              <div className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
+                Сонгосон хувилбар Poizon Korea дээр түр дууссан байна. Өөр хувилбар сонгоно уу.
+              </div>
+            )}
+
 
             {/* Colors */}
             {colors.length > 0 && (
               <div className="mt-5">
                 <div className="mb-2 text-sm font-medium">Өнгө: <span className="text-muted-foreground">{color ?? "сонгоогүй"}</span></div>
                 <div className="flex flex-wrap gap-2">
-                  {colors.map((c) => (
-                    <button key={c} onClick={() => setColor(c)}
-                      className={`rounded-lg border px-3.5 py-1.5 text-sm transition ${color === c ? "border-orange-500 bg-orange-50 text-orange-600" : "border-border bg-white hover:border-orange-300"}`}>
-                      {color === c && <Check className="mr-1 inline h-3 w-3" />}{c}
-                    </button>
-                  ))}
+                  {colors.map((c) => {
+                    const disabled = unavailableColors.has(c);
+                    return (
+                      <button key={c} disabled={disabled} onClick={() => !disabled && setColor(c)}
+                        title={disabled ? "Энэ өнгө одоогоор боломжгүй" : undefined}
+                        className={`relative rounded-lg border px-3.5 py-1.5 text-sm transition ${
+                          disabled
+                            ? "cursor-not-allowed border-dashed border-border bg-muted text-muted-foreground line-through opacity-60"
+                            : color === c
+                            ? "border-orange-500 bg-orange-50 text-orange-600"
+                            : "border-border bg-white hover:border-orange-300"
+                        }`}>
+                        {color === c && !disabled && <Check className="mr-1 inline h-3 w-3" />}{c}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             )}
@@ -468,12 +557,22 @@ function ProductDetailPage() {
               <div className="mt-4">
                 <div className="mb-2 text-sm font-medium">Хэмжээ: <span className="text-muted-foreground">{size ?? "сонгоогүй"}</span></div>
                 <div className="flex flex-wrap gap-2">
-                  {sizes.map((s) => (
-                    <button key={s} onClick={() => setSize(s)}
-                      className={`min-w-14 rounded-lg border px-3 py-2 text-sm font-medium transition ${size === s ? "border-orange-500 bg-orange-50 text-orange-600" : "border-border bg-white hover:border-orange-300"}`}>
-                      {s}
-                    </button>
-                  ))}
+                  {sizes.map((s) => {
+                    const disabled = unavailableSizes.has(s);
+                    return (
+                      <button key={s} disabled={disabled} onClick={() => !disabled && setSize(s)}
+                        title={disabled ? "Энэ хэмжээ одоогоор боломжгүй" : undefined}
+                        className={`min-w-14 rounded-lg border px-3 py-2 text-sm font-medium transition ${
+                          disabled
+                            ? "cursor-not-allowed border-dashed border-border bg-muted text-muted-foreground line-through opacity-60"
+                            : size === s
+                            ? "border-orange-500 bg-orange-50 text-orange-600"
+                            : "border-border bg-white hover:border-orange-300"
+                        }`}>
+                        {s}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             )}
