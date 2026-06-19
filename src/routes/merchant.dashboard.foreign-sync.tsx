@@ -15,7 +15,7 @@ import {
 } from "@/lib/foreign-orders/sync.functions";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 
-export const Route = createFileRoute("/_authenticated/merchant/dashboard/foreign-sync")({
+export const Route = createFileRoute("/merchant/dashboard/foreign-sync")({
   component: ForeignSyncPage,
 });
 
