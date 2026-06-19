@@ -33,12 +33,18 @@ import type { Database } from "@/integrations/supabase/types";
 
 type ForeignSource = Database["public"]["Enums"]["foreign_source"];
 
+type AvailabilityStatus = "AVAILABLE" | "LOW_STOCK" | "UNAVAILABLE" | "UNKNOWN" | "NEEDS_REVIEW";
+
 type VariantDraft = {
   sourceVariantId?: string | null;
   sizeLabel: string;
   colorLabel?: string | null;
   sourcePrice: number;
   isPurchasable: boolean;
+  availabilityStatus: AvailabilityStatus;
+  unavailableReason?: string | null;
+  sourceAvailabilityRawText?: string | null;
+  optionSignature?: string | null;
 };
 
 type OptionGroupPreview = {
@@ -72,6 +78,7 @@ type ParsedPreview = {
   optionGroups: OptionGroupPreview[];
   deliveryOptions: DeliveryOptionPreview[];
   extractionMethod: string;
+  lowStockWarning: boolean;
 };
 
 type Props = {
@@ -150,16 +157,24 @@ export function ForeignProductImporter({ merchantId, source, onClose }: Props) {
         optionGroups: (p as any).optionGroups ?? [],
         deliveryOptions: (p as any).deliveryOptions ?? [],
         extractionMethod: (p as any).extractionMethod ?? "META_FALLBACK",
+        lowStockWarning: !!(p as any).lowStockWarning,
       });
       const seeded: VariantDraft[] = (p.variants ?? []).map((v: any) => ({
         sourceVariantId: v.sourceVariantId ?? null,
         sizeLabel: v.sizeLabel ?? "",
         colorLabel: v.colorLabel ?? null,
         sourcePrice: Number(v.sourcePrice ?? 0),
-        isPurchasable: !!v.sourcePrice,
+        isPurchasable: typeof v.isPurchasable === "boolean" ? v.isPurchasable : !!v.sourcePrice,
+        availabilityStatus: (v.availabilityStatus as AvailabilityStatus) ?? "UNKNOWN",
+        unavailableReason: v.unavailableReason ?? null,
+        sourceAvailabilityRawText: v.sourceAvailabilityRawText ?? null,
+        optionSignature: v.optionSignature ?? null,
       }));
       if (seeded.length === 0) {
-        seeded.push({ sizeLabel: "", sourcePrice: 0, isPurchasable: false });
+        seeded.push({
+          sizeLabel: "", sourcePrice: 0, isPurchasable: false,
+          availabilityStatus: "UNKNOWN",
+        });
       }
       setVariants(seeded);
       setStep("preview");
@@ -264,7 +279,14 @@ export function ForeignProductImporter({ merchantId, source, onClose }: Props) {
 
       {step === "preview" && preview && (
         <div className="space-y-5">
-          <ImportStatusBadge status={preview.status} />
+          <div className="flex flex-wrap items-center gap-2">
+            <ImportStatusBadge status={preview.status} />
+            {preview.lowStockWarning && (
+              <Badge className="gap-1 bg-amber-100 text-amber-800 hover:bg-amber-100">
+                <AlertCircle className="h-3 w-3" /> Үлдэгдэл бага (품절 임박)
+              </Badge>
+            )}
+          </div>
           {warnings.length > 0 && (
             <Alert className="border-amber-300 bg-amber-50">
               <AlertCircle className="h-4 w-4 text-amber-600" />
@@ -495,7 +517,10 @@ function VariantsEditor({
 
   const remove = (i: number) => setVariants(variants.filter((_, j) => j !== i));
   const add = () =>
-    setVariants([...variants, { sizeLabel: "", sourcePrice: 0, isPurchasable: false }]);
+    setVariants([
+      ...variants,
+      { sizeLabel: "", sourcePrice: 0, isPurchasable: false, availabilityStatus: "UNKNOWN" },
+    ]);
 
   return (
     <div>
