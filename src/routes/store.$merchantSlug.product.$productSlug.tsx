@@ -411,6 +411,7 @@ function ProductDetailPage() {
               {product.category && (
                 <Badge variant="secondary" className="text-xs">{product.category}</Badge>
               )}
+              {isForeignOrder(product) && <ForeignOrderInlineBadge product={product} />}
             </div>
 
             {/* Name */}
