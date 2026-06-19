@@ -16,10 +16,11 @@ const listeners = new Set<() => void>();
 let cache: WishlistItem[] | null = null;
 let currentUserId: string | null = null;
 let synced = false;
+const EMPTY_WISHLIST: WishlistItem[] = [];
 
 function read(): WishlistItem[] {
   if (cache) return cache;
-  if (typeof window === "undefined") return [];
+  if (typeof window === "undefined") return EMPTY_WISHLIST;
   try {
     const raw = localStorage.getItem(KEY);
     cache = raw ? (JSON.parse(raw) as WishlistItem[]) : [];
@@ -177,7 +178,7 @@ const subscribe = (cb: () => void) => {
 };
 
 export function useWishlist() {
-  return useSyncExternalStore(subscribe, read, () => [] as WishlistItem[]);
+  return useSyncExternalStore(subscribe, read, () => EMPTY_WISHLIST);
 }
 
 export function useIsWishlisted(productId: string | undefined | null) {

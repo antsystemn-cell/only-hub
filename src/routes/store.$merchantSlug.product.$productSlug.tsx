@@ -370,6 +370,7 @@ function ProductDetailPage() {
   };
 
   const currentMedia = gallery[activeImg];
+  const mainMediaFitClass = isForeign ? "object-contain" : "object-cover";
   const prevImg = () => setActiveImg((i) => Math.max(0, i - 1));
   const nextImg = () => setActiveImg((i) => Math.min(gallery.length - 1, i + 1));
 
@@ -396,23 +397,23 @@ function ProductDetailPage() {
           <span className="truncate text-foreground">{product.name}</span>
         </nav>
 
-        <div className="grid gap-4 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)_minmax(0,0.7fr)] lg:gap-6">
+        <div className="grid min-w-0 gap-4 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)_minmax(0,0.7fr)] lg:gap-6">
           {/* === Gallery === */}
-          <div>
+          <div className="min-w-0 overflow-hidden">
             <Card
-              className="group relative overflow-hidden rounded-2xl border-border/60 bg-white"
+              className="group relative aspect-square w-full max-w-full overflow-hidden rounded-2xl border-border/60 bg-white p-0"
               onTouchStart={onMainTouchStart}
               onTouchEnd={onMainTouchEnd}
             >
-              <div className="relative aspect-square w-full overflow-hidden bg-muted">
+              <div className="absolute inset-0 overflow-hidden bg-muted">
                 {currentMedia?.url ? (
                   currentMedia.type === "video" ? (
-                    <video src={currentMedia.url} controls className="absolute inset-0 h-full w-full object-contain" />
+                    <video src={currentMedia.url} controls className="h-full w-full object-contain" />
                   ) : (
-                    <img src={currentMedia.url} alt={product.name} className="absolute inset-0 h-full w-full object-contain" />
+                    <img src={currentMedia.url} alt={product.name} className={`h-full w-full ${mainMediaFitClass}`} />
                   )
                 ) : (
-                  <div className="absolute inset-0 flex items-center justify-center text-muted-foreground">Зураг алга</div>
+                  <div className="flex h-full w-full items-center justify-center text-muted-foreground">Зураг алга</div>
                 )}
 
                 {/* Badges top-left */}
@@ -480,7 +481,7 @@ function ProductDetailPage() {
 
             {/* Thumbnail row */}
             {gallery.length > 1 && (
-              <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
+              <div className="mt-3 flex min-w-0 max-w-full gap-2 overflow-x-auto pb-1">
                 {gallery.map((m, i) => (
                   <button
                     key={m.url + i}

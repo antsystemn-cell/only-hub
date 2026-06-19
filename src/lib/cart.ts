@@ -13,10 +13,11 @@ export type CartItem = {
 const KEY = (merchantSlug: string) => `only:cart:${merchantSlug}`;
 const listeners = new Set<() => void>();
 const cache = new Map<string, CartItem[]>();
+const EMPTY_CART: CartItem[] = [];
 
 function read(merchantSlug: string): CartItem[] {
   if (cache.has(merchantSlug)) return cache.get(merchantSlug)!;
-  if (typeof window === "undefined") return [];
+  if (typeof window === "undefined") return EMPTY_CART;
   try {
     const raw = localStorage.getItem(KEY(merchantSlug));
     const parsed = raw ? (JSON.parse(raw) as CartItem[]) : [];
@@ -76,6 +77,6 @@ export function useCart(merchantSlug: string) {
   return useSyncExternalStore(
     subscribe,
     () => read(merchantSlug),
-    () => [] as CartItem[],
+    () => EMPTY_CART,
   );
 }
