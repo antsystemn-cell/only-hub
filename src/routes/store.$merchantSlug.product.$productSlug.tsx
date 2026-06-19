@@ -19,6 +19,7 @@ import { SiteHeader } from "@/components/site/SiteHeader";
 import { SiteFooter } from "@/components/site/SiteFooter";
 import { ShareMenu } from "@/components/product/ShareMenu";
 import { ReviewsSection } from "@/components/product/ReviewsSection";
+import { ForeignOrderInlineBadge, ForeignOrderPanel, isForeignOrder } from "@/components/product/ForeignOrderBadge";
 
 export const Route = createFileRoute("/store/$merchantSlug/product/$productSlug")({
   component: ProductDetailPage,
