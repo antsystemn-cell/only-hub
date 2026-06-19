@@ -624,6 +624,7 @@ function ProductDetailPage() {
             avg={Number(rating)}
             dist={reviewStats?.dist ?? { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 }}
           />
+          <ReviewsSection productId={product.id} />
         </div>
 
         {/* === Mobile-only: store card === */}
