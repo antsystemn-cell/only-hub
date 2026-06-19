@@ -404,12 +404,12 @@ function ProductDetailPage() {
               onTouchStart={onMainTouchStart}
               onTouchEnd={onMainTouchEnd}
             >
-              <div className="relative flex min-h-[260px] max-h-[60vh] items-center justify-center bg-muted sm:max-h-[580px]">
+              <div className="relative flex min-h-[260px] items-center justify-center bg-muted">
                 {currentMedia?.url ? (
                   currentMedia.type === "video" ? (
-                    <video src={currentMedia.url} controls className="h-auto w-full max-h-full object-contain" />
+                    <video src={currentMedia.url} controls className="h-auto w-full max-h-[60vh] object-contain sm:max-h-[580px]" />
                   ) : (
-                    <img src={currentMedia.url} alt={product.name} className="h-auto w-full max-h-full object-contain" />
+                    <img src={currentMedia.url} alt={product.name} className="h-auto w-full max-h-[60vh] object-contain sm:max-h-[580px]" />
                   )
                 ) : (
                   <div className="flex h-full min-h-[260px] items-center justify-center text-muted-foreground">Зураг алга</div>
