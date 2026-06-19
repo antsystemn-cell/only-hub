@@ -48,9 +48,28 @@ export const createOrder = createServerFn({ method: "POST" })
     const ids = Array.from(new Set(data.items.map((i) => i.productId)));
     const { data: products } = await supabaseAdmin
       .from("products")
-      .select("id,name,price,stock_quantity,variant_stock,is_active,merchant_id")
+      .select(
+        "id,name,price,stock_quantity,variant_stock,is_active,merchant_id,product_type,foreign_source,source_url,source_country,source_currency,source_name,default_delivery_min_days,default_delivery_max_days",
+      )
       .in("id", ids);
     const pmap = new Map<string, any>((products ?? []).map((p) => [p.id, p]));
+
+    // Pre-fetch variants once for any foreign-order products, to snapshot source prices.
+    const foreignIds = (products ?? [])
+      .filter((p: any) => p.product_type === "FOREIGN_ORDER")
+      .map((p: any) => p.id);
+    let variantsByProduct = new Map<string, any[]>();
+    if (foreignIds.length) {
+      const { data: vs } = await supabaseAdmin
+        .from("product_variants")
+        .select("*")
+        .in("product_id", foreignIds);
+      (vs ?? []).forEach((v: any) => {
+        const arr = variantsByProduct.get(v.product_id) ?? [];
+        arr.push(v);
+        variantsByProduct.set(v.product_id, arr);
+      });
+    }
 
     const issues: string[] = [];
     let subtotal = 0;
@@ -68,11 +87,40 @@ export const createOrder = createServerFn({ method: "POST" })
       }
       const realPrice = Number(p.price);
       if (Math.abs(realPrice - i.price) > 0.01) {
-        // price changed; use real price
         i.price = realPrice;
       }
       subtotal += realPrice * i.quantity;
-      return { ...i, price: realPrice, name: p.name };
+
+      // Foreign-order snapshot — frozen at purchase time.
+      let foreign: any = null;
+      if (p.product_type === "FOREIGN_ORDER") {
+        const variants = variantsByProduct.get(p.id) ?? [];
+        const match =
+          variants.find(
+            (v) =>
+              (i.size && v.size_label === i.size) ||
+              (i.color && v.color_label === i.color),
+          ) ?? variants[0];
+        foreign = {
+          product_type: "FOREIGN_ORDER",
+          foreign_source: p.foreign_source,
+          source_url: p.source_url,
+          source_country: p.source_country,
+          source_currency: p.source_currency ?? match?.source_currency ?? null,
+          source_name: p.source_name,
+          source_product_id: null,
+          source_variant_id: match?.source_variant_id ?? null,
+          source_price: match?.source_price != null ? Number(match.source_price) : null,
+          source_price_mnt:
+            match?.source_price_mnt != null ? Number(match.source_price_mnt) : null,
+          exchange_rate: match?.exchange_rate != null ? Number(match.exchange_rate) : null,
+          customer_paid_price_mnt: realPrice,
+          delivery_min_days: p.default_delivery_min_days,
+          delivery_max_days: p.default_delivery_max_days,
+        };
+      }
+
+      return { ...i, price: realPrice, name: p.name, foreign };
     });
     if (issues.length) return { ok: false as const, error: issues.join("\n") };
 
