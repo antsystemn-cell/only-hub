@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import {
   LayoutDashboard, Store, BarChart3, ShoppingCart,
-  Users, Image as ImageIcon, FileText, LogOut, Truck, Settings2, Wallet, Bell, MessageSquare,
+  Users, Image as ImageIcon, FileText, LogOut, Truck, Settings2, Wallet, Bell, MessageSquare, Globe2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
