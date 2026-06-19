@@ -33,6 +33,7 @@ const AuthContext = createContext<AuthState | undefined>(undefined);
 const AUTH_TIMEOUT_MS = 8_000;
 
 function withTimeout<T>(promise: PromiseLike<T>, label: string): Promise<T> {
+  if (typeof window === "undefined") return Promise.resolve(promise);
   return Promise.race([
     Promise.resolve(promise),
     new Promise<T>((_, reject) => {
@@ -87,22 +88,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         new Set(next.filter((r) => r.merchant_id).map((r) => r.merchant_id!)),
       );
       let nextPreferredMerchantId = nextMerchantIds[0] ?? null;
-      if (nextMerchantIds.length > 0) {
-        const { data: recentOrders, error: ordersError } = await withTimeout(
-          supabase
-            .from("orders")
-            .select("merchant_id, created_at")
-            .in("merchant_id", nextMerchantIds)
-            .order("created_at", { ascending: false })
-            .limit(1),
-          "merchant activity",
-        );
-        if (ordersError) {
-          console.error("[auth] Failed to load latest merchant activity", ordersError);
-        } else if (recentOrders?.[0]?.merchant_id) {
-          nextPreferredMerchantId = recentOrders[0].merchant_id;
-        }
-      }
       setPreferredMerchantId(nextPreferredMerchantId);
       setRoles((prev) => {
         // Avoid replacing the array (and thus invalidating react-query keys)
