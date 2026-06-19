@@ -95,7 +95,7 @@ export const upsertMerchantForeignSettings = createServerFn({ method: "POST" })
       .upsert(
         {
           merchant_id: data.merchantId,
-          source: data.source,
+          source: data.source as any,
           enabled: data.enabled,
           default_profit_percent: data.defaultProfitPercent,
           minimum_profit_mnt: data.minimumProfitMnt,
