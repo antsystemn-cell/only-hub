@@ -26,12 +26,7 @@ export const Route = createFileRoute("/store/$merchantSlug/product/$productSlug"
 type Spec = { label: string; value: string };
 type Media = { url: string; type?: "image" | "video" };
 
-/* tiny stable hash for demo rating/sold */
-function hashStr(s: string) {
-  let h = 0;
-  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0;
-  return h;
-}
+
 
 function ProductDetailPage() {
   const { merchantSlug, productSlug } = Route.useParams();
