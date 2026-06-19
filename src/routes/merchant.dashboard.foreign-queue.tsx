@@ -107,7 +107,7 @@ function ForeignQueuePage() {
   });
 
   return (
-    <DashboardLayout title="Гадаад захиалгын дараалал">
+    <DashboardLayout>
       <div className="space-y-4 p-4">
         <Card className="p-4">
           <div className="mb-3 flex items-center justify-between gap-3">
