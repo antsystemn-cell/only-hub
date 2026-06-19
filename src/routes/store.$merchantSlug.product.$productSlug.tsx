@@ -415,7 +415,7 @@ function ProductDetailPage() {
                 <span className="font-semibold">{rating}</span>
                 <span className="text-muted-foreground">({reviewCount} үнэлгээ)</span>
               </div>
-              <span className="text-muted-foreground">{soldCount} борлуулалт</span>
+              {soldCount > 0 && <span className="text-muted-foreground">{soldCount} борлуулалт</span>}
             </div>
 
             {/* Brand + SKU */}
