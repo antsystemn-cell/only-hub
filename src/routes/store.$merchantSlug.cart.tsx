@@ -18,6 +18,7 @@ import {
 import { fmtMnt } from "@/lib/format";
 import { cart, useCart, type CartItem } from "@/lib/cart";
 import { validateCoupon } from "@/lib/coupons.functions";
+import { validateForeignCart } from "@/lib/foreign-orders/checkout-validation.functions";
 import { useShipping } from "@/lib/shipping/use-shipping";
 import { FreeShippingProgress } from "@/components/cart/FreeShippingProgress";
 import { StickyCheckoutBar } from "@/components/cart/StickyCheckoutBar";
@@ -43,6 +44,7 @@ function CartPage() {
   const items = useCart(merchantSlug);
   const qc = useQueryClient();
   const validateFn = useServerFn(validateCoupon);
+  const validateForeignFn = useServerFn(validateForeignCart);
 
   const { data: merchant } = useQuery({
     queryKey: ["merchant", merchantSlug],
@@ -182,10 +184,57 @@ function CartPage() {
     return null;
   }
 
-  function goCheckout() {
+  // Foreign-order availability re-check — runs whenever items change.
+  const foreignCheck = useQuery({
+    queryKey: [
+      "foreign-cart-validate",
+      merchantSlug,
+      items.map((i) => `${i.productId}|${i.color ?? ""}|${i.size ?? ""}|${i.quantity}`).join(","),
+    ],
+    enabled: items.length > 0,
+    queryFn: () =>
+      validateForeignFn({
+        data: {
+          merchantSlug,
+          items: items.map((i) => ({
+            productId: i.productId,
+            color: i.color ?? null,
+            size: i.size ?? null,
+            quantity: i.quantity,
+          })),
+        },
+      }),
+    staleTime: 30_000,
+    refetchOnWindowFocus: true,
+  });
+  const foreignIssues = foreignCheck.data?.issues ?? [];
+
+  async function goCheckout() {
     if (items.length === 0) return;
     const issue = clientStockCheck();
     if (issue) return toast.error(issue);
+    // Final foreign-order availability re-check before navigating.
+    try {
+      const r = await validateForeignFn({
+        data: {
+          merchantSlug,
+          items: items.map((i) => ({
+            productId: i.productId,
+            color: i.color ?? null,
+            size: i.size ?? null,
+            quantity: i.quantity,
+          })),
+        },
+      });
+      if (!r.ok) {
+        toast.error(r.issues[0]?.reason ?? "Зарим хувилбар боломжгүй боллоо.");
+        qc.invalidateQueries({ queryKey: ["foreign-cart-validate"] });
+        return;
+      }
+    } catch (e: any) {
+      toast.error(e?.message ?? "Боломжит байдлыг шалгаж чадсангүй");
+      return;
+    }
     navigate({ to: "/store/$merchantSlug/checkout", params: { merchantSlug } });
   }
 
