@@ -248,7 +248,7 @@ function AdminMerchantsPage() {
                     pending={updateMerchant.isPending}
                   />
 
-                  <Button size="sm" variant="outline" onClick={() => { setAssignModal({ merchantId: m.id, merchantName: m.name }); setNewAdminEmail(""); setNewAdminPassword(""); }}>
+                  <Button size="sm" variant="outline" onClick={() => { setAssignModal({ merchantId: m.id, merchantName: m.name }); setAssignMode("create"); setNewAdminEmail(""); setNewAdminPassword(""); setExistingUserId(null); setExistingSearch(""); }}>
                     <UserPlus className="mr-1 h-3.5 w-3.5" /> Admin томилох
                   </Button>
 
