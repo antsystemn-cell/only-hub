@@ -370,6 +370,7 @@ function ProductDetailPage() {
   };
 
   const currentMedia = gallery[activeImg];
+  const mainMediaFitClass = isForeign ? "object-contain" : "object-cover";
   const prevImg = () => setActiveImg((i) => Math.max(0, i - 1));
   const nextImg = () => setActiveImg((i) => Math.min(gallery.length - 1, i + 1));
 
@@ -400,19 +401,19 @@ function ProductDetailPage() {
           {/* === Gallery === */}
           <div>
             <Card
-              className="group relative overflow-hidden rounded-2xl border-border/60 bg-white"
+              className="group relative aspect-square w-full max-w-full overflow-hidden rounded-2xl border-border/60 bg-white p-0"
               onTouchStart={onMainTouchStart}
               onTouchEnd={onMainTouchEnd}
             >
-              <div className="relative aspect-square w-full overflow-hidden bg-muted">
+              <div className="absolute inset-0 overflow-hidden bg-muted">
                 {currentMedia?.url ? (
                   currentMedia.type === "video" ? (
-                    <video src={currentMedia.url} controls className="absolute inset-0 h-full w-full object-contain" />
+                    <video src={currentMedia.url} controls className="h-full w-full object-contain" />
                   ) : (
-                    <img src={currentMedia.url} alt={product.name} className="absolute inset-0 h-full w-full object-contain" />
+                    <img src={currentMedia.url} alt={product.name} className={`h-full w-full ${mainMediaFitClass}`} />
                   )
                 ) : (
-                  <div className="absolute inset-0 flex items-center justify-center text-muted-foreground">Зураг алга</div>
+                  <div className="flex h-full w-full items-center justify-center text-muted-foreground">Зураг алга</div>
                 )}
 
                 {/* Badges top-left */}
