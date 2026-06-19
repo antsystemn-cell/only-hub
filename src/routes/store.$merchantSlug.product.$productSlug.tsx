@@ -397,9 +397,9 @@ function ProductDetailPage() {
           <span className="truncate text-foreground">{product.name}</span>
         </nav>
 
-        <div className="grid gap-4 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)_minmax(0,0.7fr)] lg:gap-6">
+        <div className="grid min-w-0 gap-4 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)_minmax(0,0.7fr)] lg:gap-6">
           {/* === Gallery === */}
-          <div>
+          <div className="min-w-0 overflow-hidden">
             <Card
               className="group relative aspect-square w-full max-w-full overflow-hidden rounded-2xl border-border/60 bg-white p-0"
               onTouchStart={onMainTouchStart}
@@ -481,7 +481,7 @@ function ProductDetailPage() {
 
             {/* Thumbnail row */}
             {gallery.length > 1 && (
-              <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
+              <div className="mt-3 flex min-w-0 max-w-full gap-2 overflow-x-auto pb-1">
                 {gallery.map((m, i) => (
                   <button
                     key={m.url + i}
