@@ -577,6 +577,95 @@ export type Database = {
         }
         Relationships: []
       }
+      merchant_foreign_source_settings: {
+        Row: {
+          created_at: string
+          default_cargo_cost_mnt: number
+          default_delivery_max_days: number
+          default_delivery_min_days: number
+          default_korea_domestic_shipping_krw: number
+          default_korea_domestic_shipping_mnt: number
+          default_local_delivery_cost_mnt: number
+          default_profit_percent: number
+          enabled: boolean
+          exchange_rate: number | null
+          id: string
+          merchant_id: string
+          minimum_profit_mnt: number
+          payment_fee_reserve_fixed_mnt: number
+          payment_fee_reserve_percent: number
+          price_change_threshold_mnt: number
+          price_change_threshold_percent: number
+          price_sync_mode: Database["public"]["Enums"]["price_sync_mode"]
+          profit_base: string
+          risk_buffer_fixed_mnt: number
+          risk_buffer_percent: number
+          rounding_rule: number
+          source: Database["public"]["Enums"]["foreign_source"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          default_cargo_cost_mnt?: number
+          default_delivery_max_days?: number
+          default_delivery_min_days?: number
+          default_korea_domestic_shipping_krw?: number
+          default_korea_domestic_shipping_mnt?: number
+          default_local_delivery_cost_mnt?: number
+          default_profit_percent?: number
+          enabled?: boolean
+          exchange_rate?: number | null
+          id?: string
+          merchant_id: string
+          minimum_profit_mnt?: number
+          payment_fee_reserve_fixed_mnt?: number
+          payment_fee_reserve_percent?: number
+          price_change_threshold_mnt?: number
+          price_change_threshold_percent?: number
+          price_sync_mode?: Database["public"]["Enums"]["price_sync_mode"]
+          profit_base?: string
+          risk_buffer_fixed_mnt?: number
+          risk_buffer_percent?: number
+          rounding_rule?: number
+          source: Database["public"]["Enums"]["foreign_source"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          default_cargo_cost_mnt?: number
+          default_delivery_max_days?: number
+          default_delivery_min_days?: number
+          default_korea_domestic_shipping_krw?: number
+          default_korea_domestic_shipping_mnt?: number
+          default_local_delivery_cost_mnt?: number
+          default_profit_percent?: number
+          enabled?: boolean
+          exchange_rate?: number | null
+          id?: string
+          merchant_id?: string
+          minimum_profit_mnt?: number
+          payment_fee_reserve_fixed_mnt?: number
+          payment_fee_reserve_percent?: number
+          price_change_threshold_mnt?: number
+          price_change_threshold_percent?: number
+          price_sync_mode?: Database["public"]["Enums"]["price_sync_mode"]
+          profit_base?: string
+          risk_buffer_fixed_mnt?: number
+          risk_buffer_percent?: number
+          rounding_rule?: number
+          source?: Database["public"]["Enums"]["foreign_source"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "merchant_foreign_source_settings_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       merchant_users: {
         Row: {
           created_at: string
@@ -611,10 +700,12 @@ export type Database = {
       }
       merchants: {
         Row: {
+          allowed_foreign_sources: Database["public"]["Enums"]["foreign_source"][]
           approval_status: string
           approved_at: string | null
           approved_by: string | null
           business_type: string | null
+          can_create_foreign_order_products: boolean
           commission_rate: number
           contact_name: string | null
           contact_phone: string | null
@@ -643,10 +734,12 @@ export type Database = {
           website_url: string | null
         }
         Insert: {
+          allowed_foreign_sources?: Database["public"]["Enums"]["foreign_source"][]
           approval_status?: string
           approved_at?: string | null
           approved_by?: string | null
           business_type?: string | null
+          can_create_foreign_order_products?: boolean
           commission_rate?: number
           contact_name?: string | null
           contact_phone?: string | null
@@ -675,10 +768,12 @@ export type Database = {
           website_url?: string | null
         }
         Update: {
+          allowed_foreign_sources?: Database["public"]["Enums"]["foreign_source"][]
           approval_status?: string
           approved_at?: string | null
           approved_by?: string | null
           business_type?: string | null
+          can_create_foreign_order_products?: boolean
           commission_rate?: number
           contact_name?: string | null
           contact_phone?: string | null
@@ -783,6 +878,8 @@ export type Database = {
           delivery_status: string | null
           external_ref: string | null
           guest_name: string | null
+          has_foreign_order_items: boolean
+          has_ready_stock_items: boolean
           id: string
           is_guest: boolean
           items: Json
@@ -823,6 +920,8 @@ export type Database = {
           delivery_status?: string | null
           external_ref?: string | null
           guest_name?: string | null
+          has_foreign_order_items?: boolean
+          has_ready_stock_items?: boolean
           id?: string
           is_guest?: boolean
           items: Json
@@ -863,6 +962,8 @@ export type Database = {
           delivery_status?: string | null
           external_ref?: string | null
           guest_name?: string | null
+          has_foreign_order_items?: boolean
+          has_ready_stock_items?: boolean
           id?: string
           is_guest?: boolean
           items?: Json
@@ -1255,15 +1356,119 @@ export type Database = {
           },
         ]
       }
+      product_variants: {
+        Row: {
+          availability_status: Database["public"]["Enums"]["variant_availability"]
+          cargo_cost_mnt: number | null
+          color_label: string | null
+          created_at: string
+          exchange_rate: number | null
+          final_customer_price_mnt: number | null
+          id: string
+          is_purchasable: boolean
+          is_visible: boolean
+          korea_domestic_shipping_mnt: number | null
+          label: string | null
+          last_availability_sync_at: string | null
+          last_price_sync_at: string | null
+          local_delivery_cost_mnt: number | null
+          minimum_profit_mnt: number | null
+          payment_fee_reserve_mnt: number | null
+          product_id: string
+          profit_amount_mnt: number | null
+          profit_percent: number | null
+          risk_buffer_mnt: number | null
+          rounded_customer_price_mnt: number | null
+          size_label: string | null
+          source_availability_status: string | null
+          source_currency: string | null
+          source_price: number | null
+          source_price_mnt: number | null
+          source_variant_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          availability_status?: Database["public"]["Enums"]["variant_availability"]
+          cargo_cost_mnt?: number | null
+          color_label?: string | null
+          created_at?: string
+          exchange_rate?: number | null
+          final_customer_price_mnt?: number | null
+          id?: string
+          is_purchasable?: boolean
+          is_visible?: boolean
+          korea_domestic_shipping_mnt?: number | null
+          label?: string | null
+          last_availability_sync_at?: string | null
+          last_price_sync_at?: string | null
+          local_delivery_cost_mnt?: number | null
+          minimum_profit_mnt?: number | null
+          payment_fee_reserve_mnt?: number | null
+          product_id: string
+          profit_amount_mnt?: number | null
+          profit_percent?: number | null
+          risk_buffer_mnt?: number | null
+          rounded_customer_price_mnt?: number | null
+          size_label?: string | null
+          source_availability_status?: string | null
+          source_currency?: string | null
+          source_price?: number | null
+          source_price_mnt?: number | null
+          source_variant_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          availability_status?: Database["public"]["Enums"]["variant_availability"]
+          cargo_cost_mnt?: number | null
+          color_label?: string | null
+          created_at?: string
+          exchange_rate?: number | null
+          final_customer_price_mnt?: number | null
+          id?: string
+          is_purchasable?: boolean
+          is_visible?: boolean
+          korea_domestic_shipping_mnt?: number | null
+          label?: string | null
+          last_availability_sync_at?: string | null
+          last_price_sync_at?: string | null
+          local_delivery_cost_mnt?: number | null
+          minimum_profit_mnt?: number | null
+          payment_fee_reserve_mnt?: number | null
+          product_id?: string
+          profit_amount_mnt?: number | null
+          profit_percent?: number | null
+          risk_buffer_mnt?: number | null
+          rounded_customer_price_mnt?: number | null
+          size_label?: string | null
+          source_availability_status?: string | null
+          source_currency?: string | null
+          source_price?: number | null
+          source_price_mnt?: number | null
+          source_variant_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_variants_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       products: {
         Row: {
           brand_id: string | null
           category: string | null
           colors: Json
           created_at: string
+          default_delivery_max_days: number | null
+          default_delivery_min_days: number | null
           description: string | null
           detail_media: Json
           discount: number
+          foreign_source: Database["public"]["Enums"]["foreign_source"] | null
           gallery_images: Json
           id: string
           image_url: string | null
@@ -1271,17 +1476,26 @@ export type Database = {
           is_bogo: boolean
           is_new: boolean
           is_on_sale: boolean
+          last_source_sync_at: string | null
           legacy_metadata: Json
           merchant_id: string
           name: string
           original_price: number | null
           price: number
           product_code: string | null
+          product_type: Database["public"]["Enums"]["product_type"]
           sales: number
           sizes: Json
           slug: string | null
+          source_country: string | null
+          source_currency: string | null
+          source_name: string | null
           source_product_id: string | null
+          source_sync_status:
+            | Database["public"]["Enums"]["source_sync_status"]
+            | null
           source_system: string
+          source_url: string | null
           specifications: Json
           stock_quantity: number
           thumbnail_url: string | null
@@ -1293,9 +1507,12 @@ export type Database = {
           category?: string | null
           colors?: Json
           created_at?: string
+          default_delivery_max_days?: number | null
+          default_delivery_min_days?: number | null
           description?: string | null
           detail_media?: Json
           discount?: number
+          foreign_source?: Database["public"]["Enums"]["foreign_source"] | null
           gallery_images?: Json
           id?: string
           image_url?: string | null
@@ -1303,17 +1520,26 @@ export type Database = {
           is_bogo?: boolean
           is_new?: boolean
           is_on_sale?: boolean
+          last_source_sync_at?: string | null
           legacy_metadata?: Json
           merchant_id: string
           name: string
           original_price?: number | null
           price: number
           product_code?: string | null
+          product_type?: Database["public"]["Enums"]["product_type"]
           sales?: number
           sizes?: Json
           slug?: string | null
+          source_country?: string | null
+          source_currency?: string | null
+          source_name?: string | null
           source_product_id?: string | null
+          source_sync_status?:
+            | Database["public"]["Enums"]["source_sync_status"]
+            | null
           source_system?: string
+          source_url?: string | null
           specifications?: Json
           stock_quantity?: number
           thumbnail_url?: string | null
@@ -1325,9 +1551,12 @@ export type Database = {
           category?: string | null
           colors?: Json
           created_at?: string
+          default_delivery_max_days?: number | null
+          default_delivery_min_days?: number | null
           description?: string | null
           detail_media?: Json
           discount?: number
+          foreign_source?: Database["public"]["Enums"]["foreign_source"] | null
           gallery_images?: Json
           id?: string
           image_url?: string | null
@@ -1335,17 +1564,26 @@ export type Database = {
           is_bogo?: boolean
           is_new?: boolean
           is_on_sale?: boolean
+          last_source_sync_at?: string | null
           legacy_metadata?: Json
           merchant_id?: string
           name?: string
           original_price?: number | null
           price?: number
           product_code?: string | null
+          product_type?: Database["public"]["Enums"]["product_type"]
           sales?: number
           sizes?: Json
           slug?: string | null
+          source_country?: string | null
+          source_currency?: string | null
+          source_name?: string | null
           source_product_id?: string | null
+          source_sync_status?:
+            | Database["public"]["Enums"]["source_sync_status"]
+            | null
           source_system?: string
+          source_url?: string | null
           specifications?: Json
           stock_quantity?: number
           thumbnail_url?: string | null
@@ -1599,6 +1837,81 @@ export type Database = {
         }
         Relationships: []
       }
+      source_purchase_queue: {
+        Row: {
+          created_at: string
+          customer_paid_price_mnt: number | null
+          id: string
+          merchant_id: string
+          notes: string | null
+          order_id: string
+          order_item_index: number
+          selected_size_label: string | null
+          source: Database["public"]["Enums"]["foreign_source"]
+          source_currency: string | null
+          source_price: number | null
+          source_price_mnt: number | null
+          source_product_id: string | null
+          source_url: string | null
+          source_variant_id: string | null
+          status: Database["public"]["Enums"]["foreign_fulfillment_status"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          customer_paid_price_mnt?: number | null
+          id?: string
+          merchant_id: string
+          notes?: string | null
+          order_id: string
+          order_item_index: number
+          selected_size_label?: string | null
+          source: Database["public"]["Enums"]["foreign_source"]
+          source_currency?: string | null
+          source_price?: number | null
+          source_price_mnt?: number | null
+          source_product_id?: string | null
+          source_url?: string | null
+          source_variant_id?: string | null
+          status?: Database["public"]["Enums"]["foreign_fulfillment_status"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          customer_paid_price_mnt?: number | null
+          id?: string
+          merchant_id?: string
+          notes?: string | null
+          order_id?: string
+          order_item_index?: number
+          selected_size_label?: string | null
+          source?: Database["public"]["Enums"]["foreign_source"]
+          source_currency?: string | null
+          source_price?: number | null
+          source_price_mnt?: number | null
+          source_product_id?: string | null
+          source_url?: string | null
+          source_variant_id?: string | null
+          status?: Database["public"]["Enums"]["foreign_fulfillment_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "source_purchase_queue_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "source_purchase_queue_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       suppressed_emails: {
         Row: {
           created_at: string
@@ -1782,6 +2095,37 @@ export type Database = {
         | "merchant_admin"
         | "merchant_moderator"
         | "merchant_driver"
+      foreign_fulfillment_status:
+        | "PAID"
+        | "WAITING_SOURCE_PURCHASE"
+        | "SOURCE_PURCHASED"
+        | "KOREA_WAREHOUSE_RECEIVED"
+        | "INTERNATIONAL_TRANSIT"
+        | "UB_ARRIVED"
+        | "DELIVERY_ASSIGNED"
+        | "DELIVERED"
+        | "SOURCE_PURCHASE_FAILED"
+        | "REFUNDED"
+        | "CANCELLED"
+      foreign_source:
+        | "POIZON_KR"
+        | "DEWU_CN"
+        | "TAOBAO"
+        | "TMALL"
+        | "ALIBABA_1688"
+        | "AMAZON"
+        | "MANUAL_EXTERNAL"
+      price_sync_mode:
+        | "AUTO_UPDATE_CUSTOMER_PRICE"
+        | "REVIEW_BEFORE_UPDATE"
+        | "AVAILABILITY_ONLY"
+      product_type: "READY_STOCK" | "FOREIGN_ORDER"
+      source_sync_status: "OK" | "PENDING" | "FAILED" | "NEEDS_REVIEW"
+      variant_availability:
+        | "AVAILABLE"
+        | "UNAVAILABLE"
+        | "UNKNOWN"
+        | "NEEDS_REVIEW"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1915,6 +2259,41 @@ export const Constants = {
         "merchant_admin",
         "merchant_moderator",
         "merchant_driver",
+      ],
+      foreign_fulfillment_status: [
+        "PAID",
+        "WAITING_SOURCE_PURCHASE",
+        "SOURCE_PURCHASED",
+        "KOREA_WAREHOUSE_RECEIVED",
+        "INTERNATIONAL_TRANSIT",
+        "UB_ARRIVED",
+        "DELIVERY_ASSIGNED",
+        "DELIVERED",
+        "SOURCE_PURCHASE_FAILED",
+        "REFUNDED",
+        "CANCELLED",
+      ],
+      foreign_source: [
+        "POIZON_KR",
+        "DEWU_CN",
+        "TAOBAO",
+        "TMALL",
+        "ALIBABA_1688",
+        "AMAZON",
+        "MANUAL_EXTERNAL",
+      ],
+      price_sync_mode: [
+        "AUTO_UPDATE_CUSTOMER_PRICE",
+        "REVIEW_BEFORE_UPDATE",
+        "AVAILABILITY_ONLY",
+      ],
+      product_type: ["READY_STOCK", "FOREIGN_ORDER"],
+      source_sync_status: ["OK", "PENDING", "FAILED", "NEEDS_REVIEW"],
+      variant_availability: [
+        "AVAILABLE",
+        "UNAVAILABLE",
+        "UNKNOWN",
+        "NEEDS_REVIEW",
       ],
     },
   },
