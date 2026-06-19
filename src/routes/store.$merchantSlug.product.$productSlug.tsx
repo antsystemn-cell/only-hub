@@ -698,7 +698,14 @@ function ProductDetailPage() {
               </TabsList>
               <TabsContent value="desc" className="mt-4">
                 {product.description ? (
-                  <div className="whitespace-pre-line text-sm text-foreground">{product.description}</div>
+                  /<[a-z][\s\S]*>/i.test(product.description) ? (
+                    <div
+                      className="prose prose-sm max-w-none text-sm text-foreground prose-headings:text-foreground prose-img:rounded-xl prose-img:my-3 prose-table:text-sm prose-th:bg-muted prose-th:px-2 prose-th:py-1 prose-td:px-2 prose-td:py-1 prose-table:border prose-th:border prose-td:border"
+                      dangerouslySetInnerHTML={{ __html: product.description }}
+                    />
+                  ) : (
+                    <div className="whitespace-pre-line text-sm text-foreground">{product.description}</div>
+                  )
                 ) : (
                   <p className="text-sm text-muted-foreground">Тайлбар оруулаагүй байна.</p>
                 )}
