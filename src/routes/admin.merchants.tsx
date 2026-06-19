@@ -125,11 +125,16 @@ function AdminMerchantsPage() {
   const assignMutation = useMutation({
     mutationFn: async () => {
       if (!assignModal) throw new Error("Modal not open");
-      return createAdminFn({ data: { merchantId: assignModal.merchantId, email: newAdminEmail, password: newAdminPassword } });
+      if (assignMode === "create") {
+        return createAdminFn({ data: { merchantId: assignModal.merchantId, email: newAdminEmail, password: newAdminPassword } });
+      }
+      if (!existingUserId) throw new Error("Хэрэглэгч сонгоно уу");
+      return assignExistingFn({ data: { merchantId: assignModal.merchantId, userId: existingUserId } });
     },
-    onSuccess: () => {
-      toast.success(`${newAdminEmail} → "${assignModal?.merchantName}" Admin болгогдлоо`);
-      setAssignModal(null); setNewAdminEmail(""); setNewAdminPassword("");
+    onSuccess: (res: any) => {
+      const who = assignMode === "create" ? newAdminEmail : (res?.email ?? "Хэрэглэгч");
+      toast.success(`${who} → "${assignModal?.merchantName}" Admin болгогдлоо`);
+      setAssignModal(null); setNewAdminEmail(""); setNewAdminPassword(""); setExistingUserId(null); setExistingSearch(""); setAssignMode("create");
     },
     onError: (e: any) => toast.error(e?.message ?? "Алдаа"),
   });
