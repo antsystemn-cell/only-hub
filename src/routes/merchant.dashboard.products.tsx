@@ -150,10 +150,25 @@ function ProductsPage() {
           <h1 className="text-3xl font-bold">Бүтээгдэхүүн</h1>
           <p className="text-sm text-muted-foreground">Нийт {products.length}</p>
         </div>
-        <Button onClick={() => { setShowForm(!showForm); setEditing(blank); setEditId(null); }}>
+        <Button onClick={() => { setShowTypePicker(true); }}>
           <Plus className="mr-2 h-4 w-4" /> Шинэ бүтээгдэхүүн
         </Button>
       </div>
+
+      <AddProductTypeDialog
+        open={showTypePicker}
+        onOpenChange={setShowTypePicker}
+        merchantId={merchantId}
+        onPickReadyStock={() => {
+          setEditing(blank);
+          setEditId(null);
+          setShowForm(true);
+        }}
+        onPickForeignSource={(source) => {
+          // Phase 2: route to dedicated importer screen.
+          notifyImporterComingSoon(source);
+        }}
+      />
 
       {showForm && (
         <Card className="rounded-2xl p-6">
