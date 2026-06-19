@@ -810,14 +810,14 @@ const PROVIDER_LABELS: Record<string, string> = {
 };
 
 function PaymentMethodsCard({ providers }: { providers: any[] }) {
-  const visible = (providers ?? []).filter((p) => p.is_active);
+  const visible = providers ?? [];
   return (
     <Card className="rounded-2xl border-border/60 bg-white p-4">
       <h3 className="mb-3 text-sm font-semibold">Аюулгүй төлбөр</h3>
       {visible.length === 0 ? (
         <p className="text-xs text-muted-foreground">Төлбөрийн сонголт удахгүй нэмэгдэнэ.</p>
       ) : (
-        <div className="flex flex-wrap items-center gap-2">
+        <ul className="flex flex-col gap-2">
           {visible.map((p) => {
             const label = p.name || PROVIDER_LABELS[(p.provider_type ?? "").toLowerCase()] || p.provider_type;
             const iconStr = typeof p.icon === "string" ? p.icon.trim() : "";
@@ -825,30 +825,31 @@ function PaymentMethodsCard({ providers }: { providers: any[] }) {
             const imgSrc = p.logo_url || (isIconUrl ? iconStr : "");
             const emoji = !isIconUrl ? iconStr : "";
             return (
-              <span
+              <li
                 key={p.id}
-                className="inline-flex h-9 w-14 items-center justify-center rounded-md border border-border/60 bg-white px-1.5"
-                title={label}
-                aria-label={label}
+                className="flex items-center gap-3 rounded-xl border border-border/60 bg-white px-3 py-2"
               >
-                {imgSrc ? (
-                  <img
-                    src={imgSrc}
-                    alt={label}
-                    className="max-h-6 max-w-full object-contain"
-                    loading="lazy"
-                  />
-                ) : emoji ? (
-                  <span className="text-lg leading-none" aria-hidden>{emoji}</span>
-                ) : (
-                  <CreditCard className="h-4 w-4 text-muted-foreground" aria-hidden />
-                )}
-              </span>
+                <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-border/60 bg-white">
+                  {imgSrc ? (
+                    <img src={imgSrc} alt={label} className="max-h-6 max-w-6 object-contain" loading="lazy" />
+                  ) : emoji ? (
+                    <span className="text-lg leading-none" aria-hidden>{emoji}</span>
+                  ) : (
+                    <CreditCard className="h-4 w-4 text-muted-foreground" aria-hidden />
+                  )}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <div className="truncate text-sm font-medium text-foreground">{label}</div>
+                  {p.description ? (
+                    <div className="truncate text-xs text-muted-foreground">{p.description}</div>
+                  ) : null}
+                </div>
+              </li>
             );
           })}
-        </div>
+        </ul>
       )}
-      <p className="mt-2 text-xs text-muted-foreground">Таны төлбөр 100% хамгаалагдсан.</p>
+      <p className="mt-3 text-xs text-muted-foreground">Таны төлбөр 100% хамгаалагдсан.</p>
     </Card>
   );
 }
