@@ -101,6 +101,23 @@ export const createOrder = createServerFn({ method: "POST" })
               (i.size && v.size_label === i.size) ||
               (i.color && v.color_label === i.color),
           ) ?? variants[0];
+
+        // Enforce availability — backend re-check, defeats any stale frontend state.
+        if (match) {
+          if (match.is_purchasable === false) {
+            issues.push(
+              `"${p.name}" — сонгосон хувилбар Poizon Korea дээр түр дууссан байна. Сонголтоо шинэчилнэ үү.`,
+            );
+          } else if (
+            match.availability_status &&
+            !["AVAILABLE", "LOW_STOCK"].includes(String(match.availability_status))
+          ) {
+            issues.push(
+              `"${p.name}" — сонгосон хувилбарын боломжит эсэхийг шалгах шаардлагатай.`,
+            );
+          }
+        }
+
         foreign = {
           product_type: "FOREIGN_ORDER",
           foreign_source: p.foreign_source,
