@@ -80,3 +80,23 @@ function WishlistPage() {
     </div>
   );
 }
+
+function ProductBody({ item }: { item: { image?: string | null; name: string; price: number } }) {
+  return (
+    <>
+      <div className="relative aspect-square bg-muted">
+        {item.image ? (
+          <img src={item.image} alt={item.name} className="h-full w-full object-cover transition group-hover:scale-105" loading="lazy" />
+        ) : (
+          <div className="flex h-full w-full items-center justify-center text-muted-foreground">
+            <ShoppingBag className="h-8 w-8" />
+          </div>
+        )}
+      </div>
+      <div className="p-2.5">
+        <h3 className="line-clamp-2 min-h-[2.25rem] text-xs font-medium leading-tight group-hover:text-orange-600 sm:text-[13px]">{item.name}</h3>
+        <div className="mt-1 text-sm font-bold text-orange-600">{fmtMnt(item.price)}</div>
+      </div>
+    </>
+  );
+}
