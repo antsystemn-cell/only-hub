@@ -18,7 +18,11 @@ import { toast } from "sonner";
 import { Plus, Edit, Copy, Trash2, Search, ImageIcon, X, Upload } from "lucide-react";
 import { fmtMnt, slugify } from "@/lib/format";
 import { uploadOptimized } from "@/lib/image";
-import { AddProductTypeDialog, notifyImporterComingSoon } from "@/components/merchant/AddProductTypeDialog";
+import { AddProductTypeDialog } from "@/components/merchant/AddProductTypeDialog";
+import { ForeignProductImporter } from "@/components/merchant/ForeignProductImporter";
+import type { Database } from "@/integrations/supabase/types";
+
+type ForeignSource = Database["public"]["Enums"]["foreign_source"];
 
 export const Route = createFileRoute("/merchant/dashboard/products")({
   component: ProductsPage,
