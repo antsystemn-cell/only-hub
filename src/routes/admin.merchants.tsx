@@ -273,23 +273,71 @@ function AdminMerchantsPage() {
 
       {assignModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <Card className="w-full max-w-md rounded-2xl p-6">
+          <Card className="w-full max-w-lg rounded-2xl p-6">
             <h3 className="text-lg font-semibold">Admin хэрэглэгч томилох</h3>
-            <p className="mt-1 text-sm text-muted-foreground">"{assignModal.merchantName}" дэлгүүрт шинэ admin хэрэглэгч үүсгэж томилно.</p>
-            <div className="mt-4 space-y-3">
-              <div>
-                <label className="text-sm font-medium">Имэйл *</label>
-                <Input type="email" value={newAdminEmail} onChange={(e) => setNewAdminEmail(e.target.value)} placeholder="admin@example.com" className="mt-1" />
+            <p className="mt-1 text-sm text-muted-foreground">"{assignModal.merchantName}" дэлгүүрт admin хэрэглэгч томилно.</p>
+
+            <Tabs value={assignMode} onValueChange={(v: any) => setAssignMode(v)} className="mt-4">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="create">Шинээр үүсгэх</TabsTrigger>
+                <TabsTrigger value="existing">Одоогийн хэрэглэгчээс</TabsTrigger>
+              </TabsList>
+            </Tabs>
+
+            {assignMode === "create" ? (
+              <div className="mt-4 space-y-3">
+                <div>
+                  <label className="text-sm font-medium">Имэйл *</label>
+                  <Input type="email" value={newAdminEmail} onChange={(e) => setNewAdminEmail(e.target.value)} placeholder="admin@example.com" className="mt-1" />
+                </div>
+                <div>
+                  <label className="text-sm font-medium">Нууц үг * (хэрэглэгч дараа өөрчилнө)</label>
+                  <Input type="password" value={newAdminPassword} onChange={(e) => setNewAdminPassword(e.target.value)} placeholder="Хамгийн багадаа 6 тэмдэгт" className="mt-1" />
+                </div>
               </div>
-              <div>
-                <label className="text-sm font-medium">Нууц үг * (хэрэглэгч дараа өөрчилнө)</label>
-                <Input type="password" value={newAdminPassword} onChange={(e) => setNewAdminPassword(e.target.value)} placeholder="Хамгийн багадаа 6 тэмдэгт" className="mt-1" />
+            ) : (
+              <div className="mt-4 space-y-3">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input value={existingSearch} onChange={(e) => setExistingSearch(e.target.value)} placeholder="Имэйлээр хайх..." className="pl-9" />
+                </div>
+                <div className="max-h-64 overflow-y-auto rounded-lg border">
+                  {(authUsers as any[])
+                    .filter((u) => !existingSearch || (u.email ?? "").toLowerCase().includes(existingSearch.toLowerCase()))
+                    .slice(0, 100)
+                    .map((u) => (
+                      <button
+                        key={u.id}
+                        type="button"
+                        onClick={() => setExistingUserId(u.id)}
+                        className={`flex w-full items-center justify-between border-b px-3 py-2 text-left text-sm last:border-b-0 hover:bg-muted ${existingUserId === u.id ? "bg-primary/10" : ""}`}
+                      >
+                        <div className="min-w-0">
+                          <div className="truncate font-medium">{u.email ?? "(имэйлгүй)"}</div>
+                          <div className="text-[11px] text-muted-foreground">{new Date(u.created_at).toLocaleDateString()}</div>
+                        </div>
+                        {existingUserId === u.id && <Check className="h-4 w-4 text-primary" />}
+                      </button>
+                    ))}
+                  {(authUsers as any[]).length === 0 && (
+                    <div className="px-3 py-6 text-center text-sm text-muted-foreground">Уншиж байна...</div>
+                  )}
+                </div>
               </div>
-            </div>
+            )}
+
             <div className="mt-5 flex justify-end gap-2">
               <Button variant="outline" onClick={() => setAssignModal(null)}>Болих</Button>
-              <Button onClick={() => assignMutation.mutate()} disabled={assignMutation.isPending || !newAdminEmail || newAdminPassword.length < 6}>
-                {assignMutation.isPending ? "Үүсгэж байна..." : "Томилох"}
+              <Button
+                onClick={() => assignMutation.mutate()}
+                disabled={
+                  assignMutation.isPending ||
+                  (assignMode === "create"
+                    ? !newAdminEmail || newAdminPassword.length < 6
+                    : !existingUserId)
+                }
+              >
+                {assignMutation.isPending ? "Хадгалж байна..." : "Томилох"}
               </Button>
             </div>
           </Card>
