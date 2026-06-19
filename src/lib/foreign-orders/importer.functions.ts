@@ -125,6 +125,12 @@ const variantInputSchema = z.object({
   colorLabel: z.string().nullable().optional(),
   sourcePrice: z.number().nonnegative().nullable().optional(),
   isPurchasable: z.boolean().default(true),
+  availabilityStatus: z
+    .enum(["AVAILABLE", "LOW_STOCK", "UNAVAILABLE", "UNKNOWN", "NEEDS_REVIEW"])
+    .optional(),
+  unavailableReason: z.string().nullable().optional(),
+  sourceAvailabilityRawText: z.string().nullable().optional(),
+  optionSignature: z.string().nullable().optional(),
 });
 
 const createSchema = z.object({
@@ -221,6 +227,9 @@ export const createForeignProduct = createServerFn({ method: "POST" })
     const variantRows = priced.map((x) => {
       const v = x.input;
       const p = x.pricing;
+      const avail =
+        v.availabilityStatus ??
+        (p ? "AVAILABLE" : "UNKNOWN");
       return {
         product_id: productId,
         label: [v.sizeLabel, v.colorLabel].filter(Boolean).join(" / ") || null,
@@ -241,10 +250,13 @@ export const createForeignProduct = createServerFn({ method: "POST" })
         profit_amount_mnt: p?.profitAmountMnt ?? 0,
         final_customer_price_mnt: p?.finalCustomerPriceMnt ?? null,
         rounded_customer_price_mnt: p?.roundedCustomerPriceMnt ?? null,
-        availability_status: (p ? "AVAILABLE" : "UNKNOWN") as "AVAILABLE" | "UNKNOWN",
-        source_availability_status: p ? "available" : "unknown",
+        availability_status: avail,
+        source_availability_status: avail,
+        unavailable_reason: v.unavailableReason ?? null,
+        source_availability_raw_text: v.sourceAvailabilityRawText ?? null,
+        option_signature: v.optionSignature ?? null,
         is_visible: true,
-        is_purchasable: !!p && v.isPurchasable !== false,
+        is_purchasable: !!p && v.isPurchasable !== false && avail !== "UNAVAILABLE",
         last_price_sync_at: new Date().toISOString(),
         last_availability_sync_at: new Date().toISOString(),
       };
