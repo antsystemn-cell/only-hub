@@ -31,6 +31,7 @@ function SettingsPage() {
           <TabsTrigger value="categories">Ангилал</TabsTrigger>
           <TabsTrigger value="brands">Брэнд</TabsTrigger>
           <TabsTrigger value="delivery">Хүргэлт</TabsTrigger>
+          <TabsTrigger value="policy">Хүргэлт & Бодлого</TabsTrigger>
           <TabsTrigger value="payments">Төлбөр</TabsTrigger>
           <TabsTrigger value="banners">Баннер</TabsTrigger>
           <TabsTrigger value="import">📥 Импорт</TabsTrigger>
@@ -54,6 +55,7 @@ function SettingsPage() {
             ]} hasActiveToggle />
           </div>
         </TabsContent>
+        <TabsContent value="policy"><ShippingPolicyTab /></TabsContent>
         <TabsContent value="payments"><PaymentsTab /></TabsContent>
         <TabsContent value="banners"><CrudList table="promo_banners" fields={[
           { k: "title", l: "Гарчиг" },
