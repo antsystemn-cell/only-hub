@@ -12,11 +12,12 @@ import { cart, useCart } from "@/lib/cart";
 import { wishlist, useIsWishlisted } from "@/lib/wishlist";
 import {
   Minus, Plus, ShoppingCart, ChevronRight, Check, ChevronLeft, Heart,
-  Share2, Truck, Shield, ShieldCheck, Store as StoreIcon, Play, Star,
-  RotateCcw, BadgeCheck, Zap,
+  Truck, Shield, ShieldCheck, Store as StoreIcon, Play, Star,
+  RotateCcw, BadgeCheck, Zap, CreditCard,
 } from "lucide-react";
 import { SiteHeader } from "@/components/site/SiteHeader";
 import { SiteFooter } from "@/components/site/SiteFooter";
+import { ShareMenu } from "@/components/product/ShareMenu";
 
 export const Route = createFileRoute("/store/$merchantSlug/product/$productSlug")({
   component: ProductDetailPage,
@@ -25,12 +26,7 @@ export const Route = createFileRoute("/store/$merchantSlug/product/$productSlug"
 type Spec = { label: string; value: string };
 type Media = { url: string; type?: "image" | "video" };
 
-/* tiny stable hash for demo rating/sold */
-function hashStr(s: string) {
-  let h = 0;
-  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0;
-  return h;
-}
+
 
 function ProductDetailPage() {
   const { merchantSlug, productSlug } = Route.useParams();
@@ -40,7 +36,7 @@ function ProductDetailPage() {
   const { data: merchant } = useQuery({
     queryKey: ["merchant", merchantSlug],
     queryFn: async () =>
-      (await supabase.from("merchants").select("id,name,slug,logo_url,description").eq("slug", merchantSlug).maybeSingle()).data,
+      (await supabase.from("merchants").select("id,name,slug,logo_url,description,shipping_config,policy_shipping,policy_return,followers_count").eq("slug", merchantSlug).maybeSingle()).data,
   });
 
   const { data: product, isLoading } = useQuery({
@@ -54,16 +50,83 @@ function ProductDetailPage() {
     },
   });
 
+  // Platform default policies (public read whitelist)
+  const { data: platformDefaults } = useQuery({
+    queryKey: ["platform-defaults"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("platform_settings")
+        .select("key,value")
+        .in("key", ["policy_shipping_default", "policy_return_default"]);
+      const out: Record<string, string> = {};
+      for (const r of data ?? []) {
+        const v = (r as any).value;
+        out[(r as any).key] = typeof v === "string" ? v : (v?.content ?? "");
+      }
+      return out;
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
+  // Enabled payment providers (merchant + platform-managed)
+  const { data: payments = [] } = useQuery({
+    queryKey: ["pdp-payments", merchant?.id],
+    enabled: !!merchant?.id,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("payment_providers")
+        .select("id,name,provider_type,icon,logo_url,is_active,is_platform_managed,merchant_id,position")
+        .eq("is_active", true)
+        .or(`merchant_id.eq.${merchant!.id},is_platform_managed.eq.true`)
+        .order("position", { ascending: true });
+      return data ?? [];
+    },
+  });
+
+  // Reviews aggregate
+  const { data: reviewStats } = useQuery({
+    queryKey: ["pdp-reviews", product?.id],
+    enabled: !!product?.id,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("reviews")
+        .select("rating")
+        .eq("product_id", product!.id)
+        .eq("is_hidden", false);
+      const ratings = (data ?? []).map((r: any) => r.rating as number);
+      const count = ratings.length;
+      const avg = count > 0 ? ratings.reduce((a, b) => a + b, 0) / count : 0;
+      const dist: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+      for (const r of ratings) dist[r] = (dist[r] ?? 0) + 1;
+      return { count, avg, dist };
+    },
+  });
+
+  // Similar products: same store first, then same category across platform, then featured
   const { data: related = [] } = useQuery({
-    queryKey: ["related", merchant?.id, product?.id, product?.category],
+    queryKey: ["related-v2", merchant?.id, product?.id, product?.category],
     enabled: !!merchant?.id && !!product?.id,
     queryFn: async () => {
-      let q = supabase.from("products")
-        .select("id,name,price,original_price,thumbnail_url,image_url,slug,is_new,is_on_sale")
+      const cols = "id,name,price,original_price,thumbnail_url,image_url,slug,is_new,is_on_sale,merchant_id";
+      const seen = new Set<string>([product!.id]);
+      const pick = (rows: any[]) => rows.filter((r) => !seen.has(r.id) && seen.add(r.id));
+      // Tier 1: same store
+      const t1 = await supabase.from("products").select(cols)
         .eq("merchant_id", merchant!.id).eq("is_active", true).neq("id", product!.id).limit(12);
-      if (product?.category) q = q.eq("category", product.category);
-      const { data } = await q;
-      return data ?? [];
+      const out = pick(t1.data ?? []);
+      // Tier 2: same category across platform
+      if (out.length < 12 && product?.category) {
+        const t2 = await supabase.from("products").select(cols)
+          .eq("category", product.category).eq("is_active", true).neq("id", product!.id).limit(12);
+        out.push(...pick(t2.data ?? []));
+      }
+      // Tier 3: featured / new
+      if (out.length < 12) {
+        const t3 = await supabase.from("products").select(cols)
+          .eq("is_active", true).eq("is_on_sale", true).neq("id", product!.id).limit(12);
+        out.push(...pick(t3.data ?? []));
+      }
+      return out.slice(0, 12);
     },
   });
 
@@ -158,14 +221,6 @@ function ProductDetailPage() {
     navigate({ to: "/store/$merchantSlug/cart", params: { merchantSlug } });
   };
 
-  const handleShare = async () => {
-    const url = typeof window !== "undefined" ? window.location.href : "";
-    try {
-      if (navigator.share) await navigator.share({ title: product.name, url });
-      else { await navigator.clipboard.writeText(url); toast.success("Холбоос хуулагдлаа"); }
-    } catch { /* cancelled */ }
-  };
-
   const toggleWish = () => {
     const added = wishlist.toggle({
       productId: product.id,
@@ -183,11 +238,10 @@ function ProductDetailPage() {
     ? Math.round((1 - Number(product.price) / Number(product.original_price)) * 100)
     : 0;
 
-  // Demo rating/sold derived from product id (graceful fallback — no real ratings table)
-  const idHash = Math.abs(hashStr(product.id));
-  const rating = (4.3 + (idHash % 7) / 10).toFixed(1);
-  const reviewCount = 12 + (idHash % 240);
-  const soldCount = 30 + (idHash % 500);
+  // Real rating from reviews; fallback display when no reviews yet
+  const reviewCount = reviewStats?.count ?? 0;
+  const rating = reviewCount > 0 ? (reviewStats!.avg).toFixed(1) : "5.0";
+  const soldCount = Number(product.sales ?? 0);
 
   const onMainTouchStart = (e: React.TouchEvent) => { touchStartX.current = e.touches[0].clientX; };
   const onMainTouchEnd = (e: React.TouchEvent) => {
@@ -356,7 +410,7 @@ function ProductDetailPage() {
                 <span className="font-semibold">{rating}</span>
                 <span className="text-muted-foreground">({reviewCount} үнэлгээ)</span>
               </div>
-              <span className="text-muted-foreground">{soldCount} борлуулалт</span>
+              {soldCount > 0 && <span className="text-muted-foreground">{soldCount} борлуулалт</span>}
             </div>
 
             {/* Brand + SKU */}
@@ -444,13 +498,11 @@ function ProductDetailPage() {
                 <Heart className={`h-4 w-4 ${wished ? "fill-current" : ""}`} />
                 {wished ? "Хүссэнд хадгалсан" : "Хүссэнд нэмэх"}
               </button>
-              <button
-                type="button"
-                onClick={handleShare}
-                className="inline-flex items-center gap-1.5 text-muted-foreground transition hover:text-foreground"
-              >
-                <Share2 className="h-4 w-4" /> Хуваалцах
-              </button>
+              <ShareMenu
+                url={typeof window !== "undefined" ? window.location.href : ""}
+                title={product.name}
+                text={product.description ?? undefined}
+              />
             </div>
 
             {/* Trust strip */}
@@ -465,39 +517,9 @@ function ProductDetailPage() {
 
           {/* === Right column (desktop only) === */}
           <aside className="hidden flex-col gap-4 lg:flex">
-            {/* Delivery card */}
-            <Card className="rounded-2xl border-border/60 bg-white p-4">
-              <h3 className="mb-3 text-sm font-semibold">Хүргэлтийн мэдээлэл</h3>
-              <ul className="space-y-3 text-sm">
-                <li className="flex items-start justify-between gap-3">
-                  <div className="flex items-start gap-2">
-                    <Truck className="mt-0.5 h-4 w-4 text-muted-foreground" />
-                    <div>
-                      <div className="font-medium">Улаанбаатар дотор</div>
-                      <div className="text-xs text-muted-foreground">24-48 цаг</div>
-                    </div>
-                  </div>
-                  <span className="font-semibold text-emerald-600">Үнэгүй</span>
-                </li>
-                <li className="flex items-start justify-between gap-3">
-                  <div className="flex items-start gap-2">
-                    <Truck className="mt-0.5 h-4 w-4 text-muted-foreground" />
-                    <div>
-                      <div className="font-medium">Орон нутагт</div>
-                      <div className="text-xs text-muted-foreground">2-4 хоног</div>
-                    </div>
-                  </div>
-                  <span className="font-semibold">₮6,000</span>
-                </li>
-                <li className="flex items-start justify-between gap-3 border-t pt-3">
-                  <div className="flex items-start gap-2">
-                    <ShieldCheck className="mt-0.5 h-4 w-4 text-muted-foreground" />
-                    <div className="font-medium">Хүргэлтийн компани</div>
-                  </div>
-                  <span className="text-xs text-muted-foreground">Only Delivery</span>
-                </li>
-              </ul>
-            </Card>
+            {/* Delivery card (dynamic from merchant.shipping_config) */}
+            <ShippingCard merchant={merchant} />
+
 
             {/* Store card */}
             <Card className="rounded-2xl border-border/60 bg-white p-4">
@@ -526,18 +548,9 @@ function ProductDetailPage() {
               </Link>
             </Card>
 
-            {/* Secure payment */}
-            <Card className="rounded-2xl border-border/60 bg-white p-4">
-              <h3 className="mb-3 text-sm font-semibold">Аюулгүй төлбөр</h3>
-              <div className="flex flex-wrap gap-2">
-                {["StorePay", "QPay", "Pocket", "VISA", "Master"].map((m) => (
-                  <span key={m} className="rounded-md border border-border/60 bg-muted/40 px-2.5 py-1 text-[11px] font-semibold text-muted-foreground">
-                    {m}
-                  </span>
-                ))}
-              </div>
-              <p className="mt-2 text-xs text-muted-foreground">Таны төлбөр 100% хамгаалагдсан.</p>
-            </Card>
+            {/* Secure payment (dynamic from payment_providers) */}
+            <PaymentMethodsCard providers={payments} />
+
           </aside>
         </div>
 
@@ -579,48 +592,26 @@ function ProductDetailPage() {
                 </TabsContent>
               )}
               <TabsContent value="delivery" className="mt-4">
-                <ul className="space-y-2 text-sm text-muted-foreground">
-                  <li>• Захиалгыг ажлын өдөр 24 цагийн дотор бэлтгэж хүргэлтэнд гаргана.</li>
-                  <li>• Улаанбаатар хотод 1-3 хоногт, орон нутагт 3-7 хоногт хүрнэ.</li>
-                  <li>• Бараа гэмтэлтэй ирвэл хүлээн авснаас хойш 24 цагт мэдэгдэнэ үү.</li>
-                  <li>• 7 хоногийн дотор буцаалт, солилт боломжтой.</li>
-                </ul>
+                <PolicyBlock
+                  title="Хүргэлтийн нөхцөл"
+                  html={merchant.policy_shipping || platformDefaults?.policy_shipping_default || ""}
+                />
+                <div className="mt-4">
+                  <PolicyBlock
+                    title="Буцаалтын нөхцөл"
+                    html={merchant.policy_return || platformDefaults?.policy_return_default || ""}
+                  />
+                </div>
               </TabsContent>
             </Tabs>
           </Card>
 
-          {/* Reviews summary */}
-          <Card className="rounded-2xl border-border/60 bg-white p-4 sm:p-5">
-            <div className="flex items-center justify-between">
-              <h3 className="text-sm font-semibold">Хэрэглэгчийн үнэлгээ ({reviewCount})</h3>
-              <button className="text-xs font-medium text-orange-600 hover:underline">Бүх үнэлгээг харах</button>
-            </div>
-            <div className="mt-3 flex items-center gap-5">
-              <div className="text-center">
-                <div className="text-3xl font-extrabold">{rating}</div>
-                <div className="mt-1 flex justify-center">
-                  {[1, 2, 3, 4, 5].map((n) => (
-                    <Star key={n} className={`h-4 w-4 ${n <= Math.round(Number(rating)) ? "fill-amber-400 text-amber-400" : "text-muted"}`} />
-                  ))}
-                </div>
-                <div className="mt-1 text-xs text-muted-foreground">{reviewCount} үнэлгээ</div>
-              </div>
-              <div className="flex-1 space-y-1.5">
-                {[5, 4, 3, 2, 1].map((star) => {
-                  const pct = star === 5 ? 78 : star === 4 ? 14 : star === 3 ? 5 : star === 2 ? 2 : 1;
-                  return (
-                    <div key={star} className="flex items-center gap-2 text-xs">
-                      <span className="w-6 text-muted-foreground">{star} ★</span>
-                      <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-muted">
-                        <div className="h-full rounded-full bg-amber-400" style={{ width: `${pct}%` }} />
-                      </div>
-                      <span className="w-8 text-right text-muted-foreground">{Math.round(reviewCount * pct / 100)}</span>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </Card>
+          {/* Reviews summary (real) */}
+          <ReviewSummaryCard
+            count={reviewCount}
+            avg={Number(rating)}
+            dist={reviewStats?.dist ?? { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 }}
+          />
         </div>
 
         {/* === Mobile-only: store card === */}
@@ -723,3 +714,195 @@ function ProductDetailPage() {
     </div>
   );
 }
+
+/* ============================================================ */
+/*  Reusable PDP sub-components                                 */
+/* ============================================================ */
+
+type ShippingItem = {
+  title: string;
+  description?: string;
+  duration?: string;
+  price?: number;
+  free?: boolean;
+  label?: string;
+};
+
+function ShippingCard({ merchant }: { merchant: any }) {
+  const cfg = (merchant?.shipping_config ?? {}) as {
+    ub?: ShippingItem;
+    local?: ShippingItem;
+    extras?: ShippingItem[];
+  };
+  const defaultUb: ShippingItem = { title: "Улаанбаатар дотор", duration: "24-48 цаг", price: 0, free: true };
+  const defaultLocal: ShippingItem = { title: "Орон нутагт", duration: "2-4 хоног", price: 6000, label: "" };
+  const ub = { ...defaultUb, ...(cfg.ub ?? {}) };
+  const local = { ...defaultLocal, ...(cfg.local ?? {}) };
+  const extras = Array.isArray(cfg.extras) ? cfg.extras : [];
+
+  const renderRow = (it: ShippingItem, key: string) => {
+    const priceLabel =
+      it.free
+        ? "Үнэгүй"
+        : it.label
+          ? it.label
+          : typeof it.price === "number"
+            ? fmtMnt(it.price)
+            : "—";
+    const priceClass = it.free ? "font-semibold text-emerald-600" : "font-semibold";
+    return (
+      <li key={key} className="flex items-start justify-between gap-3">
+        <div className="flex items-start gap-2">
+          <Truck className="mt-0.5 h-4 w-4 text-muted-foreground" />
+          <div>
+            <div className="font-medium">{it.title}</div>
+            {(it.description || it.duration) && (
+              <div className="text-xs text-muted-foreground">
+                {it.description || it.duration}
+              </div>
+            )}
+          </div>
+        </div>
+        <span className={priceClass}>{priceLabel}</span>
+      </li>
+    );
+  };
+
+  return (
+    <Card className="rounded-2xl border-border/60 bg-white p-4">
+      <h3 className="mb-3 text-sm font-semibold">Хүргэлтийн мэдээлэл</h3>
+      <ul className="space-y-3 text-sm">
+        {renderRow(ub, "ub")}
+        {renderRow(local, "local")}
+        {extras.map((it, i) => renderRow(it, `ex-${i}`))}
+        <li className="flex items-start justify-between gap-3 border-t pt-3">
+          <div className="flex items-start gap-2">
+            <ShieldCheck className="mt-0.5 h-4 w-4 text-muted-foreground" />
+            <div className="font-medium">Хүргэлтийн компани</div>
+          </div>
+          <span className="text-xs text-muted-foreground">Only Delivery</span>
+        </li>
+      </ul>
+    </Card>
+  );
+}
+
+const PROVIDER_LABELS: Record<string, string> = {
+  qpay: "QPay",
+  storepay: "StorePay",
+  pocket: "Pocket",
+  omniway: "Omniway",
+  visa: "Visa",
+  mastercard: "MasterCard",
+  hipay: "HiPay",
+  cash: "Бэлэн",
+};
+
+function PaymentMethodsCard({ providers }: { providers: any[] }) {
+  const visible = (providers ?? []).filter((p) => p.is_active);
+  return (
+    <Card className="rounded-2xl border-border/60 bg-white p-4">
+      <h3 className="mb-3 text-sm font-semibold">Аюулгүй төлбөр</h3>
+      {visible.length === 0 ? (
+        <p className="text-xs text-muted-foreground">Төлбөрийн сонголт удахгүй нэмэгдэнэ.</p>
+      ) : (
+        <div className="flex flex-wrap gap-2">
+          {visible.map((p) => {
+            const label = p.name || PROVIDER_LABELS[(p.provider_type ?? "").toLowerCase()] || p.provider_type;
+            return (
+              <span
+                key={p.id}
+                className="inline-flex items-center gap-1.5 rounded-md border border-border/60 bg-muted/40 px-2.5 py-1 text-[11px] font-semibold text-muted-foreground"
+                title={label}
+              >
+                {p.logo_url ? (
+                  <img src={p.logo_url} alt={label} className="h-4 w-auto object-contain" loading="lazy" />
+                ) : (
+                  <span aria-hidden>{p.icon || <CreditCard className="h-3 w-3" />}</span>
+                )}
+                {label}
+              </span>
+            );
+          })}
+        </div>
+      )}
+      <p className="mt-2 text-xs text-muted-foreground">Таны төлбөр 100% хамгаалагдсан.</p>
+    </Card>
+  );
+}
+
+function PolicyBlock({ title, html }: { title: string; html: string }) {
+  if (!html) {
+    return (
+      <div>
+        <h4 className="mb-1.5 text-sm font-semibold">{title}</h4>
+        <p className="text-sm text-muted-foreground">Тохиргоо одоогоор хоосон байна.</p>
+      </div>
+    );
+  }
+  return (
+    <div>
+      <h4 className="mb-1.5 text-sm font-semibold">{title}</h4>
+      <div
+        className="prose prose-sm max-w-none text-sm text-foreground prose-headings:text-foreground prose-li:my-0.5 prose-ul:my-2 prose-p:my-2"
+        dangerouslySetInnerHTML={{ __html: html }}
+      />
+    </div>
+  );
+}
+
+function ReviewSummaryCard({
+  count,
+  avg,
+  dist,
+}: {
+  count: number;
+  avg: number;
+  dist: Record<number, number>;
+}) {
+  const display = count > 0 ? avg.toFixed(1) : "5.0";
+  return (
+    <Card className="rounded-2xl border-border/60 bg-white p-4 sm:p-5">
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-semibold">Хэрэглэгчийн үнэлгээ ({count})</h3>
+      </div>
+      <div className="mt-3 flex items-center gap-5">
+        <div className="text-center">
+          <div className="text-3xl font-extrabold">{display}</div>
+          <div className="mt-1 flex justify-center">
+            {[1, 2, 3, 4, 5].map((n) => (
+              <Star
+                key={n}
+                className={`h-4 w-4 ${n <= Math.round(Number(display)) ? "fill-amber-400 text-amber-400" : "text-muted"}`}
+              />
+            ))}
+          </div>
+          <div className="mt-1 text-xs text-muted-foreground">
+            {count === 0 ? "Үнэлгээ алга" : `${count} үнэлгээ`}
+          </div>
+        </div>
+        <div className="flex-1 space-y-1.5">
+          {[5, 4, 3, 2, 1].map((star) => {
+            const n = dist[star] ?? 0;
+            const pct = count > 0 ? Math.round((n / count) * 100) : 0;
+            return (
+              <div key={star} className="flex items-center gap-2 text-xs">
+                <span className="w-6 text-muted-foreground">{star} ★</span>
+                <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-muted">
+                  <div className="h-full rounded-full bg-amber-400" style={{ width: `${pct}%` }} />
+                </div>
+                <span className="w-8 text-right text-muted-foreground">{n}</span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+      {count === 0 && (
+        <p className="mt-3 text-xs text-muted-foreground">
+          Энэ бараанд үнэлгээ хараахан алга. Худалдан авч, хүргэлт амжилттай дууссаны дараа үнэлгээ үлдээх боломжтой.
+        </p>
+      )}
+    </Card>
+  );
+}
+
