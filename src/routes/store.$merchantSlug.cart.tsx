@@ -24,6 +24,7 @@ import { StickyCheckoutBar } from "@/components/cart/StickyCheckoutBar";
 import { ArrowLeft, Minus, Plus, ShoppingBag, Tag, Trash2, X } from "lucide-react";
 import { SiteHeader } from "@/components/site/SiteHeader";
 import { SiteFooter } from "@/components/site/SiteFooter";
+import { ForeignOrderInlineBadge } from "@/components/product/ForeignOrderBadge";
 
 export const Route = createFileRoute("/store/$merchantSlug/cart")({
   component: CartPage,
