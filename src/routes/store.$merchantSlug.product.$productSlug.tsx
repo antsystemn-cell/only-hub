@@ -252,6 +252,34 @@ function ProductDetailPage() {
     isForeign &&
     (foreignVariants as any[]).some((v) => v.price_review_required === true);
 
+  // Compute the active display price: variant override (foreign) → product.price
+  const variantPriceCandidates = useMemo(() => {
+    if (!isForeign) return [] as number[];
+    const matches = (foreignVariants as any[]).filter(
+      (v) =>
+        (size ? v.size_label === size : true) &&
+        (color ? v.color_label === color : true),
+    );
+    return matches
+      .map((v) => Number(v.rounded_customer_price_mnt ?? v.final_customer_price_mnt ?? 0))
+      .filter((n) => n > 0);
+  }, [foreignVariants, isForeign, size, color]);
+
+  const activePrice = useMemo(() => {
+    if (variantPriceCandidates.length === 0) return Number(product?.price ?? 0);
+    // If a unique variant is matched (or all candidates share the same price), use it.
+    const min = Math.min(...variantPriceCandidates);
+    const max = Math.max(...variantPriceCandidates);
+    return min === max ? min : min;
+  }, [variantPriceCandidates, product?.price]);
+
+  const activePriceMax = useMemo(() => {
+    if (variantPriceCandidates.length === 0) return null;
+    const min = Math.min(...variantPriceCandidates);
+    const max = Math.max(...variantPriceCandidates);
+    return min === max ? null : max;
+  }, [variantPriceCandidates]);
+
   const variantKey = color && size ? `${color}|${size}` : color || size || "";
   const hasTrackedStock = !!variantKey && typeof variantStock[variantKey] === "number";
   const stockForVariant = hasTrackedStock ? variantStock[variantKey] : Number.MAX_SAFE_INTEGER;
