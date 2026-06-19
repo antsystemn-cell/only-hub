@@ -61,6 +61,7 @@ import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/e
 import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
 import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
 import { Route as ApiPublicQpayWebhookRouteImport } from './routes/api.public.qpay.webhook'
+import { Route as ApiPublicHooksForeignSourceSyncRouteImport } from './routes/api.public.hooks.foreign-source-sync'
 import { Route as ApiPublicHooksForeignQueueAdvanceRouteImport } from './routes/api.public.hooks.foreign-queue-advance'
 import { Route as ApiPublicDeliveryWebhookRouteImport } from './routes/api.public.delivery.webhook'
 import { Route as ApiPublicPaymentsStorepayWebhookRouteImport } from './routes/api.public.payments.storepay.webhook'
@@ -338,6 +339,12 @@ const ApiPublicQpayWebhookRoute = ApiPublicQpayWebhookRouteImport.update({
   path: '/api/public/qpay/webhook',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicHooksForeignSourceSyncRoute =
+  ApiPublicHooksForeignSourceSyncRouteImport.update({
+    id: '/api/public/hooks/foreign-source-sync',
+    path: '/api/public/hooks/foreign-source-sync',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksForeignQueueAdvanceRoute =
   ApiPublicHooksForeignQueueAdvanceRouteImport.update({
     id: '/api/public/hooks/foreign-queue-advance',
@@ -418,6 +425,7 @@ export interface FileRoutesByFullPath {
   '/merchant/dashboard/': typeof MerchantDashboardIndexRoute
   '/api/public/delivery/webhook': typeof ApiPublicDeliveryWebhookRoute
   '/api/public/hooks/foreign-queue-advance': typeof ApiPublicHooksForeignQueueAdvanceRoute
+  '/api/public/hooks/foreign-source-sync': typeof ApiPublicHooksForeignSourceSyncRoute
   '/api/public/qpay/webhook': typeof ApiPublicQpayWebhookRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -475,6 +483,7 @@ export interface FileRoutesByTo {
   '/merchant/dashboard': typeof MerchantDashboardIndexRoute
   '/api/public/delivery/webhook': typeof ApiPublicDeliveryWebhookRoute
   '/api/public/hooks/foreign-queue-advance': typeof ApiPublicHooksForeignQueueAdvanceRoute
+  '/api/public/hooks/foreign-source-sync': typeof ApiPublicHooksForeignSourceSyncRoute
   '/api/public/qpay/webhook': typeof ApiPublicQpayWebhookRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -535,6 +544,7 @@ export interface FileRoutesById {
   '/merchant/dashboard/': typeof MerchantDashboardIndexRoute
   '/api/public/delivery/webhook': typeof ApiPublicDeliveryWebhookRoute
   '/api/public/hooks/foreign-queue-advance': typeof ApiPublicHooksForeignQueueAdvanceRoute
+  '/api/public/hooks/foreign-source-sync': typeof ApiPublicHooksForeignSourceSyncRoute
   '/api/public/qpay/webhook': typeof ApiPublicQpayWebhookRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -596,6 +606,7 @@ export interface FileRouteTypes {
     | '/merchant/dashboard/'
     | '/api/public/delivery/webhook'
     | '/api/public/hooks/foreign-queue-advance'
+    | '/api/public/hooks/foreign-source-sync'
     | '/api/public/qpay/webhook'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -653,6 +664,7 @@ export interface FileRouteTypes {
     | '/merchant/dashboard'
     | '/api/public/delivery/webhook'
     | '/api/public/hooks/foreign-queue-advance'
+    | '/api/public/hooks/foreign-source-sync'
     | '/api/public/qpay/webhook'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -712,6 +724,7 @@ export interface FileRouteTypes {
     | '/merchant/dashboard/'
     | '/api/public/delivery/webhook'
     | '/api/public/hooks/foreign-queue-advance'
+    | '/api/public/hooks/foreign-source-sync'
     | '/api/public/qpay/webhook'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -741,6 +754,7 @@ export interface RootRouteChildren {
   BlogIndexRoute: typeof BlogIndexRoute
   ApiPublicDeliveryWebhookRoute: typeof ApiPublicDeliveryWebhookRoute
   ApiPublicHooksForeignQueueAdvanceRoute: typeof ApiPublicHooksForeignQueueAdvanceRoute
+  ApiPublicHooksForeignSourceSyncRoute: typeof ApiPublicHooksForeignSourceSyncRoute
   ApiPublicQpayWebhookRoute: typeof ApiPublicQpayWebhookRoute
   LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
   LovableEmailAuthWebhookRoute: typeof LovableEmailAuthWebhookRoute
@@ -1116,6 +1130,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicQpayWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/foreign-source-sync': {
+      id: '/api/public/hooks/foreign-source-sync'
+      path: '/api/public/hooks/foreign-source-sync'
+      fullPath: '/api/public/hooks/foreign-source-sync'
+      preLoaderRoute: typeof ApiPublicHooksForeignSourceSyncRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/foreign-queue-advance': {
       id: '/api/public/hooks/foreign-queue-advance'
       path: '/api/public/hooks/foreign-queue-advance'
@@ -1276,6 +1297,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicDeliveryWebhookRoute: ApiPublicDeliveryWebhookRoute,
   ApiPublicHooksForeignQueueAdvanceRoute:
     ApiPublicHooksForeignQueueAdvanceRoute,
+  ApiPublicHooksForeignSourceSyncRoute: ApiPublicHooksForeignSourceSyncRoute,
   ApiPublicQpayWebhookRoute: ApiPublicQpayWebhookRoute,
   LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,
   LovableEmailAuthWebhookRoute: LovableEmailAuthWebhookRoute,
