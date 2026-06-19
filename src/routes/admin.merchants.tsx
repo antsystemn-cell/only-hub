@@ -17,8 +17,13 @@ import {
 } from "@/components/ui/alert-dialog";
 import { fmtMnt } from "@/lib/format";
 import { toast } from "sonner";
-import { Check, X, Search, UserPlus, Pencil, ExternalLink } from "lucide-react";
+import { Check, X, Search, UserPlus, Pencil, ExternalLink, Globe2 } from "lucide-react";
 import { createMerchantAdminUser } from "@/lib/admin-merchant.functions";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Checkbox } from "@/components/ui/checkbox";
+import { FOREIGN_SOURCES } from "@/lib/foreign-orders/sources";
+import type { Database } from "@/integrations/supabase/types";
+type ForeignSource = Database["public"]["Enums"]["foreign_source"];
 
 export const Route = createFileRoute("/admin/merchants")({ component: AdminMerchantsPage });
 
@@ -42,7 +47,7 @@ function AdminMerchantsPage() {
     queryFn: async () => {
       const { data } = await supabase
         .from("merchants")
-        .select("id,name,slug,logo_url,description,commission_rate,is_active,approval_status,rejection_reason,contact_name,contact_phone,business_type,register_number,created_at")
+        .select("id,name,slug,logo_url,description,commission_rate,is_active,approval_status,rejection_reason,contact_name,contact_phone,business_type,register_number,can_create_foreign_order_products,allowed_foreign_sources,created_at")
         .order("created_at", { ascending: false });
       return data ?? [];
     },
@@ -221,6 +226,12 @@ function AdminMerchantsPage() {
                     </>
                   )}
 
+                  <ForeignPermissionEditor
+                    merchant={m}
+                    onSave={(patch) => updateMerchant.mutate({ id: m.id, patch })}
+                    pending={updateMerchant.isPending}
+                  />
+
                   <Button size="sm" variant="outline" onClick={() => { setAssignModal({ merchantId: m.id, merchantName: m.name }); setNewAdminEmail(""); setNewAdminPassword(""); }}>
                     <UserPlus className="mr-1 h-3.5 w-3.5" /> Admin томилох
                   </Button>
@@ -291,5 +302,103 @@ function CommissionRateEdit({ value, onSave }: { value: number; onSave: (v: numb
     <button onClick={() => setEditing(true)} className="flex items-center gap-1 rounded-lg border border-border px-2.5 py-1 text-sm hover:bg-muted">
       <Pencil className="h-3 w-3 text-muted-foreground" /> {value}%
     </button>
+  );
+}
+
+function ForeignPermissionEditor({
+  merchant,
+  onSave,
+  pending,
+}: {
+  merchant: any;
+  onSave: (patch: { can_create_foreign_order_products: boolean; allowed_foreign_sources: ForeignSource[] }) => void;
+  pending: boolean;
+}) {
+  const initialCan = !!merchant.can_create_foreign_order_products;
+  const initialSources: ForeignSource[] = (merchant.allowed_foreign_sources as ForeignSource[] | null) ?? [];
+  const [open, setOpen] = useState(false);
+  const [can, setCan] = useState(initialCan);
+  const [sources, setSources] = useState<ForeignSource[]>(initialSources);
+
+  // Re-sync when popover opens or merchant row changes
+  function onOpenChange(o: boolean) {
+    if (o) {
+      setCan(initialCan);
+      setSources(initialSources);
+    }
+    setOpen(o);
+  }
+
+  const toggleSource = (key: ForeignSource) =>
+    setSources((prev) => (prev.includes(key) ? prev.filter((s) => s !== key) : [...prev, key]));
+
+  const count = initialSources.length;
+  return (
+    <Popover open={open} onOpenChange={onOpenChange}>
+      <PopoverTrigger asChild>
+        <Button
+          size="sm"
+          variant={initialCan ? "default" : "outline"}
+          className={initialCan ? "bg-indigo-600 hover:bg-indigo-700" : ""}
+        >
+          <Globe2 className="mr-1 h-3.5 w-3.5" />
+          Гадаад захиалга
+          {initialCan && <span className="ml-1.5 rounded-full bg-white/20 px-1.5 text-[10px]">{count}</span>}
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent align="end" className="w-80 p-4">
+        <div className="space-y-3">
+          <div>
+            <div className="text-sm font-semibold">Гадаадаас захиалах эрх</div>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              Энэ дэлгүүр гадны эх сурвалжаас бараа импортлох эсэх, ямар эх сурвалж зөвшөөрөгдсөн зэргийг тохируулна.
+            </p>
+          </div>
+          <label className="flex items-center gap-2 text-sm">
+            <Switch checked={can} onCheckedChange={setCan} />
+            <span>Гадаад захиалгын бараа нэмэхийг зөвшөөрөх</span>
+          </label>
+          <div className={`space-y-2 rounded-lg border p-2 ${can ? "" : "opacity-50"}`}>
+            <div className="text-xs font-medium text-muted-foreground">Зөвшөөрөгдсөн эх сурвалжууд</div>
+            {Object.values(FOREIGN_SOURCES).map((s) => (
+              <label key={s.key} className="flex items-start gap-2 text-sm">
+                <Checkbox
+                  checked={sources.includes(s.key)}
+                  disabled={!can || !s.active}
+                  onCheckedChange={() => toggleSource(s.key)}
+                />
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-medium">{s.name}</span>
+                    {!s.active && (
+                      <Badge variant="outline" className="text-[9px]">удахгүй</Badge>
+                    )}
+                  </div>
+                  <div className="text-[11px] text-muted-foreground">
+                    {s.country} · {s.currency} · {s.defaultDeliveryMinDays}-{s.defaultDeliveryMaxDays} өдөр
+                  </div>
+                </div>
+              </label>
+            ))}
+          </div>
+          <div className="flex justify-end gap-2 pt-1">
+            <Button size="sm" variant="ghost" onClick={() => setOpen(false)}>Болих</Button>
+            <Button
+              size="sm"
+              disabled={pending}
+              onClick={() => {
+                onSave({
+                  can_create_foreign_order_products: can,
+                  allowed_foreign_sources: can ? sources : [],
+                });
+                setOpen(false);
+              }}
+            >
+              Хадгалах
+            </Button>
+          </div>
+        </div>
+      </PopoverContent>
+    </Popover>
   );
 }
