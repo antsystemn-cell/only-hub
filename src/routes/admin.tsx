@@ -32,7 +32,7 @@ const NAV: NavItem[] = [
 
 
 function AdminLayout() {
-  const { isPlatformAdmin, loading, user, refreshRoles, roles } = useAuth();
+  const { isPlatformAdmin, loading, user, refreshRoles, roles, rolesLoaded, rolesError } = useAuth();
   const location = useLocation();
 
   useEffect(() => { if (user) refreshRoles(); /* eslint-disable-next-line */ }, [user?.id]);
@@ -50,14 +50,20 @@ function AdminLayout() {
     refetchInterval: 60_000,
   });
 
-  if (loading) return (
+  if (loading || (user && !rolesLoaded && !rolesError)) return (
     <div className="flex min-h-screen items-center justify-center">
       <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
     </div>
   );
   if (!user) return <div className="flex min-h-screen items-center justify-center text-destructive">Эхлээд нэвтэрнэ үү</div>;
+  if (rolesError) return (
+    <div className="flex min-h-screen flex-col items-center justify-center gap-3 px-4 text-center text-muted-foreground">
+      <p>Эрх шалгахад алдаа гарлаа.</p>
+      <Button variant="outline" onClick={() => refreshRoles()}>Дахин шалгах</Button>
+    </div>
+  );
   if (!isPlatformAdmin) {
-    if (roles.length === 0) return <div className="flex min-h-screen items-center justify-center text-muted-foreground">Эрх шалгаж байна...</div>;
+    if (roles.length === 0) return <div className="flex min-h-screen items-center justify-center text-destructive">Админ эрх олдсонгүй</div>;
     return <div className="flex min-h-screen items-center justify-center text-destructive">Зөвшөөрөлгүй</div>;
   }
 

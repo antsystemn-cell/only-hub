@@ -13,15 +13,15 @@ export const Route = createFileRoute("/merchant/dashboard")({
 });
 
 function DashboardShell() {
-  const { user, loading, primaryMerchantId, isPlatformAdmin } = useAuth();
+  const { user, loading, primaryMerchantId, isPlatformAdmin, rolesLoaded, rolesError, refreshRoles } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (loading) return;
+    if (loading || (user && !rolesLoaded) || rolesError) return;
     if (!user) navigate({ to: "/merchant/login" });
     else if (!primaryMerchantId && isPlatformAdmin) navigate({ to: "/admin" });
     else if (!primaryMerchantId) navigate({ to: "/merchant/login" });
-  }, [user, loading, primaryMerchantId, isPlatformAdmin, navigate]);
+  }, [user, loading, rolesLoaded, rolesError, primaryMerchantId, isPlatformAdmin, navigate]);
 
   const { data: merchantInfo } = useQuery({
     queryKey: ["merchant-info", primaryMerchantId],
@@ -32,8 +32,25 @@ function DashboardShell() {
       .maybeSingle()).data as any,
   });
 
-  if (loading || !user || !primaryMerchantId) {
+  if (loading || (user && !rolesLoaded)) {
     return <div className="flex min-h-screen items-center justify-center text-muted-foreground">Уншиж байна...</div>;
+  }
+
+  if (!user) {
+    return <div className="flex min-h-screen items-center justify-center text-muted-foreground">Нэвтрэх хуудас руу шилжүүлж байна...</div>;
+  }
+
+  if (rolesError) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center gap-3 px-4 text-center text-muted-foreground">
+        <p>Эрх шалгахад алдаа гарлаа.</p>
+        <Button variant="outline" onClick={() => refreshRoles()}>Дахин шалгах</Button>
+      </div>
+    );
+  }
+
+  if (!primaryMerchantId) {
+    return <div className="flex min-h-screen items-center justify-center text-muted-foreground">Мерчант эрх олдсонгүй.</div>;
   }
 
   if (merchantInfo && merchantInfo.approval_status === "pending") {
