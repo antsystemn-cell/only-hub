@@ -191,7 +191,7 @@ function ProductDetailPage() {
     queryFn: async () => {
       const { data } = await supabase
         .from("product_variants")
-        .select("size_label,color_label,availability_status,is_purchasable,price_review_required")
+        .select("size_label,color_label,availability_status,is_purchasable,price_review_required,rounded_customer_price_mnt,final_customer_price_mnt")
         .eq("product_id", product!.id);
       return data ?? [];
     },
