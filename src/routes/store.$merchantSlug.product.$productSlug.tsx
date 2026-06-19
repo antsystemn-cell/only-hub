@@ -522,39 +522,9 @@ function ProductDetailPage() {
 
           {/* === Right column (desktop only) === */}
           <aside className="hidden flex-col gap-4 lg:flex">
-            {/* Delivery card */}
-            <Card className="rounded-2xl border-border/60 bg-white p-4">
-              <h3 className="mb-3 text-sm font-semibold">Хүргэлтийн мэдээлэл</h3>
-              <ul className="space-y-3 text-sm">
-                <li className="flex items-start justify-between gap-3">
-                  <div className="flex items-start gap-2">
-                    <Truck className="mt-0.5 h-4 w-4 text-muted-foreground" />
-                    <div>
-                      <div className="font-medium">Улаанбаатар дотор</div>
-                      <div className="text-xs text-muted-foreground">24-48 цаг</div>
-                    </div>
-                  </div>
-                  <span className="font-semibold text-emerald-600">Үнэгүй</span>
-                </li>
-                <li className="flex items-start justify-between gap-3">
-                  <div className="flex items-start gap-2">
-                    <Truck className="mt-0.5 h-4 w-4 text-muted-foreground" />
-                    <div>
-                      <div className="font-medium">Орон нутагт</div>
-                      <div className="text-xs text-muted-foreground">2-4 хоног</div>
-                    </div>
-                  </div>
-                  <span className="font-semibold">₮6,000</span>
-                </li>
-                <li className="flex items-start justify-between gap-3 border-t pt-3">
-                  <div className="flex items-start gap-2">
-                    <ShieldCheck className="mt-0.5 h-4 w-4 text-muted-foreground" />
-                    <div className="font-medium">Хүргэлтийн компани</div>
-                  </div>
-                  <span className="text-xs text-muted-foreground">Only Delivery</span>
-                </li>
-              </ul>
-            </Card>
+            {/* Delivery card (dynamic from merchant.shipping_config) */}
+            <ShippingCard merchant={merchant} />
+
 
             {/* Store card */}
             <Card className="rounded-2xl border-border/60 bg-white p-4">
