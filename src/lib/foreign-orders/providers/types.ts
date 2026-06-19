@@ -33,7 +33,6 @@ export type ParsedProduct = {
   gallery: string[];
   variants: ParsedVariant[];
   warnings: string[];
-  rawDebug?: Record<string, unknown>;
 };
 
 export interface ExternalCatalogProvider {
