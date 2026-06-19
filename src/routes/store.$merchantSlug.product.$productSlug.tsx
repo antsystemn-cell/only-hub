@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { fmtMnt } from "@/lib/format";
 import { cart, useCart } from "@/lib/cart";
+import { wishlist, useIsWishlisted } from "@/lib/wishlist";
 import {
   Minus, Plus, ShoppingCart, ChevronRight, Check, ChevronLeft, Heart,
   Share2, Truck, Shield, Store as StoreIcon, Play,
@@ -100,6 +101,7 @@ function ProductDetailPage() {
   const needsColor = colors.length > 0 && !color;
   const needsSize = sizes.length > 0 && !size;
   const outOfStock = hasTrackedStock && stockForVariant <= 0;
+  const wished = useIsWishlisted(product?.id);
 
   if (isLoading || !merchant) {
     return (
@@ -144,6 +146,22 @@ function ProductDetailPage() {
       else { await navigator.clipboard.writeText(url); toast.success("Холбоос хуулагдлаа"); }
     } catch { /* cancelled */ }
   };
+
+  const toggleWish = () => {
+    if (!product) return;
+    const added = wishlist.toggle({
+      productId: product.id,
+      name: product.name,
+      price: Number(product.price),
+      image: product.thumbnail_url || product.image_url,
+      merchantSlug,
+      productSlug: product.slug ?? product.id,
+    });
+    toast.success(added ? "Хүссэн жагсаалтад нэмэгдлээ" : "Хүссэн жагсаалтаас хасагдлаа");
+  };
+
+
+
 
   const cartCount = cartItems.reduce((s, i) => s + i.quantity, 0);
   const hasDiscount = product.original_price != null && Number(product.original_price) > Number(product.price);
@@ -381,7 +399,16 @@ function ProductDetailPage() {
                 onClick={() => { handleAdd(); navigate({ to: "/store/$merchantSlug/cart", params: { merchantSlug } }); }}>
                 Шууд авах
               </Button>
-              <Button size="lg" variant="outline" aria-label="Хадгалах"><Heart className="h-5 w-5" /></Button>
+              <Button
+                size="lg"
+                variant="outline"
+                aria-label={wished ? "Хүссэн жагсаалтаас хасах" : "Хүссэнд хадгалах"}
+                aria-pressed={wished}
+                onClick={toggleWish}
+                className={wished ? "border-rose-300 text-rose-500 hover:text-rose-600" : ""}
+              >
+                <Heart className={`h-5 w-5 ${wished ? "fill-current" : ""}`} />
+              </Button>
             </div>
 
             {/* Trust badges */}
@@ -491,7 +518,16 @@ function ProductDetailPage() {
       {/* Mobile sticky CTA */}
       <div className="sticky bottom-0 z-30 mt-8 border-t border-border bg-background/95 px-3 py-2.5 backdrop-blur lg:hidden">
         <div className="container mx-auto flex items-center gap-2">
-          <Button variant="outline" size="icon" aria-label="Хадгалах" className="h-11 w-11 shrink-0"><Heart className="h-5 w-5" /></Button>
+          <Button
+            variant="outline"
+            size="icon"
+            aria-label={wished ? "Хүссэн жагсаалтаас хасах" : "Хүссэнд хадгалах"}
+            aria-pressed={wished}
+            onClick={toggleWish}
+            className={`h-11 w-11 shrink-0 ${wished ? "border-rose-300 text-rose-500" : ""}`}
+          >
+            <Heart className={`h-5 w-5 ${wished ? "fill-current" : ""}`} />
+          </Button>
           <Button className="h-11 flex-1" onClick={handleAdd} disabled={outOfStock}>
             <ShoppingCart className="mr-2 h-4 w-4" /> Сагсанд
           </Button>
