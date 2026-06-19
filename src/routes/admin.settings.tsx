@@ -159,25 +159,20 @@ function AdminSettingsPage() {
     setCommission(String(settings.default_commission_rate ?? 3));
     const lg = settings.platform_logo_url;
     setLogoUrl(typeof lg === "string" ? lg : (lg?.url ?? ""));
+    const ps = settings.policy_shipping_default;
+    setPolicyShip(typeof ps === "string" ? ps : (ps?.content ?? ""));
+    const pr = settings.policy_return_default;
+    setPolicyReturn(typeof pr === "string" ? pr : (pr?.content ?? ""));
   }, [data]);
 
   const save = useMutation({
     mutationFn: async () => {
-      await saveFn({
-        data: {
-          key: "delivery_fee_rules",
-          value: { flat: Number(flat) || 0, free_over: Number(freeOver) || 0 },
-        },
-      });
-      await saveFn({
-        data: { key: "default_delivery_fee", value: Number(flat) || 0 },
-      });
-      await saveFn({
-        data: { key: "default_commission_rate", value: Number(commission) || 0 },
-      });
-      await saveFn({
-        data: { key: "platform_logo_url", value: logoUrl.trim() || null },
-      });
+      await saveFn({ data: { key: "delivery_fee_rules", value: { flat: Number(flat) || 0, free_over: Number(freeOver) || 0 } } });
+      await saveFn({ data: { key: "default_delivery_fee", value: Number(flat) || 0 } });
+      await saveFn({ data: { key: "default_commission_rate", value: Number(commission) || 0 } });
+      await saveFn({ data: { key: "platform_logo_url", value: logoUrl.trim() || null } });
+      await saveFn({ data: { key: "policy_shipping_default", value: { content: policyShip } } });
+      await saveFn({ data: { key: "policy_return_default", value: { content: policyReturn } } });
     },
     onSuccess: () => { toast.success("Хадгалагдлаа"); refetch(); },
     onError: (e: any) => toast.error(e?.message ?? "Алдаа"),
