@@ -54,7 +54,7 @@ export async function confirmOrderPayment(opts: ConfirmOptions): Promise<Confirm
   // 1. Load order
   const { data: order, error: loadErr } = await supabaseAdmin
     .from("orders")
-    .select("id,merchant_id,payment_status,paid_at,delivery_status")
+    .select("id,merchant_id,payment_status,paid_at,delivery_status,items,has_foreign_order_items,has_ready_stock_items")
     .eq("id", orderId)
     .maybeSingle();
   if (loadErr || !order) {
@@ -106,10 +106,48 @@ export async function confirmOrderPayment(opts: ConfirmOptions): Promise<Confirm
     .eq("order_id", orderId)
     .neq("status", "paid");
 
-  // 4. Auto-create delivery request (idempotent inside delivery.service).
+  // 4. Foreign-order items → enqueue source purchase rows (one per item).
+  try {
+    const items = Array.isArray((order as any).items) ? ((order as any).items as any[]) : [];
+    const queueRows = items
+      .map((it: any, idx: number) => {
+        if (!it?.foreign) return null;
+        const f = it.foreign;
+        return {
+          order_id: orderId,
+          order_item_index: idx,
+          merchant_id: order.merchant_id,
+          source: f.foreign_source,
+          source_url: f.source_url ?? null,
+          source_product_id: f.source_product_id ?? null,
+          source_variant_id: f.source_variant_id ?? null,
+          selected_size_label: it.size ?? null,
+          source_price: f.source_price ?? null,
+          source_currency: f.source_currency ?? null,
+          source_price_mnt: f.source_price_mnt ?? null,
+          customer_paid_price_mnt: f.customer_paid_price_mnt ?? it.price ?? null,
+          status: "WAITING_SOURCE_PURCHASE" as const,
+        };
+      })
+      .filter(Boolean) as any[];
+    if (queueRows.length) {
+      const { error: qErr } = await supabaseAdmin
+        .from("source_purchase_queue")
+        .insert(queueRows);
+      if (qErr) console.error("[confirmOrderPayment] queue insert failed", orderId, qErr);
+    }
+  } catch (e) {
+    console.error("[confirmOrderPayment] queue snapshot failed", orderId, e);
+  }
+
+  // 5. Auto-create delivery request (idempotent inside delivery.service).
+  //    Skip for orders that contain ONLY foreign items — those need source
+  //    purchase + Korea warehouse + international transit before delivery.
+  const foreignOnly =
+    !!(order as any).has_foreign_order_items && !(order as any).has_ready_stock_items;
   let deliveryRequestCreated = false;
   let deliveryError: string | null = null;
-  if (!skipDelivery) {
+  if (!skipDelivery && !foreignOnly) {
     try {
       const { createDeliveryRequest } = await import("@/lib/delivery/delivery.service");
       const res = await createDeliveryRequest({ orderId });

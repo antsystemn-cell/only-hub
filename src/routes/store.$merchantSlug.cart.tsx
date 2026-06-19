@@ -24,6 +24,7 @@ import { StickyCheckoutBar } from "@/components/cart/StickyCheckoutBar";
 import { ArrowLeft, Minus, Plus, ShoppingBag, Tag, Trash2, X } from "lucide-react";
 import { SiteHeader } from "@/components/site/SiteHeader";
 import { SiteFooter } from "@/components/site/SiteFooter";
+import { ForeignOrderInlineBadge } from "@/components/product/ForeignOrderBadge";
 
 export const Route = createFileRoute("/store/$merchantSlug/cart")({
   component: CartPage,
@@ -257,13 +258,16 @@ function CartPage() {
 
                       <div className="flex flex-1 flex-col gap-3">
                         <div className="flex items-start justify-between gap-2">
-                          <Link
-                            to="/store/$merchantSlug/product/$productSlug"
-                            params={{ merchantSlug, productSlug: product?.slug || item.productId }}
-                            className="font-medium hover:underline line-clamp-2"
-                          >
-                            {product?.name ?? item.name}
-                          </Link>
+                          <div className="min-w-0 flex-1">
+                            <Link
+                              to="/store/$merchantSlug/product/$productSlug"
+                              params={{ merchantSlug, productSlug: product?.slug || item.productId }}
+                              className="font-medium hover:underline line-clamp-2"
+                            >
+                              {product?.name ?? item.name}
+                            </Link>
+                            {product && <ForeignOrderInlineBadge product={product} className="mt-1" />}
+                          </div>
                           <Button
                             variant="ghost"
                             size="icon"

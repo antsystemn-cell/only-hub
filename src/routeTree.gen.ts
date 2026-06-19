@@ -48,6 +48,7 @@ import { Route as MerchantDashboardSettingsRouteImport } from './routes/merchant
 import { Route as MerchantDashboardProductsRouteImport } from './routes/merchant.dashboard.products'
 import { Route as MerchantDashboardPaymentsRouteImport } from './routes/merchant.dashboard.payments'
 import { Route as MerchantDashboardOrdersRouteImport } from './routes/merchant.dashboard.orders'
+import { Route as MerchantDashboardForeignQueueRouteImport } from './routes/merchant.dashboard.foreign-queue'
 import { Route as MerchantDashboardDeliveryRouteImport } from './routes/merchant.dashboard.delivery'
 import { Route as MerchantDashboardChatbotRouteImport } from './routes/merchant.dashboard.chatbot'
 import { Route as MerchantDashboardBackupOldDeliveryRouteImport } from './routes/merchant.dashboard.backup-old-delivery'
@@ -263,6 +264,12 @@ const MerchantDashboardOrdersRoute = MerchantDashboardOrdersRouteImport.update({
   path: '/orders',
   getParentRoute: () => MerchantDashboardRoute,
 } as any)
+const MerchantDashboardForeignQueueRoute =
+  MerchantDashboardForeignQueueRouteImport.update({
+    id: '/foreign-queue',
+    path: '/foreign-queue',
+    getParentRoute: () => MerchantDashboardRoute,
+  } as any)
 const MerchantDashboardDeliveryRoute =
   MerchantDashboardDeliveryRouteImport.update({
     id: '/delivery',
@@ -384,6 +391,7 @@ export interface FileRoutesByFullPath {
   '/merchant/dashboard/backup-old-delivery': typeof MerchantDashboardBackupOldDeliveryRoute
   '/merchant/dashboard/chatbot': typeof MerchantDashboardChatbotRoute
   '/merchant/dashboard/delivery': typeof MerchantDashboardDeliveryRoute
+  '/merchant/dashboard/foreign-queue': typeof MerchantDashboardForeignQueueRoute
   '/merchant/dashboard/orders': typeof MerchantDashboardOrdersRoute
   '/merchant/dashboard/payments': typeof MerchantDashboardPaymentsRoute
   '/merchant/dashboard/products': typeof MerchantDashboardProductsRoute
@@ -438,6 +446,7 @@ export interface FileRoutesByTo {
   '/merchant/dashboard/backup-old-delivery': typeof MerchantDashboardBackupOldDeliveryRoute
   '/merchant/dashboard/chatbot': typeof MerchantDashboardChatbotRoute
   '/merchant/dashboard/delivery': typeof MerchantDashboardDeliveryRoute
+  '/merchant/dashboard/foreign-queue': typeof MerchantDashboardForeignQueueRoute
   '/merchant/dashboard/orders': typeof MerchantDashboardOrdersRoute
   '/merchant/dashboard/payments': typeof MerchantDashboardPaymentsRoute
   '/merchant/dashboard/products': typeof MerchantDashboardProductsRoute
@@ -495,6 +504,7 @@ export interface FileRoutesById {
   '/merchant/dashboard/backup-old-delivery': typeof MerchantDashboardBackupOldDeliveryRoute
   '/merchant/dashboard/chatbot': typeof MerchantDashboardChatbotRoute
   '/merchant/dashboard/delivery': typeof MerchantDashboardDeliveryRoute
+  '/merchant/dashboard/foreign-queue': typeof MerchantDashboardForeignQueueRoute
   '/merchant/dashboard/orders': typeof MerchantDashboardOrdersRoute
   '/merchant/dashboard/payments': typeof MerchantDashboardPaymentsRoute
   '/merchant/dashboard/products': typeof MerchantDashboardProductsRoute
@@ -553,6 +563,7 @@ export interface FileRouteTypes {
     | '/merchant/dashboard/backup-old-delivery'
     | '/merchant/dashboard/chatbot'
     | '/merchant/dashboard/delivery'
+    | '/merchant/dashboard/foreign-queue'
     | '/merchant/dashboard/orders'
     | '/merchant/dashboard/payments'
     | '/merchant/dashboard/products'
@@ -607,6 +618,7 @@ export interface FileRouteTypes {
     | '/merchant/dashboard/backup-old-delivery'
     | '/merchant/dashboard/chatbot'
     | '/merchant/dashboard/delivery'
+    | '/merchant/dashboard/foreign-queue'
     | '/merchant/dashboard/orders'
     | '/merchant/dashboard/payments'
     | '/merchant/dashboard/products'
@@ -663,6 +675,7 @@ export interface FileRouteTypes {
     | '/merchant/dashboard/backup-old-delivery'
     | '/merchant/dashboard/chatbot'
     | '/merchant/dashboard/delivery'
+    | '/merchant/dashboard/foreign-queue'
     | '/merchant/dashboard/orders'
     | '/merchant/dashboard/payments'
     | '/merchant/dashboard/products'
@@ -986,6 +999,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MerchantDashboardOrdersRouteImport
       parentRoute: typeof MerchantDashboardRoute
     }
+    '/merchant/dashboard/foreign-queue': {
+      id: '/merchant/dashboard/foreign-queue'
+      path: '/foreign-queue'
+      fullPath: '/merchant/dashboard/foreign-queue'
+      preLoaderRoute: typeof MerchantDashboardForeignQueueRouteImport
+      parentRoute: typeof MerchantDashboardRoute
+    }
     '/merchant/dashboard/delivery': {
       id: '/merchant/dashboard/delivery'
       path: '/delivery'
@@ -1149,6 +1169,7 @@ interface MerchantDashboardRouteChildren {
   MerchantDashboardBackupOldDeliveryRoute: typeof MerchantDashboardBackupOldDeliveryRoute
   MerchantDashboardChatbotRoute: typeof MerchantDashboardChatbotRoute
   MerchantDashboardDeliveryRoute: typeof MerchantDashboardDeliveryRoute
+  MerchantDashboardForeignQueueRoute: typeof MerchantDashboardForeignQueueRoute
   MerchantDashboardOrdersRoute: typeof MerchantDashboardOrdersRoute
   MerchantDashboardPaymentsRoute: typeof MerchantDashboardPaymentsRoute
   MerchantDashboardProductsRoute: typeof MerchantDashboardProductsRoute
@@ -1163,6 +1184,7 @@ const MerchantDashboardRouteChildren: MerchantDashboardRouteChildren = {
     MerchantDashboardBackupOldDeliveryRoute,
   MerchantDashboardChatbotRoute: MerchantDashboardChatbotRoute,
   MerchantDashboardDeliveryRoute: MerchantDashboardDeliveryRoute,
+  MerchantDashboardForeignQueueRoute: MerchantDashboardForeignQueueRoute,
   MerchantDashboardOrdersRoute: MerchantDashboardOrdersRoute,
   MerchantDashboardPaymentsRoute: MerchantDashboardPaymentsRoute,
   MerchantDashboardProductsRoute: MerchantDashboardProductsRoute,
