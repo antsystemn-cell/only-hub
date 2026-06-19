@@ -144,6 +144,12 @@ const createSchema = z.object({
   coverImage: z.string().url().nullable().optional(),
   gallery: z.array(z.string().url()).default([]),
   category: z.string().nullable().optional(),
+  productInfo: z
+    .array(z.object({ label: z.string(), value: z.string() }))
+    .default([]),
+  productIntroSections: z
+    .array(z.object({ title: z.string(), content: z.string() }))
+    .default([]),
   variants: z.array(variantInputSchema).min(1, "Хамгийн багадаа 1 хувилбар оруулна."),
 });
 
