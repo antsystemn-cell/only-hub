@@ -320,7 +320,7 @@ function ProductDetailPage() {
     if (needsSize) return toast.error("Хэмжээ сонгоно уу");
     if (outOfStock) return toast.error("Нөөц дууссан");
     cart.add(merchantSlug, {
-      productId: product.id, name: product.name, price: Number(product.price),
+      productId: product.id, name: product.name, price: Number(activePrice || product.price),
       image: product.thumbnail_url || product.image_url, color, size, quantity: qty,
     });
     toast.success("Сагсанд нэмэгдлээ");
@@ -331,7 +331,7 @@ function ProductDetailPage() {
     if (needsSize) return toast.error("Хэмжээ сонгоно уу");
     if (outOfStock) return toast.error("Нөөц дууссан");
     cart.add(merchantSlug, {
-      productId: product.id, name: product.name, price: Number(product.price),
+      productId: product.id, name: product.name, price: Number(activePrice || product.price),
       image: product.thumbnail_url || product.image_url, color, size, quantity: qty,
     });
     navigate({ to: "/store/$merchantSlug/cart", params: { merchantSlug } });
