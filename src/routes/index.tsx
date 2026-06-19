@@ -221,6 +221,21 @@ function ProductCard({
       : 0);
   const rating = 4.5 + (Math.abs(hashStr(p.id)) % 5) / 10; // pseudo-stable rating display
   const sold = Number(p.sales) > 0 ? Number(p.sales) : (Math.abs(hashStr(p.id)) % 200) + 5;
+  const wished = useIsWishlisted(p.id);
+
+  const onToggleWish = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const added = wishlist.toggle({
+      productId: p.id,
+      name: p.name,
+      price: Number(p.price),
+      image: p.thumbnail_url ?? p.image_url ?? null,
+      merchantSlug: merchant?.slug ?? null,
+      productSlug: p.slug ?? p.id,
+    });
+    toast.success(added ? "Хүссэн жагсаалтад нэмэгдлээ" : "Хүссэн жагсаалтаас хасагдлаа");
+  };
 
   const card = (
     <Card className="group flex h-full flex-col overflow-hidden rounded-2xl border-border/60 bg-card shadow-sm transition-all hover:-translate-y-0.5 hover:border-orange-300 hover:shadow-md">
@@ -249,11 +264,12 @@ function ProductCard({
         )}
         <button
           type="button"
-          aria-label="Хүсэлтэнд нэмэх"
-          onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
-          className="absolute right-2 top-2 inline-flex h-7 w-7 items-center justify-center rounded-full bg-white/90 text-foreground shadow backdrop-blur transition hover:bg-white hover:text-rose-500"
+          aria-label={wished ? "Хүссэн жагсаалтаас хасах" : "Хүссэн жагсаалтад нэмэх"}
+          aria-pressed={wished}
+          onClick={onToggleWish}
+          className={`absolute right-2 top-2 inline-flex h-7 w-7 items-center justify-center rounded-full bg-white/90 shadow backdrop-blur transition hover:bg-white ${wished ? "text-rose-500" : "text-foreground hover:text-rose-500"}`}
         >
-          <Heart className="h-3.5 w-3.5" />
+          <Heart className={`h-3.5 w-3.5 ${wished ? "fill-current" : ""}`} />
         </button>
         <button
           type="button"
