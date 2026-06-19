@@ -47,7 +47,7 @@ function AdminMerchantsPage() {
     queryFn: async () => {
       const { data } = await supabase
         .from("merchants")
-        .select("id,name,slug,logo_url,description,commission_rate,is_active,approval_status,rejection_reason,contact_name,contact_phone,business_type,register_number,created_at")
+        .select("id,name,slug,logo_url,description,commission_rate,is_active,approval_status,rejection_reason,contact_name,contact_phone,business_type,register_number,can_create_foreign_order_products,allowed_foreign_sources,created_at")
         .order("created_at", { ascending: false });
       return data ?? [];
     },
