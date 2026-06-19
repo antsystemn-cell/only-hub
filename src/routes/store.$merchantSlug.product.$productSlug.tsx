@@ -18,6 +18,7 @@ import {
 import { SiteHeader } from "@/components/site/SiteHeader";
 import { SiteFooter } from "@/components/site/SiteFooter";
 import { ShareMenu } from "@/components/product/ShareMenu";
+import { ReviewsSection } from "@/components/product/ReviewsSection";
 
 export const Route = createFileRoute("/store/$merchantSlug/product/$productSlug")({
   component: ProductDetailPage,
@@ -623,6 +624,7 @@ function ProductDetailPage() {
             avg={Number(rating)}
             dist={reviewStats?.dist ?? { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 }}
           />
+          <ReviewsSection productId={product.id} />
         </div>
 
         {/* === Mobile-only: store card === */}
@@ -639,10 +641,10 @@ function ProductDetailPage() {
                 <div className="mt-0.5 flex items-center gap-2 text-xs text-muted-foreground">
                   <span className="inline-flex items-center gap-0.5">
                     <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
-                    <span className="font-semibold text-foreground">4.9</span>
+                    <span className="font-semibold text-foreground">{rating}</span>
                   </span>
                   <span>•</span>
-                  <span>Итгэмжлэгдсэн дэлгүүр</span>
+                  <span>{merchant.followers_count ?? 0} дагагч</span>
                 </div>
               </div>
               <ChevronRight className="h-4 w-4 text-muted-foreground" />

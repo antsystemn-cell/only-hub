@@ -18,8 +18,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { importEasyshopProducts } from "@/lib/import-easyshop.functions";
 import { sendTestSmsFn, listSmsTestLogsFn } from "@/lib/admin-message-test.functions";
 import { supabase } from "@/integrations/supabase/client";
+import { TiptapEditor } from "@/components/admin/TiptapEditor";
 
-const SETTING_KEYS = ["default_delivery_fee", "delivery_fee_rules", "default_commission_rate", "platform_logo_url"] as const;
+const SETTING_KEYS = ["default_delivery_fee", "delivery_fee_rules", "default_commission_rate", "platform_logo_url", "policy_shipping_default", "policy_return_default"] as const;
 
 const getPlatformSettings = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -148,6 +149,8 @@ function AdminSettingsPage() {
   const [commission, setCommission] = useState<string>("3");
   const [logoUrl, setLogoUrl] = useState<string>("");
   const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [policyShip, setPolicyShip] = useState<string>("");
+  const [policyReturn, setPolicyReturn] = useState<string>("");
 
   useEffect(() => {
     const rules = settings.delivery_fee_rules ?? {};
@@ -156,25 +159,20 @@ function AdminSettingsPage() {
     setCommission(String(settings.default_commission_rate ?? 3));
     const lg = settings.platform_logo_url;
     setLogoUrl(typeof lg === "string" ? lg : (lg?.url ?? ""));
+    const ps = settings.policy_shipping_default;
+    setPolicyShip(typeof ps === "string" ? ps : (ps?.content ?? ""));
+    const pr = settings.policy_return_default;
+    setPolicyReturn(typeof pr === "string" ? pr : (pr?.content ?? ""));
   }, [data]);
 
   const save = useMutation({
     mutationFn: async () => {
-      await saveFn({
-        data: {
-          key: "delivery_fee_rules",
-          value: { flat: Number(flat) || 0, free_over: Number(freeOver) || 0 },
-        },
-      });
-      await saveFn({
-        data: { key: "default_delivery_fee", value: Number(flat) || 0 },
-      });
-      await saveFn({
-        data: { key: "default_commission_rate", value: Number(commission) || 0 },
-      });
-      await saveFn({
-        data: { key: "platform_logo_url", value: logoUrl.trim() || null },
-      });
+      await saveFn({ data: { key: "delivery_fee_rules", value: { flat: Number(flat) || 0, free_over: Number(freeOver) || 0 } } });
+      await saveFn({ data: { key: "default_delivery_fee", value: Number(flat) || 0 } });
+      await saveFn({ data: { key: "default_commission_rate", value: Number(commission) || 0 } });
+      await saveFn({ data: { key: "platform_logo_url", value: logoUrl.trim() || null } });
+      await saveFn({ data: { key: "policy_shipping_default", value: { content: policyShip } } });
+      await saveFn({ data: { key: "policy_return_default", value: { content: policyReturn } } });
     },
     onSuccess: () => { toast.success("Хадгалагдлаа"); refetch(); },
     onError: (e: any) => toast.error(e?.message ?? "Алдаа"),
@@ -297,6 +295,18 @@ function AdminSettingsPage() {
               onChange={(e) => setCommission(e.target.value)}
               className="mt-3 max-w-xs"
             />
+          </Card>
+
+          <Card className="rounded-2xl p-6">
+            <h2 className="text-lg font-semibold">Глобал хүргэлтийн нөхцөл</h2>
+            <p className="mt-1 mb-3 text-xs text-muted-foreground">Дэлгүүр өөрийн нөхцөл бичээгүй үед барааны хуудсанд харагдана.</p>
+            <TiptapEditor value={policyShip} onChange={setPolicyShip} minHeight={200} placeholder="Хүргэлтийн ерөнхий нөхцөл..." />
+          </Card>
+
+          <Card className="rounded-2xl p-6">
+            <h2 className="text-lg font-semibold">Глобал буцаалтын нөхцөл</h2>
+            <p className="mt-1 mb-3 text-xs text-muted-foreground">Дэлгүүр өөрийн нөхцөл бичээгүй үед барааны хуудсанд харагдана.</p>
+            <TiptapEditor value={policyReturn} onChange={setPolicyReturn} minHeight={200} placeholder="Буцаалтын ерөнхий нөхцөл..." />
           </Card>
 
           <div className="flex justify-end">

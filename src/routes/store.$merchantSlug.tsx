@@ -18,7 +18,7 @@ function StorePage() {
   const isStoreIndex = pathname === `/store/${merchantSlug}` || pathname === `/store/${merchantSlug}/`;
   const { data: merchant } = useQuery({
     queryKey: ["merchant", merchantSlug],
-    queryFn: async () => (await supabase.from("merchants").select("id,name,slug,logo_url,description,is_active,approval_status,created_at,updated_at").eq("slug", merchantSlug).maybeSingle()).data,
+    queryFn: async () => (await supabase.from("merchants").select("id,name,slug,logo_url,description,is_active,approval_status,followers_count,created_at,updated_at").eq("slug", merchantSlug).maybeSingle()).data,
   });
   const { data: products = [] } = useQuery({
     queryKey: ["store-products", merchant?.id],
@@ -87,8 +87,13 @@ function StorePage() {
           )}
           <div className="min-w-0">
             <h1 className="truncate text-xl font-bold sm:text-2xl">{merchant.name}</h1>
+            <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground sm:text-sm">
+              <span><span className="font-semibold text-foreground">{products.length}</span> бараа</span>
+              <span>•</span>
+              <span><span className="font-semibold text-foreground">{(merchant as any).followers_count ?? 0}</span> дагагч</span>
+            </div>
             {merchant.description && (
-              <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground sm:text-sm">{merchant.description}</p>
+              <p className="mt-1 line-clamp-2 text-xs text-muted-foreground sm:text-sm">{merchant.description}</p>
             )}
           </div>
         </div>
