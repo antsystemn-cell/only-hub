@@ -91,7 +91,7 @@ function CheckoutPage() {
     queryFn: async () =>
       (await supabase
         .from("delivery_options")
-        .select("*")
+        .select("id,merchant_id,name,description,price,estimated_days_min,estimated_days_max,is_active,payment_terms,position,address")
         .eq("merchant_id", merchant!.id)
         .eq("is_active", true)
         .order("position")).data ?? [],
