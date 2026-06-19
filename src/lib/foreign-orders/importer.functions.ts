@@ -241,7 +241,7 @@ export const createForeignProduct = createServerFn({ method: "POST" })
         profit_amount_mnt: p?.profitAmountMnt ?? 0,
         final_customer_price_mnt: p?.finalCustomerPriceMnt ?? null,
         rounded_customer_price_mnt: p?.roundedCustomerPriceMnt ?? null,
-        availability_status: p ? "AVAILABLE" : "UNKNOWN",
+        availability_status: (p ? "AVAILABLE" : "UNKNOWN") as "AVAILABLE" | "UNKNOWN",
         source_availability_status: p ? "available" : "unknown",
         is_visible: true,
         is_purchasable: !!p && v.isPurchasable !== false,
