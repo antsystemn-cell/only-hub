@@ -18,6 +18,7 @@ const TABS: Tab[] = [
   { to: "/merchant/dashboard/products", label: "Бараа", icon: Package },
   { to: "/merchant/dashboard/orders", label: "Захиалга", icon: ShoppingCart },
   { to: "/merchant/dashboard/foreign-queue", label: "Гадаад захиалга", icon: Globe2 },
+  { to: "/merchant/dashboard/foreign-sync", label: "Гадаад sync", icon: Globe2 },
   { to: "/merchant/dashboard/delivery", label: "Хүргэлт удирдах", icon: Truck },
   { to: "/merchant/dashboard/users", label: "Үйлчлүүлэгч", icon: Users },
   { to: "/merchant/dashboard/staff", label: "Ажилтан / Эрх", icon: ShieldCheck },

@@ -33,12 +33,18 @@ import type { Database } from "@/integrations/supabase/types";
 
 type ForeignSource = Database["public"]["Enums"]["foreign_source"];
 
+type AvailabilityStatus = "AVAILABLE" | "LOW_STOCK" | "UNAVAILABLE" | "UNKNOWN" | "NEEDS_REVIEW";
+
 type VariantDraft = {
   sourceVariantId?: string | null;
   sizeLabel: string;
   colorLabel?: string | null;
   sourcePrice: number;
   isPurchasable: boolean;
+  availabilityStatus: AvailabilityStatus;
+  unavailableReason?: string | null;
+  sourceAvailabilityRawText?: string | null;
+  optionSignature?: string | null;
 };
 
 type OptionGroupPreview = {
@@ -72,6 +78,7 @@ type ParsedPreview = {
   optionGroups: OptionGroupPreview[];
   deliveryOptions: DeliveryOptionPreview[];
   extractionMethod: string;
+  lowStockWarning: boolean;
 };
 
 type Props = {
@@ -150,16 +157,24 @@ export function ForeignProductImporter({ merchantId, source, onClose }: Props) {
         optionGroups: (p as any).optionGroups ?? [],
         deliveryOptions: (p as any).deliveryOptions ?? [],
         extractionMethod: (p as any).extractionMethod ?? "META_FALLBACK",
+        lowStockWarning: !!(p as any).lowStockWarning,
       });
       const seeded: VariantDraft[] = (p.variants ?? []).map((v: any) => ({
         sourceVariantId: v.sourceVariantId ?? null,
         sizeLabel: v.sizeLabel ?? "",
         colorLabel: v.colorLabel ?? null,
         sourcePrice: Number(v.sourcePrice ?? 0),
-        isPurchasable: !!v.sourcePrice,
+        isPurchasable: typeof v.isPurchasable === "boolean" ? v.isPurchasable : !!v.sourcePrice,
+        availabilityStatus: (v.availabilityStatus as AvailabilityStatus) ?? "UNKNOWN",
+        unavailableReason: v.unavailableReason ?? null,
+        sourceAvailabilityRawText: v.sourceAvailabilityRawText ?? null,
+        optionSignature: v.optionSignature ?? null,
       }));
       if (seeded.length === 0) {
-        seeded.push({ sizeLabel: "", sourcePrice: 0, isPurchasable: false });
+        seeded.push({
+          sizeLabel: "", sourcePrice: 0, isPurchasable: false,
+          availabilityStatus: "UNKNOWN",
+        });
       }
       setVariants(seeded);
       setStep("preview");
@@ -264,7 +279,14 @@ export function ForeignProductImporter({ merchantId, source, onClose }: Props) {
 
       {step === "preview" && preview && (
         <div className="space-y-5">
-          <ImportStatusBadge status={preview.status} />
+          <div className="flex flex-wrap items-center gap-2">
+            <ImportStatusBadge status={preview.status} />
+            {preview.lowStockWarning && (
+              <Badge className="gap-1 bg-amber-100 text-amber-800 hover:bg-amber-100">
+                <AlertCircle className="h-3 w-3" /> Үлдэгдэл бага (품절 임박)
+              </Badge>
+            )}
+          </div>
           {warnings.length > 0 && (
             <Alert className="border-amber-300 bg-amber-50">
               <AlertCircle className="h-4 w-4 text-amber-600" />
@@ -495,7 +517,10 @@ function VariantsEditor({
 
   const remove = (i: number) => setVariants(variants.filter((_, j) => j !== i));
   const add = () =>
-    setVariants([...variants, { sizeLabel: "", sourcePrice: 0, isPurchasable: false }]);
+    setVariants([
+      ...variants,
+      { sizeLabel: "", sourcePrice: 0, isPurchasable: false, availabilityStatus: "UNKNOWN" },
+    ]);
 
   return (
     <div>
@@ -512,7 +537,14 @@ function VariantsEditor({
               ? calculateVariantPricing({ sourcePrice: v.sourcePrice }, settings)
               : null;
           return (
-            <div key={i} className="grid grid-cols-12 items-center gap-2 rounded-xl border p-2.5">
+            <div
+              key={i}
+              className={`grid grid-cols-12 items-center gap-2 rounded-xl border p-2.5 ${
+                v.availabilityStatus === "UNAVAILABLE" ? "bg-red-50/50 border-red-200" :
+                v.availabilityStatus === "LOW_STOCK" ? "bg-amber-50/50 border-amber-200" :
+                v.availabilityStatus === "UNKNOWN" ? "bg-muted/40" : ""
+              }`}
+            >
               <Input
                 className="col-span-3"
                 placeholder="Хэмжээ (e.g. 250)"
@@ -525,7 +557,7 @@ function VariantsEditor({
                 value={v.colorLabel ?? ""}
                 onChange={(e) => update(i, { colorLabel: e.target.value || null })}
               />
-              <div className="col-span-3 flex items-center gap-1">
+              <div className="col-span-2 flex items-center gap-1">
                 <Input
                   type="number"
                   placeholder={`Үнэ ${currency}`}
@@ -534,7 +566,27 @@ function VariantsEditor({
                 />
                 <span className="text-xs text-muted-foreground">{currency}</span>
               </div>
-              <div className="col-span-3 text-right text-sm font-semibold">
+              <div className="col-span-2 flex flex-col items-start gap-1">
+                <AvailabilityBadge status={v.availabilityStatus} />
+                <label className="flex items-center gap-1 text-[11px] text-muted-foreground">
+                  <input
+                    type="checkbox"
+                    checked={v.isPurchasable}
+                    onChange={(e) => {
+                      const next = e.target.checked;
+                      if (next && v.availabilityStatus === "UNAVAILABLE") {
+                        const ok = window.confirm(
+                          "Энэ сонголт Poizon Korea дээр боломжгүй гэж уншигдсан. Гараар идэвхжүүлэх үү?",
+                        );
+                        if (!ok) return;
+                      }
+                      update(i, { isPurchasable: next });
+                    }}
+                  />
+                  Зарагдана
+                </label>
+              </div>
+              <div className="col-span-2 text-right text-sm font-semibold">
                 {pricing ? (
                   <span className="text-orange-600">{fmtMnt(pricing.roundedCustomerPriceMnt)}</span>
                 ) : (
@@ -555,6 +607,18 @@ function VariantsEditor({
       )}
     </div>
   );
+}
+
+function AvailabilityBadge({ status }: { status: AvailabilityStatus }) {
+  const map: Record<AvailabilityStatus, { label: string; cls: string }> = {
+    AVAILABLE: { label: "Боломжтой", cls: "bg-emerald-100 text-emerald-700" },
+    LOW_STOCK: { label: "Үлдэгдэл бага", cls: "bg-amber-100 text-amber-800" },
+    UNAVAILABLE: { label: "Түр дууссан", cls: "bg-red-100 text-red-700" },
+    UNKNOWN: { label: "Шалгах", cls: "bg-slate-100 text-slate-700" },
+    NEEDS_REVIEW: { label: "Хяналт", cls: "bg-orange-100 text-orange-700" },
+  };
+  const m = map[status] ?? map.UNKNOWN;
+  return <span className={`rounded px-1.5 py-0.5 text-[10px] font-semibold ${m.cls}`}>{m.label}</span>;
 }
 
 function SettingsQuickForm({

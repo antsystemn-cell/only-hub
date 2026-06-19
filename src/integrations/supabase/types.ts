@@ -577,8 +577,84 @@ export type Database = {
         }
         Relationships: []
       }
+      foreign_source_sync_jobs: {
+        Row: {
+          availability_changes_count: number
+          created_at: string
+          diagnostics: Json | null
+          error_message: string | null
+          finished_at: string | null
+          id: string
+          merchant_id: string
+          price_changes_count: number
+          product_id: string
+          source: Database["public"]["Enums"]["foreign_source"]
+          started_at: string | null
+          status: string
+          sync_type: string
+          variants_available: number
+          variants_checked: number
+          variants_unavailable: number
+          variants_unknown: number
+        }
+        Insert: {
+          availability_changes_count?: number
+          created_at?: string
+          diagnostics?: Json | null
+          error_message?: string | null
+          finished_at?: string | null
+          id?: string
+          merchant_id: string
+          price_changes_count?: number
+          product_id: string
+          source: Database["public"]["Enums"]["foreign_source"]
+          started_at?: string | null
+          status?: string
+          sync_type?: string
+          variants_available?: number
+          variants_checked?: number
+          variants_unavailable?: number
+          variants_unknown?: number
+        }
+        Update: {
+          availability_changes_count?: number
+          created_at?: string
+          diagnostics?: Json | null
+          error_message?: string | null
+          finished_at?: string | null
+          id?: string
+          merchant_id?: string
+          price_changes_count?: number
+          product_id?: string
+          source?: Database["public"]["Enums"]["foreign_source"]
+          started_at?: string | null
+          status?: string
+          sync_type?: string
+          variants_available?: number
+          variants_checked?: number
+          variants_unavailable?: number
+          variants_unknown?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "foreign_source_sync_jobs_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "foreign_source_sync_jobs_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       merchant_foreign_source_settings: {
         Row: {
+          checkout_freshness_required_hours: number
           created_at: string
           default_cargo_cost_mnt: number
           default_delivery_max_days: number
@@ -587,6 +663,7 @@ export type Database = {
           default_korea_domestic_shipping_mnt: number
           default_local_delivery_cost_mnt: number
           default_profit_percent: number
+          default_sync_frequency_hours: number
           enabled: boolean
           exchange_rate: number | null
           id: string
@@ -605,6 +682,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          checkout_freshness_required_hours?: number
           created_at?: string
           default_cargo_cost_mnt?: number
           default_delivery_max_days?: number
@@ -613,6 +691,7 @@ export type Database = {
           default_korea_domestic_shipping_mnt?: number
           default_local_delivery_cost_mnt?: number
           default_profit_percent?: number
+          default_sync_frequency_hours?: number
           enabled?: boolean
           exchange_rate?: number | null
           id?: string
@@ -631,6 +710,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          checkout_freshness_required_hours?: number
           created_at?: string
           default_cargo_cost_mnt?: number
           default_delivery_max_days?: number
@@ -639,6 +719,7 @@ export type Database = {
           default_korea_domestic_shipping_mnt?: number
           default_local_delivery_cost_mnt?: number
           default_profit_percent?: number
+          default_sync_frequency_hours?: number
           enabled?: boolean
           exchange_rate?: number | null
           id?: string
@@ -1372,19 +1453,29 @@ export type Database = {
           last_availability_sync_at: string | null
           last_price_sync_at: string | null
           local_delivery_cost_mnt: number | null
+          manual_availability_override: boolean
+          manual_availability_status: string | null
+          manual_override_at: string | null
+          manual_override_by: string | null
+          manual_override_reason: string | null
           minimum_profit_mnt: number | null
+          option_signature: string | null
           payment_fee_reserve_mnt: number | null
+          previous_source_price: number | null
+          price_review_required: boolean
           product_id: string
           profit_amount_mnt: number | null
           profit_percent: number | null
           risk_buffer_mnt: number | null
           rounded_customer_price_mnt: number | null
           size_label: string | null
+          source_availability_raw_text: string | null
           source_availability_status: string | null
           source_currency: string | null
           source_price: number | null
           source_price_mnt: number | null
           source_variant_id: string | null
+          unavailable_reason: string | null
           updated_at: string
         }
         Insert: {
@@ -1402,19 +1493,29 @@ export type Database = {
           last_availability_sync_at?: string | null
           last_price_sync_at?: string | null
           local_delivery_cost_mnt?: number | null
+          manual_availability_override?: boolean
+          manual_availability_status?: string | null
+          manual_override_at?: string | null
+          manual_override_by?: string | null
+          manual_override_reason?: string | null
           minimum_profit_mnt?: number | null
+          option_signature?: string | null
           payment_fee_reserve_mnt?: number | null
+          previous_source_price?: number | null
+          price_review_required?: boolean
           product_id: string
           profit_amount_mnt?: number | null
           profit_percent?: number | null
           risk_buffer_mnt?: number | null
           rounded_customer_price_mnt?: number | null
           size_label?: string | null
+          source_availability_raw_text?: string | null
           source_availability_status?: string | null
           source_currency?: string | null
           source_price?: number | null
           source_price_mnt?: number | null
           source_variant_id?: string | null
+          unavailable_reason?: string | null
           updated_at?: string
         }
         Update: {
@@ -1432,19 +1533,29 @@ export type Database = {
           last_availability_sync_at?: string | null
           last_price_sync_at?: string | null
           local_delivery_cost_mnt?: number | null
+          manual_availability_override?: boolean
+          manual_availability_status?: string | null
+          manual_override_at?: string | null
+          manual_override_by?: string | null
+          manual_override_reason?: string | null
           minimum_profit_mnt?: number | null
+          option_signature?: string | null
           payment_fee_reserve_mnt?: number | null
+          previous_source_price?: number | null
+          price_review_required?: boolean
           product_id?: string
           profit_amount_mnt?: number | null
           profit_percent?: number | null
           risk_buffer_mnt?: number | null
           rounded_customer_price_mnt?: number | null
           size_label?: string | null
+          source_availability_raw_text?: string | null
           source_availability_status?: string | null
           source_currency?: string | null
           source_price?: number | null
           source_price_mnt?: number | null
           source_variant_id?: string | null
+          unavailable_reason?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -1478,8 +1589,10 @@ export type Database = {
           is_on_sale: boolean
           last_source_sync_at: string | null
           legacy_metadata: Json
+          low_stock_warning: boolean
           merchant_id: string
           name: string
+          next_sync_at: string | null
           original_price: number | null
           price: number
           product_code: string | null
@@ -1491,6 +1604,7 @@ export type Database = {
           source_currency: string | null
           source_name: string | null
           source_product_id: string | null
+          source_sync_error: string | null
           source_sync_status:
             | Database["public"]["Enums"]["source_sync_status"]
             | null
@@ -1498,6 +1612,9 @@ export type Database = {
           source_url: string | null
           specifications: Json
           stock_quantity: number
+          sync_enabled: boolean
+          sync_failure_count: number
+          sync_frequency_hours: number
           thumbnail_url: string | null
           updated_at: string
           variant_stock: Json
@@ -1522,8 +1639,10 @@ export type Database = {
           is_on_sale?: boolean
           last_source_sync_at?: string | null
           legacy_metadata?: Json
+          low_stock_warning?: boolean
           merchant_id: string
           name: string
+          next_sync_at?: string | null
           original_price?: number | null
           price: number
           product_code?: string | null
@@ -1535,6 +1654,7 @@ export type Database = {
           source_currency?: string | null
           source_name?: string | null
           source_product_id?: string | null
+          source_sync_error?: string | null
           source_sync_status?:
             | Database["public"]["Enums"]["source_sync_status"]
             | null
@@ -1542,6 +1662,9 @@ export type Database = {
           source_url?: string | null
           specifications?: Json
           stock_quantity?: number
+          sync_enabled?: boolean
+          sync_failure_count?: number
+          sync_frequency_hours?: number
           thumbnail_url?: string | null
           updated_at?: string
           variant_stock?: Json
@@ -1566,8 +1689,10 @@ export type Database = {
           is_on_sale?: boolean
           last_source_sync_at?: string | null
           legacy_metadata?: Json
+          low_stock_warning?: boolean
           merchant_id?: string
           name?: string
+          next_sync_at?: string | null
           original_price?: number | null
           price?: number
           product_code?: string | null
@@ -1579,6 +1704,7 @@ export type Database = {
           source_currency?: string | null
           source_name?: string | null
           source_product_id?: string | null
+          source_sync_error?: string | null
           source_sync_status?:
             | Database["public"]["Enums"]["source_sync_status"]
             | null
@@ -1586,6 +1712,9 @@ export type Database = {
           source_url?: string | null
           specifications?: Json
           stock_quantity?: number
+          sync_enabled?: boolean
+          sync_failure_count?: number
+          sync_frequency_hours?: number
           thumbnail_url?: string | null
           updated_at?: string
           variant_stock?: Json
@@ -2126,6 +2255,7 @@ export type Database = {
         | "UNAVAILABLE"
         | "UNKNOWN"
         | "NEEDS_REVIEW"
+        | "LOW_STOCK"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -2294,6 +2424,7 @@ export const Constants = {
         "UNAVAILABLE",
         "UNKNOWN",
         "NEEDS_REVIEW",
+        "LOW_STOCK",
       ],
     },
   },
