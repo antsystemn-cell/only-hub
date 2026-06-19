@@ -34,7 +34,7 @@ export const adminListForeignSyncProducts = createServerFn({ method: "GET" })
       .eq("product_type", "FOREIGN_ORDER")
       .order("last_source_sync_at", { ascending: false, nullsFirst: false })
       .limit(data.limit);
-    if (data.status) q = q.eq("source_sync_status", data.status);
+    if (data.status) q = q.eq("source_sync_status", data.status as any);
     if (data.merchantId) q = q.eq("merchant_id", data.merchantId);
     if (data.search) q = q.or(`name.ilike.%${data.search}%,source_url.ilike.%${data.search}%`);
     const { data: rows, error } = await q;
@@ -74,7 +74,7 @@ export const adminListAllForeignSyncJobs = createServerFn({ method: "GET" })
       .order("created_at", { ascending: false })
       .limit(data.limit);
     if (data.merchantId) q = q.eq("merchant_id", data.merchantId);
-    if (data.status) q = q.eq("status", data.status);
+    if (data.status) q = q.eq("status", data.status as any);
     const { data: rows, error } = await q;
     if (error) throw new Error(error.message);
     return rows ?? [];
