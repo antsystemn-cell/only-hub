@@ -36,10 +36,21 @@ function AdminMerchantsPage() {
   const [rejectReason, setRejectReason] = useState("");
 
   const [assignModal, setAssignModal] = useState<{ merchantId: string; merchantName: string } | null>(null);
+  const [assignMode, setAssignMode] = useState<"create" | "existing">("create");
   const [newAdminEmail, setNewAdminEmail] = useState("");
   const [newAdminPassword, setNewAdminPassword] = useState("");
+  const [existingUserId, setExistingUserId] = useState<string | null>(null);
+  const [existingSearch, setExistingSearch] = useState("");
 
   const createAdminFn = useServerFn(createMerchantAdminUser);
+  const assignExistingFn = useServerFn(assignMerchantAdminByUserId);
+  const listUsersFn = useServerFn(listAuthUsersLite);
+
+  const { data: authUsers = [] } = useQuery({
+    queryKey: ["admin-auth-users-lite"],
+    enabled: isPlatformAdmin && !!assignModal && assignMode === "existing",
+    queryFn: async () => (await listUsersFn({} as any)).users,
+  });
 
   const { data: merchants = [], isLoading } = useQuery({
     queryKey: ["admin-merchants-full"],
