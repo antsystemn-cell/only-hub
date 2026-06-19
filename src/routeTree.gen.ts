@@ -33,6 +33,7 @@ import { Route as AdminOrdersRouteImport } from './routes/admin.orders'
 import { Route as AdminNotificationsRouteImport } from './routes/admin.notifications'
 import { Route as AdminMessageTestRouteImport } from './routes/admin.message-test'
 import { Route as AdminMerchantsRouteImport } from './routes/admin.merchants'
+import { Route as AdminForeignOrdersRouteImport } from './routes/admin.foreign-orders'
 import { Route as AdminDeliveryRouteImport } from './routes/admin.delivery'
 import { Route as AdminBannersRouteImport } from './routes/admin.banners'
 import { Route as AdminBackupOldDeliveryRouteImport } from './routes/admin.backup-old-delivery'
@@ -60,6 +61,7 @@ import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/e
 import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
 import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
 import { Route as ApiPublicQpayWebhookRouteImport } from './routes/api.public.qpay.webhook'
+import { Route as ApiPublicHooksForeignQueueAdvanceRouteImport } from './routes/api.public.hooks.foreign-queue-advance'
 import { Route as ApiPublicDeliveryWebhookRouteImport } from './routes/api.public.delivery.webhook'
 import { Route as ApiPublicPaymentsStorepayWebhookRouteImport } from './routes/api.public.payments.storepay.webhook'
 import { Route as ApiPublicPaymentsPocketWebhookRouteImport } from './routes/api.public.payments.pocket.webhook'
@@ -183,6 +185,11 @@ const AdminMessageTestRoute = AdminMessageTestRouteImport.update({
 const AdminMerchantsRoute = AdminMerchantsRouteImport.update({
   id: '/merchants',
   path: '/merchants',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminForeignOrdersRoute = AdminForeignOrdersRouteImport.update({
+  id: '/foreign-orders',
+  path: '/foreign-orders',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminDeliveryRoute = AdminDeliveryRouteImport.update({
@@ -331,6 +338,12 @@ const ApiPublicQpayWebhookRoute = ApiPublicQpayWebhookRouteImport.update({
   path: '/api/public/qpay/webhook',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicHooksForeignQueueAdvanceRoute =
+  ApiPublicHooksForeignQueueAdvanceRouteImport.update({
+    id: '/api/public/hooks/foreign-queue-advance',
+    path: '/api/public/hooks/foreign-queue-advance',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicDeliveryWebhookRoute =
   ApiPublicDeliveryWebhookRouteImport.update({
     id: '/api/public/delivery/webhook',
@@ -370,6 +383,7 @@ export interface FileRoutesByFullPath {
   '/admin/backup-old-delivery': typeof AdminBackupOldDeliveryRoute
   '/admin/banners': typeof AdminBannersRoute
   '/admin/delivery': typeof AdminDeliveryRoute
+  '/admin/foreign-orders': typeof AdminForeignOrdersRoute
   '/admin/merchants': typeof AdminMerchantsRoute
   '/admin/message-test': typeof AdminMessageTestRoute
   '/admin/notifications': typeof AdminNotificationsRoute
@@ -403,6 +417,7 @@ export interface FileRoutesByFullPath {
   '/admin/blog/': typeof AdminBlogIndexRoute
   '/merchant/dashboard/': typeof MerchantDashboardIndexRoute
   '/api/public/delivery/webhook': typeof ApiPublicDeliveryWebhookRoute
+  '/api/public/hooks/foreign-queue-advance': typeof ApiPublicHooksForeignQueueAdvanceRoute
   '/api/public/qpay/webhook': typeof ApiPublicQpayWebhookRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -426,6 +441,7 @@ export interface FileRoutesByTo {
   '/admin/backup-old-delivery': typeof AdminBackupOldDeliveryRoute
   '/admin/banners': typeof AdminBannersRoute
   '/admin/delivery': typeof AdminDeliveryRoute
+  '/admin/foreign-orders': typeof AdminForeignOrdersRoute
   '/admin/merchants': typeof AdminMerchantsRoute
   '/admin/message-test': typeof AdminMessageTestRoute
   '/admin/notifications': typeof AdminNotificationsRoute
@@ -458,6 +474,7 @@ export interface FileRoutesByTo {
   '/admin/blog': typeof AdminBlogIndexRoute
   '/merchant/dashboard': typeof MerchantDashboardIndexRoute
   '/api/public/delivery/webhook': typeof ApiPublicDeliveryWebhookRoute
+  '/api/public/hooks/foreign-queue-advance': typeof ApiPublicHooksForeignQueueAdvanceRoute
   '/api/public/qpay/webhook': typeof ApiPublicQpayWebhookRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -483,6 +500,7 @@ export interface FileRoutesById {
   '/admin/backup-old-delivery': typeof AdminBackupOldDeliveryRoute
   '/admin/banners': typeof AdminBannersRoute
   '/admin/delivery': typeof AdminDeliveryRoute
+  '/admin/foreign-orders': typeof AdminForeignOrdersRoute
   '/admin/merchants': typeof AdminMerchantsRoute
   '/admin/message-test': typeof AdminMessageTestRoute
   '/admin/notifications': typeof AdminNotificationsRoute
@@ -516,6 +534,7 @@ export interface FileRoutesById {
   '/admin/blog/': typeof AdminBlogIndexRoute
   '/merchant/dashboard/': typeof MerchantDashboardIndexRoute
   '/api/public/delivery/webhook': typeof ApiPublicDeliveryWebhookRoute
+  '/api/public/hooks/foreign-queue-advance': typeof ApiPublicHooksForeignQueueAdvanceRoute
   '/api/public/qpay/webhook': typeof ApiPublicQpayWebhookRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -542,6 +561,7 @@ export interface FileRouteTypes {
     | '/admin/backup-old-delivery'
     | '/admin/banners'
     | '/admin/delivery'
+    | '/admin/foreign-orders'
     | '/admin/merchants'
     | '/admin/message-test'
     | '/admin/notifications'
@@ -575,6 +595,7 @@ export interface FileRouteTypes {
     | '/admin/blog/'
     | '/merchant/dashboard/'
     | '/api/public/delivery/webhook'
+    | '/api/public/hooks/foreign-queue-advance'
     | '/api/public/qpay/webhook'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -598,6 +619,7 @@ export interface FileRouteTypes {
     | '/admin/backup-old-delivery'
     | '/admin/banners'
     | '/admin/delivery'
+    | '/admin/foreign-orders'
     | '/admin/merchants'
     | '/admin/message-test'
     | '/admin/notifications'
@@ -630,6 +652,7 @@ export interface FileRouteTypes {
     | '/admin/blog'
     | '/merchant/dashboard'
     | '/api/public/delivery/webhook'
+    | '/api/public/hooks/foreign-queue-advance'
     | '/api/public/qpay/webhook'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -654,6 +677,7 @@ export interface FileRouteTypes {
     | '/admin/backup-old-delivery'
     | '/admin/banners'
     | '/admin/delivery'
+    | '/admin/foreign-orders'
     | '/admin/merchants'
     | '/admin/message-test'
     | '/admin/notifications'
@@ -687,6 +711,7 @@ export interface FileRouteTypes {
     | '/admin/blog/'
     | '/merchant/dashboard/'
     | '/api/public/delivery/webhook'
+    | '/api/public/hooks/foreign-queue-advance'
     | '/api/public/qpay/webhook'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -715,6 +740,7 @@ export interface RootRouteChildren {
   TrackTokenRoute: typeof TrackTokenRoute
   BlogIndexRoute: typeof BlogIndexRoute
   ApiPublicDeliveryWebhookRoute: typeof ApiPublicDeliveryWebhookRoute
+  ApiPublicHooksForeignQueueAdvanceRoute: typeof ApiPublicHooksForeignQueueAdvanceRoute
   ApiPublicQpayWebhookRoute: typeof ApiPublicQpayWebhookRoute
   LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
   LovableEmailAuthWebhookRoute: typeof LovableEmailAuthWebhookRoute
@@ -892,6 +918,13 @@ declare module '@tanstack/react-router' {
       path: '/merchants'
       fullPath: '/admin/merchants'
       preLoaderRoute: typeof AdminMerchantsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/foreign-orders': {
+      id: '/admin/foreign-orders'
+      path: '/foreign-orders'
+      fullPath: '/admin/foreign-orders'
+      preLoaderRoute: typeof AdminForeignOrdersRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/delivery': {
@@ -1083,6 +1116,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicQpayWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/foreign-queue-advance': {
+      id: '/api/public/hooks/foreign-queue-advance'
+      path: '/api/public/hooks/foreign-queue-advance'
+      fullPath: '/api/public/hooks/foreign-queue-advance'
+      preLoaderRoute: typeof ApiPublicHooksForeignQueueAdvanceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/delivery/webhook': {
       id: '/api/public/delivery/webhook'
       path: '/api/public/delivery/webhook'
@@ -1130,6 +1170,7 @@ interface AdminRouteChildren {
   AdminBackupOldDeliveryRoute: typeof AdminBackupOldDeliveryRoute
   AdminBannersRoute: typeof AdminBannersRoute
   AdminDeliveryRoute: typeof AdminDeliveryRoute
+  AdminForeignOrdersRoute: typeof AdminForeignOrdersRoute
   AdminMerchantsRoute: typeof AdminMerchantsRoute
   AdminMessageTestRoute: typeof AdminMessageTestRoute
   AdminNotificationsRoute: typeof AdminNotificationsRoute
@@ -1149,6 +1190,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminBackupOldDeliveryRoute: AdminBackupOldDeliveryRoute,
   AdminBannersRoute: AdminBannersRoute,
   AdminDeliveryRoute: AdminDeliveryRoute,
+  AdminForeignOrdersRoute: AdminForeignOrdersRoute,
   AdminMerchantsRoute: AdminMerchantsRoute,
   AdminMessageTestRoute: AdminMessageTestRoute,
   AdminNotificationsRoute: AdminNotificationsRoute,
@@ -1232,6 +1274,8 @@ const rootRouteChildren: RootRouteChildren = {
   TrackTokenRoute: TrackTokenRoute,
   BlogIndexRoute: BlogIndexRoute,
   ApiPublicDeliveryWebhookRoute: ApiPublicDeliveryWebhookRoute,
+  ApiPublicHooksForeignQueueAdvanceRoute:
+    ApiPublicHooksForeignQueueAdvanceRoute,
   ApiPublicQpayWebhookRoute: ApiPublicQpayWebhookRoute,
   LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,
   LovableEmailAuthWebhookRoute: LovableEmailAuthWebhookRoute,
