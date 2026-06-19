@@ -71,10 +71,10 @@ export function ForeignProductImporter({ merchantId, source, onClose }: Props) {
   const [warnings, setWarnings] = useState<string[]>([]);
 
   // ----- Settings -----
+  const fetchSettings = useServerFn(getMerchantForeignSettings);
   const settingsQuery = useQuery({
     queryKey: ["merchant-foreign-settings", merchantId, source],
-    queryFn: () =>
-      useServerFnFetch(getMerchantForeignSettings, { merchantId, source }),
+    queryFn: () => fetchSettings({ data: { merchantId, source } }),
   });
   const settingsRow = settingsQuery.data?.[0] ?? null;
 
