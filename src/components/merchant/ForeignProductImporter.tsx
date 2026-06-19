@@ -198,9 +198,12 @@ export function ForeignProductImporter({ merchantId, source, onClose }: Props) {
           sourceProductId: preview.sourceProductId,
           title: preview.title.trim(),
           brand: preview.brand || null,
+          category: preview.category || null,
           description: preview.description || null,
           coverImage: preview.coverImage || null,
           gallery: preview.gallery,
+          productInfo: preview.productInfo ?? [],
+          productIntroSections: preview.productIntroSections ?? [],
           variants: variants
             .filter((v) => v.sizeLabel.trim() && v.sourcePrice > 0)
             .map((v) => ({
