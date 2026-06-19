@@ -518,7 +518,16 @@ function ProductDetailPage() {
       {/* Mobile sticky CTA */}
       <div className="sticky bottom-0 z-30 mt-8 border-t border-border bg-background/95 px-3 py-2.5 backdrop-blur lg:hidden">
         <div className="container mx-auto flex items-center gap-2">
-          <Button variant="outline" size="icon" aria-label="Хадгалах" className="h-11 w-11 shrink-0"><Heart className="h-5 w-5" /></Button>
+          <Button
+            variant="outline"
+            size="icon"
+            aria-label={wished ? "Хүссэн жагсаалтаас хасах" : "Хүссэнд хадгалах"}
+            aria-pressed={wished}
+            onClick={toggleWish}
+            className={`h-11 w-11 shrink-0 ${wished ? "border-rose-300 text-rose-500" : ""}`}
+          >
+            <Heart className={`h-5 w-5 ${wished ? "fill-current" : ""}`} />
+          </Button>
           <Button className="h-11 flex-1" onClick={handleAdd} disabled={outOfStock}>
             <ShoppingCart className="mr-2 h-4 w-4" /> Сагсанд
           </Button>
