@@ -64,6 +64,7 @@ import { Route as ApiPublicQpayWebhookRouteImport } from './routes/api.public.qp
 import { Route as ApiPublicHooksForeignSourceSyncRouteImport } from './routes/api.public.hooks.foreign-source-sync'
 import { Route as ApiPublicHooksForeignQueueAdvanceRouteImport } from './routes/api.public.hooks.foreign-queue-advance'
 import { Route as ApiPublicDeliveryWebhookRouteImport } from './routes/api.public.delivery.webhook'
+import { Route as AuthenticatedMerchantDashboardForeignSyncRouteImport } from './routes/_authenticated/merchant.dashboard.foreign-sync'
 import { Route as ApiPublicPaymentsStorepayWebhookRouteImport } from './routes/api.public.payments.storepay.webhook'
 import { Route as ApiPublicPaymentsPocketWebhookRouteImport } from './routes/api.public.payments.pocket.webhook'
 import { Route as ApiPublicPaymentsOmniwayWebhookRouteImport } from './routes/api.public.payments.omniway.webhook'
@@ -357,6 +358,12 @@ const ApiPublicDeliveryWebhookRoute =
     path: '/api/public/delivery/webhook',
     getParentRoute: () => rootRouteImport,
   } as any)
+const AuthenticatedMerchantDashboardForeignSyncRoute =
+  AuthenticatedMerchantDashboardForeignSyncRouteImport.update({
+    id: '/_authenticated/merchant/dashboard/foreign-sync',
+    path: '/merchant/dashboard/foreign-sync',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicPaymentsStorepayWebhookRoute =
   ApiPublicPaymentsStorepayWebhookRouteImport.update({
     id: '/api/public/payments/storepay/webhook',
@@ -423,6 +430,7 @@ export interface FileRoutesByFullPath {
   '/store/$merchantSlug/checkout': typeof StoreMerchantSlugCheckoutRoute
   '/admin/blog/': typeof AdminBlogIndexRoute
   '/merchant/dashboard/': typeof MerchantDashboardIndexRoute
+  '/merchant/dashboard/foreign-sync': typeof AuthenticatedMerchantDashboardForeignSyncRoute
   '/api/public/delivery/webhook': typeof ApiPublicDeliveryWebhookRoute
   '/api/public/hooks/foreign-queue-advance': typeof ApiPublicHooksForeignQueueAdvanceRoute
   '/api/public/hooks/foreign-source-sync': typeof ApiPublicHooksForeignSourceSyncRoute
@@ -481,6 +489,7 @@ export interface FileRoutesByTo {
   '/store/$merchantSlug/checkout': typeof StoreMerchantSlugCheckoutRoute
   '/admin/blog': typeof AdminBlogIndexRoute
   '/merchant/dashboard': typeof MerchantDashboardIndexRoute
+  '/merchant/dashboard/foreign-sync': typeof AuthenticatedMerchantDashboardForeignSyncRoute
   '/api/public/delivery/webhook': typeof ApiPublicDeliveryWebhookRoute
   '/api/public/hooks/foreign-queue-advance': typeof ApiPublicHooksForeignQueueAdvanceRoute
   '/api/public/hooks/foreign-source-sync': typeof ApiPublicHooksForeignSourceSyncRoute
@@ -542,6 +551,7 @@ export interface FileRoutesById {
   '/store/$merchantSlug/checkout': typeof StoreMerchantSlugCheckoutRoute
   '/admin/blog/': typeof AdminBlogIndexRoute
   '/merchant/dashboard/': typeof MerchantDashboardIndexRoute
+  '/_authenticated/merchant/dashboard/foreign-sync': typeof AuthenticatedMerchantDashboardForeignSyncRoute
   '/api/public/delivery/webhook': typeof ApiPublicDeliveryWebhookRoute
   '/api/public/hooks/foreign-queue-advance': typeof ApiPublicHooksForeignQueueAdvanceRoute
   '/api/public/hooks/foreign-source-sync': typeof ApiPublicHooksForeignSourceSyncRoute
@@ -604,6 +614,7 @@ export interface FileRouteTypes {
     | '/store/$merchantSlug/checkout'
     | '/admin/blog/'
     | '/merchant/dashboard/'
+    | '/merchant/dashboard/foreign-sync'
     | '/api/public/delivery/webhook'
     | '/api/public/hooks/foreign-queue-advance'
     | '/api/public/hooks/foreign-source-sync'
@@ -662,6 +673,7 @@ export interface FileRouteTypes {
     | '/store/$merchantSlug/checkout'
     | '/admin/blog'
     | '/merchant/dashboard'
+    | '/merchant/dashboard/foreign-sync'
     | '/api/public/delivery/webhook'
     | '/api/public/hooks/foreign-queue-advance'
     | '/api/public/hooks/foreign-source-sync'
@@ -722,6 +734,7 @@ export interface FileRouteTypes {
     | '/store/$merchantSlug/checkout'
     | '/admin/blog/'
     | '/merchant/dashboard/'
+    | '/_authenticated/merchant/dashboard/foreign-sync'
     | '/api/public/delivery/webhook'
     | '/api/public/hooks/foreign-queue-advance'
     | '/api/public/hooks/foreign-source-sync'
@@ -752,6 +765,7 @@ export interface RootRouteChildren {
   StoreMerchantSlugRoute: typeof StoreMerchantSlugRouteWithChildren
   TrackTokenRoute: typeof TrackTokenRoute
   BlogIndexRoute: typeof BlogIndexRoute
+  AuthenticatedMerchantDashboardForeignSyncRoute: typeof AuthenticatedMerchantDashboardForeignSyncRoute
   ApiPublicDeliveryWebhookRoute: typeof ApiPublicDeliveryWebhookRoute
   ApiPublicHooksForeignQueueAdvanceRoute: typeof ApiPublicHooksForeignQueueAdvanceRoute
   ApiPublicHooksForeignSourceSyncRoute: typeof ApiPublicHooksForeignSourceSyncRoute
@@ -1151,6 +1165,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicDeliveryWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/merchant/dashboard/foreign-sync': {
+      id: '/_authenticated/merchant/dashboard/foreign-sync'
+      path: '/merchant/dashboard/foreign-sync'
+      fullPath: '/merchant/dashboard/foreign-sync'
+      preLoaderRoute: typeof AuthenticatedMerchantDashboardForeignSyncRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/payments/storepay/webhook': {
       id: '/api/public/payments/storepay/webhook'
       path: '/api/public/payments/storepay/webhook'
@@ -1294,6 +1315,8 @@ const rootRouteChildren: RootRouteChildren = {
   StoreMerchantSlugRoute: StoreMerchantSlugRouteWithChildren,
   TrackTokenRoute: TrackTokenRoute,
   BlogIndexRoute: BlogIndexRoute,
+  AuthenticatedMerchantDashboardForeignSyncRoute:
+    AuthenticatedMerchantDashboardForeignSyncRoute,
   ApiPublicDeliveryWebhookRoute: ApiPublicDeliveryWebhookRoute,
   ApiPublicHooksForeignQueueAdvanceRoute:
     ApiPublicHooksForeignQueueAdvanceRoute,
