@@ -719,3 +719,195 @@ function ProductDetailPage() {
     </div>
   );
 }
+
+/* ============================================================ */
+/*  Reusable PDP sub-components                                 */
+/* ============================================================ */
+
+type ShippingItem = {
+  title: string;
+  description?: string;
+  duration?: string;
+  price?: number;
+  free?: boolean;
+  label?: string;
+};
+
+function ShippingCard({ merchant }: { merchant: any }) {
+  const cfg = (merchant?.shipping_config ?? {}) as {
+    ub?: ShippingItem;
+    local?: ShippingItem;
+    extras?: ShippingItem[];
+  };
+  const defaultUb: ShippingItem = { title: "Улаанбаатар дотор", duration: "24-48 цаг", price: 0, free: true };
+  const defaultLocal: ShippingItem = { title: "Орон нутагт", duration: "2-4 хоног", price: 6000, label: "" };
+  const ub = { ...defaultUb, ...(cfg.ub ?? {}) };
+  const local = { ...defaultLocal, ...(cfg.local ?? {}) };
+  const extras = Array.isArray(cfg.extras) ? cfg.extras : [];
+
+  const renderRow = (it: ShippingItem, key: string) => {
+    const priceLabel =
+      it.free
+        ? "Үнэгүй"
+        : it.label
+          ? it.label
+          : typeof it.price === "number"
+            ? fmtMnt(it.price)
+            : "—";
+    const priceClass = it.free ? "font-semibold text-emerald-600" : "font-semibold";
+    return (
+      <li key={key} className="flex items-start justify-between gap-3">
+        <div className="flex items-start gap-2">
+          <Truck className="mt-0.5 h-4 w-4 text-muted-foreground" />
+          <div>
+            <div className="font-medium">{it.title}</div>
+            {(it.description || it.duration) && (
+              <div className="text-xs text-muted-foreground">
+                {it.description || it.duration}
+              </div>
+            )}
+          </div>
+        </div>
+        <span className={priceClass}>{priceLabel}</span>
+      </li>
+    );
+  };
+
+  return (
+    <Card className="rounded-2xl border-border/60 bg-white p-4">
+      <h3 className="mb-3 text-sm font-semibold">Хүргэлтийн мэдээлэл</h3>
+      <ul className="space-y-3 text-sm">
+        {renderRow(ub, "ub")}
+        {renderRow(local, "local")}
+        {extras.map((it, i) => renderRow(it, `ex-${i}`))}
+        <li className="flex items-start justify-between gap-3 border-t pt-3">
+          <div className="flex items-start gap-2">
+            <ShieldCheck className="mt-0.5 h-4 w-4 text-muted-foreground" />
+            <div className="font-medium">Хүргэлтийн компани</div>
+          </div>
+          <span className="text-xs text-muted-foreground">Only Delivery</span>
+        </li>
+      </ul>
+    </Card>
+  );
+}
+
+const PROVIDER_LABELS: Record<string, string> = {
+  qpay: "QPay",
+  storepay: "StorePay",
+  pocket: "Pocket",
+  omniway: "Omniway",
+  visa: "Visa",
+  mastercard: "MasterCard",
+  hipay: "HiPay",
+  cash: "Бэлэн",
+};
+
+function PaymentMethodsCard({ providers }: { providers: any[] }) {
+  const visible = (providers ?? []).filter((p) => p.is_active);
+  return (
+    <Card className="rounded-2xl border-border/60 bg-white p-4">
+      <h3 className="mb-3 text-sm font-semibold">Аюулгүй төлбөр</h3>
+      {visible.length === 0 ? (
+        <p className="text-xs text-muted-foreground">Төлбөрийн сонголт удахгүй нэмэгдэнэ.</p>
+      ) : (
+        <div className="flex flex-wrap gap-2">
+          {visible.map((p) => {
+            const label = p.name || PROVIDER_LABELS[(p.provider_type ?? "").toLowerCase()] || p.provider_type;
+            return (
+              <span
+                key={p.id}
+                className="inline-flex items-center gap-1.5 rounded-md border border-border/60 bg-muted/40 px-2.5 py-1 text-[11px] font-semibold text-muted-foreground"
+                title={label}
+              >
+                {p.logo_url ? (
+                  <img src={p.logo_url} alt={label} className="h-4 w-auto object-contain" loading="lazy" />
+                ) : (
+                  <span aria-hidden>{p.icon || <CreditCard className="h-3 w-3" />}</span>
+                )}
+                {label}
+              </span>
+            );
+          })}
+        </div>
+      )}
+      <p className="mt-2 text-xs text-muted-foreground">Таны төлбөр 100% хамгаалагдсан.</p>
+    </Card>
+  );
+}
+
+function PolicyBlock({ title, html }: { title: string; html: string }) {
+  if (!html) {
+    return (
+      <div>
+        <h4 className="mb-1.5 text-sm font-semibold">{title}</h4>
+        <p className="text-sm text-muted-foreground">Тохиргоо одоогоор хоосон байна.</p>
+      </div>
+    );
+  }
+  return (
+    <div>
+      <h4 className="mb-1.5 text-sm font-semibold">{title}</h4>
+      <div
+        className="prose prose-sm max-w-none text-sm text-foreground prose-headings:text-foreground prose-li:my-0.5 prose-ul:my-2 prose-p:my-2"
+        dangerouslySetInnerHTML={{ __html: html }}
+      />
+    </div>
+  );
+}
+
+function ReviewSummaryCard({
+  count,
+  avg,
+  dist,
+}: {
+  count: number;
+  avg: number;
+  dist: Record<number, number>;
+}) {
+  const display = count > 0 ? avg.toFixed(1) : "5.0";
+  return (
+    <Card className="rounded-2xl border-border/60 bg-white p-4 sm:p-5">
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-semibold">Хэрэглэгчийн үнэлгээ ({count})</h3>
+      </div>
+      <div className="mt-3 flex items-center gap-5">
+        <div className="text-center">
+          <div className="text-3xl font-extrabold">{display}</div>
+          <div className="mt-1 flex justify-center">
+            {[1, 2, 3, 4, 5].map((n) => (
+              <Star
+                key={n}
+                className={`h-4 w-4 ${n <= Math.round(Number(display)) ? "fill-amber-400 text-amber-400" : "text-muted"}`}
+              />
+            ))}
+          </div>
+          <div className="mt-1 text-xs text-muted-foreground">
+            {count === 0 ? "Үнэлгээ алга" : `${count} үнэлгээ`}
+          </div>
+        </div>
+        <div className="flex-1 space-y-1.5">
+          {[5, 4, 3, 2, 1].map((star) => {
+            const n = dist[star] ?? 0;
+            const pct = count > 0 ? Math.round((n / count) * 100) : 0;
+            return (
+              <div key={star} className="flex items-center gap-2 text-xs">
+                <span className="w-6 text-muted-foreground">{star} ★</span>
+                <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-muted">
+                  <div className="h-full rounded-full bg-amber-400" style={{ width: `${pct}%` }} />
+                </div>
+                <span className="w-8 text-right text-muted-foreground">{n}</span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+      {count === 0 && (
+        <p className="mt-3 text-xs text-muted-foreground">
+          Энэ бараанд үнэлгээ хараахан алга. Худалдан авч, хүргэлт амжилттай дууссаны дараа үнэлгээ үлдээх боломжтой.
+        </p>
+      )}
+    </Card>
+  );
+}
+
