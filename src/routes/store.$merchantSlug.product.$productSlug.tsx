@@ -175,14 +175,81 @@ function ProductDetailPage() {
   const [qty, setQty] = useState(1);
   const touchStartX = useRef<number | null>(null);
 
-  useEffect(() => { setActiveImg(0); setColor(null); setSize(null); setQty(1); }, [product?.id]);
+  // Foreign-order variant availability: fetch from product_variants and disable unavailable options.
+  const isForeign = product?.product_type === "FOREIGN_ORDER";
+  const { data: foreignVariants = [] } = useQuery({
+    queryKey: ["pdp-foreign-variants", product?.id],
+    enabled: !!product?.id && !!isForeign,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("product_variants")
+        .select("size_label,color_label,availability_status,is_purchasable,price_review_required")
+        .eq("product_id", product!.id);
+      return data ?? [];
+    },
+  });
+
+  const unavailableColors = useMemo(() => {
+    if (!isForeign) return new Set<string>();
+    // Color is unavailable iff EVERY variant matching that color is not purchasable.
+    const byColor = new Map<string, { total: number; bad: number }>();
+    for (const v of foreignVariants as any[]) {
+      if (!v.color_label) continue;
+      const k = String(v.color_label);
+      const cur = byColor.get(k) ?? { total: 0, bad: 0 };
+      cur.total++;
+      if (v.is_purchasable === false || v.availability_status === "UNAVAILABLE") cur.bad++;
+      byColor.set(k, cur);
+    }
+    return new Set([...byColor.entries()].filter(([, c]) => c.total > 0 && c.bad === c.total).map(([k]) => k));
+  }, [foreignVariants, isForeign]);
+
+  const unavailableSizes = useMemo(() => {
+    if (!isForeign) return new Set<string>();
+    // If a color is chosen, a size is unavailable iff that specific (color,size) combo is not purchasable.
+    // Otherwise it's unavailable iff every variant with that size is not purchasable.
+    const out = new Set<string>();
+    const sizesAll = new Map<string, { total: number; bad: number }>();
+    for (const v of foreignVariants as any[]) {
+      if (!v.size_label) continue;
+      const k = String(v.size_label);
+      if (color && v.color_label && v.color_label !== color) continue;
+      const cur = sizesAll.get(k) ?? { total: 0, bad: 0 };
+      cur.total++;
+      if (v.is_purchasable === false || v.availability_status === "UNAVAILABLE") cur.bad++;
+      sizesAll.set(k, cur);
+    }
+    for (const [k, c] of sizesAll) if (c.total > 0 && c.bad === c.total) out.add(k);
+    return out;
+  }, [foreignVariants, isForeign, color]);
+
+  const selectedForeignVariant = useMemo(() => {
+    if (!isForeign) return null;
+    return (
+      (foreignVariants as any[]).find(
+        (v) =>
+          (size ? v.size_label === size : true) &&
+          (color ? v.color_label === color : true),
+      ) ?? null
+    );
+  }, [foreignVariants, isForeign, size, color]);
+
+  const foreignBlocked =
+    isForeign &&
+    !!selectedForeignVariant &&
+    (selectedForeignVariant.is_purchasable === false ||
+      selectedForeignVariant.availability_status === "UNAVAILABLE");
+
+  const foreignPriceReview =
+    isForeign &&
+    (foreignVariants as any[]).some((v) => v.price_review_required === true);
 
   const variantKey = color && size ? `${color}|${size}` : color || size || "";
   const hasTrackedStock = !!variantKey && typeof variantStock[variantKey] === "number";
   const stockForVariant = hasTrackedStock ? variantStock[variantKey] : Number.MAX_SAFE_INTEGER;
   const needsColor = colors.length > 0 && !color;
   const needsSize = sizes.length > 0 && !size;
-  const outOfStock = hasTrackedStock && stockForVariant <= 0;
+  const outOfStock = (hasTrackedStock && stockForVariant <= 0) || foreignBlocked;
   const wished = useIsWishlisted(product?.id);
 
   if (isLoading || !merchant) {
