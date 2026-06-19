@@ -132,16 +132,24 @@ export function ForeignProductImporter({ merchantId, source, onClose }: Props) {
         return;
       }
       const p = res.parsed;
+      const introDesc = (p as any).productIntroSections?.[0]?.content as string | undefined;
       setPreview({
         status: res.status,
         warnings: res.warnings ?? [],
         sourceUrl: p.sourceUrl,
         sourceProductId: p.sourceProductId ?? "",
         title: p.title ?? "",
-        brand: p.brand ?? "",
-        description: p.description ?? "",
+        brand: (p as any).brand ?? "",
+        category: (p as any).category ?? "",
+        description: p.description ?? introDesc ?? "",
         coverImage: p.coverImage ?? "",
         gallery: p.gallery ?? [],
+        baseSourcePrice: (p as any).baseSourcePrice ?? null,
+        productInfo: (p as any).productInfo ?? [],
+        productIntroSections: (p as any).productIntroSections ?? [],
+        optionGroups: (p as any).optionGroups ?? [],
+        deliveryOptions: (p as any).deliveryOptions ?? [],
+        extractionMethod: (p as any).extractionMethod ?? "META_FALLBACK",
       });
       const seeded: VariantDraft[] = (p.variants ?? []).map((v: any) => ({
         sourceVariantId: v.sourceVariantId ?? null,
