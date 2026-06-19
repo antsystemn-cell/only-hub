@@ -149,6 +149,8 @@ function AdminSettingsPage() {
   const [commission, setCommission] = useState<string>("3");
   const [logoUrl, setLogoUrl] = useState<string>("");
   const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [policyShip, setPolicyShip] = useState<string>("");
+  const [policyReturn, setPolicyReturn] = useState<string>("");
 
   useEffect(() => {
     const rules = settings.delivery_fee_rules ?? {};
