@@ -399,7 +399,16 @@ function ProductDetailPage() {
                 onClick={() => { handleAdd(); navigate({ to: "/store/$merchantSlug/cart", params: { merchantSlug } }); }}>
                 Шууд авах
               </Button>
-              <Button size="lg" variant="outline" aria-label="Хадгалах"><Heart className="h-5 w-5" /></Button>
+              <Button
+                size="lg"
+                variant="outline"
+                aria-label={wished ? "Хүссэн жагсаалтаас хасах" : "Хүссэнд хадгалах"}
+                aria-pressed={wished}
+                onClick={toggleWish}
+                className={wished ? "border-rose-300 text-rose-500 hover:text-rose-600" : ""}
+              >
+                <Heart className={`h-5 w-5 ${wished ? "fill-current" : ""}`} />
+              </Button>
             </div>
 
             {/* Trust badges */}
