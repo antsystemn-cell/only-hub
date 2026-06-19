@@ -777,3 +777,90 @@ function DeliveryApiCard() {
     </Card>
   );
 }
+
+function ShippingPolicyTab() {
+  const { primaryMerchantId } = useAuth();
+  const merchantId = primaryMerchantId;
+  const qc = useQueryClient();
+
+  const { data: m } = useQuery({
+    queryKey: ["merchant-policy", merchantId],
+    enabled: !!merchantId,
+    queryFn: async () =>
+      (await supabase.from("merchants").select("shipping_config,policy_shipping,policy_return").eq("id", merchantId!).maybeSingle()).data,
+  });
+
+  type ShipItem = { title: string; description?: string; duration?: string; price?: number; free?: boolean; label?: string };
+  const cfg = (m?.shipping_config ?? {}) as { ub?: ShipItem; local?: ShipItem; extras?: ShipItem[] };
+  const [ub, setUb] = useState<ShipItem>({ title: "Улаанбаатар дотор", duration: "24-48 цаг", price: 0, free: true });
+  const [local, setLocal] = useState<ShipItem>({ title: "Орон нутагт", duration: "2-4 хоног", price: 6000 });
+  const [policyShip, setPolicyShip] = useState("");
+  const [policyReturn, setPolicyReturn] = useState("");
+  const [hydrated, setHydrated] = useState(false);
+
+  if (m && !hydrated) {
+    if (cfg.ub) setUb({ ...ub, ...cfg.ub });
+    if (cfg.local) setLocal({ ...local, ...cfg.local });
+    setPolicyShip(m.policy_shipping ?? "");
+    setPolicyReturn(m.policy_return ?? "");
+    setHydrated(true);
+  }
+
+  const save = useMutation({
+    mutationFn: async () => {
+      if (!merchantId) throw new Error("merchant байхгүй");
+      const payload = {
+        shipping_config: { ub, local, extras: cfg.extras ?? [] },
+        policy_shipping: policyShip || null,
+        policy_return: policyReturn || null,
+      };
+      const { error } = await (supabase as any).from("merchants").update(payload).eq("id", merchantId);
+      if (error) throw error;
+    },
+    onSuccess: () => { toast.success("Хадгалагдлаа"); qc.invalidateQueries({ queryKey: ["merchant-policy", merchantId] }); },
+    onError: (e: any) => toast.error(e?.message ?? "Алдаа"),
+  });
+
+  if (!merchantId) return <Card className="rounded-2xl p-6 text-sm text-muted-foreground">Дэлгүүр олдсонгүй.</Card>;
+
+  const ShipRow = ({ value, onChange, label }: { value: ShipItem; onChange: (v: ShipItem) => void; label: string }) => (
+    <div className="rounded-xl border border-border/60 p-4">
+      <div className="mb-2 text-sm font-semibold">{label}</div>
+      <div className="grid gap-3 md:grid-cols-2">
+        <div><Label>Гарчиг</Label><Input value={value.title} onChange={(e) => onChange({ ...value, title: e.target.value })} /></div>
+        <div><Label>Хугацаа</Label><Input value={value.duration ?? ""} onChange={(e) => onChange({ ...value, duration: e.target.value })} /></div>
+        <div><Label>Үнэ (₮)</Label><Input type="number" value={value.price ?? 0} onChange={(e) => onChange({ ...value, price: Number(e.target.value) })} disabled={value.free} /></div>
+        <label className="flex items-end gap-2 pb-2"><Switch checked={!!value.free} onCheckedChange={(v) => onChange({ ...value, free: v })} /> Үнэгүй</label>
+      </div>
+    </div>
+  );
+
+  return (
+    <Card className="rounded-2xl p-6 space-y-6">
+      <div>
+        <h2 className="text-lg font-semibold">Хүргэлтийн тохиргоо</h2>
+        <p className="mt-1 text-xs text-muted-foreground">Барааны хуудсанд "Хүргэлтийн мэдээлэл" блокт харагдана.</p>
+      </div>
+      <ShipRow value={ub} onChange={setUb} label="Улаанбаатар" />
+      <ShipRow value={local} onChange={setLocal} label="Орон нутаг" />
+
+      <div className="border-t pt-6">
+        <h2 className="text-lg font-semibold">Хүргэлтийн нөхцөл</h2>
+        <p className="mb-2 mt-1 text-xs text-muted-foreground">Хоосон үед платформын стандарт нөхцөл харагдана.</p>
+        <TiptapEditor value={policyShip} onChange={setPolicyShip} minHeight={200} placeholder="Хүргэлтийн нөхцөл бичих..." />
+      </div>
+
+      <div className="border-t pt-6">
+        <h2 className="text-lg font-semibold">Буцаалтын нөхцөл</h2>
+        <p className="mb-2 mt-1 text-xs text-muted-foreground">Хоосон үед платформын стандарт нөхцөл харагдана.</p>
+        <TiptapEditor value={policyReturn} onChange={setPolicyReturn} minHeight={200} placeholder="Буцаалтын нөхцөл бичих..." />
+      </div>
+
+      <div className="flex justify-end">
+        <Button onClick={() => save.mutate()} disabled={save.isPending}>
+          {save.isPending ? "Хадгалж байна..." : "Хадгалах"}
+        </Button>
+      </div>
+    </Card>
+  );
+}
