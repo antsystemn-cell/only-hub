@@ -306,7 +306,7 @@ function AdminForeignSyncPage() {
               ))}
               {productsQ.data?.rows?.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="py-6 text-center text-muted-foreground">
+                  <td colSpan={8} className="py-6 text-center text-muted-foreground">
                     Гадаад эх сурвалжтай бараа алга.
                   </td>
                 </tr>
