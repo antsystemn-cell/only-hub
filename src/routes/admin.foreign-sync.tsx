@@ -48,6 +48,22 @@ function AdminForeignSyncPage() {
   const listJobs = useServerFn(adminListAllForeignSyncJobs);
   const listChanges = useServerFn(adminListForeignPriceChanges);
   const triggerFn = useServerFn(triggerForeignSourceSync);
+  const renameFn = useServerFn(adminRenameForeignProduct);
+
+  const [editing, setEditing] = useState<{ id: string; name: string } | null>(null);
+  const [editName, setEditName] = useState("");
+
+  const renameMut = useMutation({
+    mutationFn: (input: { productId: string; name: string }) =>
+      renameFn({ data: input }),
+    onSuccess: () => {
+      toast.success("Барааны нэр шинэчлэгдлээ");
+      setEditing(null);
+      qc.invalidateQueries({ queryKey: ["admin-foreign-sync-products"] });
+      qc.invalidateQueries({ queryKey: ["admin-foreign-sync-jobs"] });
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Нэр солих амжилтгүй"),
+  });
 
   const productsQ = useQuery({
     queryKey: ["admin-foreign-sync-products", status, search],
