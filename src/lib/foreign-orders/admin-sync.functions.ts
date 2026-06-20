@@ -29,7 +29,7 @@ export const adminListForeignSyncProducts = createServerFn({ method: "GET" })
     let q = supabaseAdmin
       .from("products")
       .select(
-        "id,name,source_url,foreign_source,sync_enabled,sync_frequency_hours,last_source_sync_at,next_sync_at,source_sync_status,source_sync_error,sync_failure_count,low_stock_warning,merchant_id,merchants:merchant_id(id,name,slug)",
+        "id,name,source_url,foreign_source,source_country,default_delivery_min_days,default_delivery_max_days,sync_enabled,sync_frequency_hours,last_source_sync_at,next_sync_at,source_sync_status,source_sync_error,sync_failure_count,low_stock_warning,merchant_id,merchants:merchant_id(id,name,slug)",
       )
       .eq("product_type", "FOREIGN_ORDER")
       .order("last_source_sync_at", { ascending: false, nullsFirst: false })
