@@ -186,7 +186,20 @@ function AdminForeignSyncPage() {
                     <div className="text-xs text-muted-foreground">{p.merchants?.slug}</div>
                   </td>
                   <td className="py-2 pr-3">
-                    <div className="font-medium">{p.name}</div>
+                    <div className="flex items-start gap-1">
+                      <div className="font-medium">{p.name}</div>
+                      <button
+                        type="button"
+                        className="text-muted-foreground hover:text-orange-600"
+                        title="Нэр засах"
+                        onClick={() => {
+                          setEditing({ id: p.id, name: p.name });
+                          setEditName(p.name);
+                        }}
+                      >
+                        <Pencil className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
                     {p.source_url && (
                       <a
                         href={p.source_url}
