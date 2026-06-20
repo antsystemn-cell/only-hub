@@ -102,3 +102,22 @@ export const adminListForeignPriceChanges = createServerFn({ method: "GET" })
     if (error) throw new Error(error.message);
     return rows ?? [];
   });
+
+const renameSchema = z.object({
+  productId: z.string().uuid(),
+  name: z.string().trim().min(1).max(300),
+});
+
+export const adminRenameForeignProduct = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => renameSchema.parse(d))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin
+      .from("products")
+      .update({ name: data.name, updated_at: new Date().toISOString() })
+      .eq("id", data.productId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
