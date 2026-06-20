@@ -73,3 +73,41 @@ export function ForeignOrderPanel({ product }: { product: Product & { source_nam
     </div>
   );
 }
+
+/** Country origin badge — flag + country + delivery days. Renders only for KR/CN. */
+export function CountryOriginBadge({
+  product,
+  size = "sm",
+  className = "",
+}: {
+  product: { source_country?: string | null; default_delivery_min_days?: number | null; default_delivery_max_days?: number | null };
+  size?: "xs" | "sm" | "md";
+  className?: string;
+}) {
+  const c = product.source_country;
+  if (c !== "KR" && c !== "CN") return null;
+  const flag = c === "KR" ? "🇰🇷" : "🇨🇳";
+  const country = c === "KR" ? "Солонгос" : "Хятад";
+  const grad =
+    c === "KR"
+      ? "from-rose-500 to-indigo-600"
+      : "from-red-500 to-yellow-500";
+  const days = deliveryRangeLabel(product as Product);
+  const sz =
+    size === "xs"
+      ? "px-1.5 py-0.5 text-[10px] gap-1"
+      : size === "md"
+      ? "px-2.5 py-1 text-xs gap-1.5"
+      : "px-2 py-0.5 text-[11px] gap-1";
+  return (
+    <span
+      className={`inline-flex items-center rounded-full bg-gradient-to-r ${grad} font-semibold text-white shadow-sm ring-1 ring-white/40 ${sz} ${className}`}
+      title={`${country}аас захиалгаар • ${days}`}
+    >
+      <span className="leading-none">{flag}</span>
+      <span className="leading-none">{country}</span>
+      <span className="rounded-full bg-white/25 px-1.5 py-[1px] leading-none backdrop-blur-sm">{days}</span>
+    </span>
+  );
+}
+
