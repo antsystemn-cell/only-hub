@@ -19,7 +19,7 @@ import { SiteHeader } from "@/components/site/SiteHeader";
 import { SiteFooter } from "@/components/site/SiteFooter";
 import { ShareMenu } from "@/components/product/ShareMenu";
 import { ReviewsSection } from "@/components/product/ReviewsSection";
-import { ForeignOrderInlineBadge, ForeignOrderPanel, isForeignOrder } from "@/components/product/ForeignOrderBadge";
+import { ForeignOrderInlineBadge, ForeignOrderPanel, isForeignOrder, CountryOriginBadge } from "@/components/product/ForeignOrderBadge";
 
 export const Route = createFileRoute("/store/$merchantSlug/product/$productSlug")({
   component: ProductDetailPage,
@@ -515,6 +515,7 @@ function ProductDetailPage() {
                 <Badge variant="secondary" className="text-xs">{product.category}</Badge>
               )}
               {isForeignOrder(product) && <ForeignOrderInlineBadge product={product} />}
+              <CountryOriginBadge product={product as any} size="md" />
             </div>
 
             {/* Name */}

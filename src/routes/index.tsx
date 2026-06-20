@@ -14,6 +14,7 @@ import { fmtMnt } from "@/lib/format";
 import { wishlist, useIsWishlisted } from "@/lib/wishlist";
 import { toast } from "sonner";
 import { QuickViewDialog, type QuickViewProduct } from "@/components/QuickViewDialog";
+import { CountryOriginBadge } from "@/components/product/ForeignOrderBadge";
 import { AccountNav } from "@/components/AccountNav";
 import { useServerFn } from "@tanstack/react-start";
 import { getPublicBrandingFn } from "@/lib/branding.functions";
@@ -279,6 +280,9 @@ function ProductCard({
         >
           <Eye className="h-4 w-4" />
         </button>
+        <div className="pointer-events-none absolute bottom-2 left-2">
+          <CountryOriginBadge product={p} size="xs" />
+        </div>
       </div>
       <div className="flex flex-1 flex-col gap-1 p-2 sm:p-2.5">
         <h3 className="line-clamp-2 min-h-[2.25rem] text-[12px] font-medium leading-tight text-foreground/90 sm:text-[13px]">
@@ -513,7 +517,7 @@ function Index() {
     queryFn: async () => {
       const { data } = await supabase
         .from("products")
-        .select("id,name,price,original_price,image_url,thumbnail_url,merchant_id,is_new,is_on_sale,slug,description,discount,sales")
+        .select("id,name,price,original_price,image_url,thumbnail_url,merchant_id,is_new,is_on_sale,slug,description,discount,sales,source_country,default_delivery_min_days,default_delivery_max_days")
         .eq("is_active", true)
         .eq("is_new", true)
         .order("created_at", { ascending: false })
@@ -528,7 +532,7 @@ function Index() {
     queryFn: async () => {
       const { data } = await supabase
         .from("products")
-        .select("id,name,price,original_price,image_url,thumbnail_url,merchant_id,is_new,is_on_sale,slug,description,discount,sales")
+        .select("id,name,price,original_price,image_url,thumbnail_url,merchant_id,is_new,is_on_sale,slug,description,discount,sales,source_country,default_delivery_min_days,default_delivery_max_days")
         .eq("is_active", true)
         .or("is_on_sale.eq.true,discount.gt.0")
         .order("discount", { ascending: false })
@@ -546,7 +550,7 @@ function Index() {
       const to = from + PAGE_SIZE - 1;
       const { data, count } = await supabase
         .from("products")
-        .select("id,name,price,original_price,image_url,thumbnail_url,merchant_id,is_new,is_on_sale,slug,description,discount,sales", { count: "exact" })
+        .select("id,name,price,original_price,image_url,thumbnail_url,merchant_id,is_new,is_on_sale,slug,description,discount,sales,source_country,default_delivery_min_days,default_delivery_max_days", { count: "exact" })
         .eq("is_active", true)
         .order("created_at", { ascending: false })
         .order("id", { ascending: false })
