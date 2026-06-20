@@ -178,6 +178,7 @@ function AdminForeignSyncPage() {
               <tr>
                 <th className="py-2 pr-3">Мерчант</th>
                 <th className="py-2 pr-3">Бараа</th>
+                <th className="py-2 pr-3">Хүргэлт</th>
                 <th className="py-2 pr-3">Давтамж</th>
                 <th className="py-2 pr-3">Сүүлд</th>
                 <th className="py-2 pr-3">Дараа</th>
