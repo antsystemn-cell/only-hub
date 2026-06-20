@@ -515,6 +515,7 @@ function ProductDetailPage() {
                 <Badge variant="secondary" className="text-xs">{product.category}</Badge>
               )}
               {isForeignOrder(product) && <ForeignOrderInlineBadge product={product} />}
+              <CountryOriginBadge product={product as any} size="md" />
             </div>
 
             {/* Name */}
