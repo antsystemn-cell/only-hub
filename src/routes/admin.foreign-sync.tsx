@@ -361,6 +361,34 @@ function AdminForeignSyncPage() {
           </div>
         </Card>
       </div>
+
+      <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Барааны нэр засах</DialogTitle>
+          </DialogHeader>
+          <Input
+            value={editName}
+            onChange={(e) => setEditName(e.target.value)}
+            placeholder="Барааны шинэ нэр"
+            autoFocus
+          />
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditing(null)}>
+              Болих
+            </Button>
+            <Button
+              disabled={renameMut.isPending || !editName.trim() || editName.trim() === editing?.name}
+              onClick={() =>
+                editing && renameMut.mutate({ productId: editing.id, name: editName.trim() })
+              }
+            >
+              {renameMut.isPending && <Loader2 className="mr-1 h-3 w-3 animate-spin" />}
+              Хадгалах
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
