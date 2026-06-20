@@ -280,6 +280,9 @@ function ProductCard({
         >
           <Eye className="h-4 w-4" />
         </button>
+        <div className="pointer-events-none absolute bottom-2 left-2">
+          <CountryOriginBadge product={p} size="xs" />
+        </div>
       </div>
       <div className="flex flex-1 flex-col gap-1 p-2 sm:p-2.5">
         <h3 className="line-clamp-2 min-h-[2.25rem] text-[12px] font-medium leading-tight text-foreground/90 sm:text-[13px]">
