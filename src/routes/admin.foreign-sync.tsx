@@ -27,6 +27,7 @@ import {
   adminListAllForeignSyncJobs,
   adminListForeignPriceChanges,
   adminRenameForeignProduct,
+  adminSetForeignProductOrigin,
 } from "@/lib/foreign-orders/admin-sync.functions";
 import { triggerForeignSourceSync } from "@/lib/foreign-orders/sync.functions";
 import { fmtMnt } from "@/lib/format";
@@ -49,6 +50,7 @@ function AdminForeignSyncPage() {
   const listChanges = useServerFn(adminListForeignPriceChanges);
   const triggerFn = useServerFn(triggerForeignSourceSync);
   const renameFn = useServerFn(adminRenameForeignProduct);
+  const setOriginFn = useServerFn(adminSetForeignProductOrigin);
 
   const [editing, setEditing] = useState<{ id: string; name: string } | null>(null);
   const [editName, setEditName] = useState("");
@@ -63,6 +65,16 @@ function AdminForeignSyncPage() {
       qc.invalidateQueries({ queryKey: ["admin-foreign-sync-jobs"] });
     },
     onError: (e: any) => toast.error(e?.message ?? "Нэр солих амжилтгүй"),
+  });
+
+  const originMut = useMutation({
+    mutationFn: (input: { productId: string; origin: "KR" | "CN" }) =>
+      setOriginFn({ data: input }),
+    onSuccess: (r) => {
+      toast.success(`Хүргэлт ${r.days} хоног болж шинэчлэгдлээ`);
+      qc.invalidateQueries({ queryKey: ["admin-foreign-sync-products"] });
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Шинэчлэх амжилтгүй"),
   });
 
   const productsQ = useQuery({
@@ -166,6 +178,7 @@ function AdminForeignSyncPage() {
               <tr>
                 <th className="py-2 pr-3">Мерчант</th>
                 <th className="py-2 pr-3">Бараа</th>
+                <th className="py-2 pr-3">Хүргэлт</th>
                 <th className="py-2 pr-3">Давтамж</th>
                 <th className="py-2 pr-3">Сүүлд</th>
                 <th className="py-2 pr-3">Дараа</th>
@@ -209,6 +222,36 @@ function AdminForeignSyncPage() {
                       >
                         Эх сурвалж →
                       </a>
+                    )}
+                  </td>
+                  <td className="py-2 pr-3 text-xs">
+                    <Select
+                      value={
+                        p.source_country === "KR"
+                          ? "KR"
+                          : p.source_country === "CN"
+                          ? "CN"
+                          : ""
+                      }
+                      onValueChange={(v) =>
+                        originMut.mutate({ productId: p.id, origin: v as "KR" | "CN" })
+                      }
+                      disabled={originMut.isPending}
+                    >
+                      <SelectTrigger className="h-8 w-36">
+                        <SelectValue placeholder="Сонгох" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="KR">🇰🇷 Солонгос (8 хоног)</SelectItem>
+                        <SelectItem value="CN">🇨🇳 Хятад (6 хоног)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    {(p.default_delivery_min_days || p.default_delivery_max_days) && (
+                      <div className="mt-1 text-[10px] text-muted-foreground">
+                        {p.default_delivery_min_days === p.default_delivery_max_days
+                          ? `${p.default_delivery_min_days} хоног`
+                          : `${p.default_delivery_min_days}–${p.default_delivery_max_days} хоног`}
+                      </div>
                     )}
                   </td>
                   <td className="py-2 pr-3 text-xs">
@@ -263,7 +306,7 @@ function AdminForeignSyncPage() {
               ))}
               {productsQ.data?.rows?.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="py-6 text-center text-muted-foreground">
+                  <td colSpan={8} className="py-6 text-center text-muted-foreground">
                     Гадаад эх сурвалжтай бараа алга.
                   </td>
                 </tr>

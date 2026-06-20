@@ -29,7 +29,7 @@ export const adminListForeignSyncProducts = createServerFn({ method: "GET" })
     let q = supabaseAdmin
       .from("products")
       .select(
-        "id,name,source_url,foreign_source,sync_enabled,sync_frequency_hours,last_source_sync_at,next_sync_at,source_sync_status,source_sync_error,sync_failure_count,low_stock_warning,merchant_id,merchants:merchant_id(id,name,slug)",
+        "id,name,source_url,foreign_source,source_country,default_delivery_min_days,default_delivery_max_days,sync_enabled,sync_frequency_hours,last_source_sync_at,next_sync_at,source_sync_status,source_sync_error,sync_failure_count,low_stock_warning,merchant_id,merchants:merchant_id(id,name,slug)",
       )
       .eq("product_type", "FOREIGN_ORDER")
       .order("last_source_sync_at", { ascending: false, nullsFirst: false })
@@ -106,7 +106,32 @@ export const adminListForeignPriceChanges = createServerFn({ method: "GET" })
 const renameSchema = z.object({
   productId: z.string().uuid(),
   name: z.string().trim().min(1).max(300),
+  });
+
+const originSchema = z.object({
+  productId: z.string().uuid(),
+  origin: z.enum(["KR", "CN"]),
 });
+
+export const adminSetForeignProductOrigin = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => originSchema.parse(d))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const days = data.origin === "KR" ? 8 : 6;
+    const { error } = await supabaseAdmin
+      .from("products")
+      .update({
+        source_country: data.origin,
+        default_delivery_min_days: days,
+        default_delivery_max_days: days,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", data.productId);
+    if (error) throw new Error(error.message);
+    return { ok: true, days };
+  });
 
 export const adminRenameForeignProduct = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
