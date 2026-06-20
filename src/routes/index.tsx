@@ -513,7 +513,7 @@ function Index() {
     queryFn: async () => {
       const { data } = await supabase
         .from("products")
-        .select("id,name,price,original_price,image_url,thumbnail_url,merchant_id,is_new,is_on_sale,slug,description,discount,sales")
+        .select("id,name,price,original_price,image_url,thumbnail_url,merchant_id,is_new,is_on_sale,slug,description,discount,sales,source_country,default_delivery_min_days,default_delivery_max_days")
         .eq("is_active", true)
         .eq("is_new", true)
         .order("created_at", { ascending: false })
@@ -528,7 +528,7 @@ function Index() {
     queryFn: async () => {
       const { data } = await supabase
         .from("products")
-        .select("id,name,price,original_price,image_url,thumbnail_url,merchant_id,is_new,is_on_sale,slug,description,discount,sales")
+        .select("id,name,price,original_price,image_url,thumbnail_url,merchant_id,is_new,is_on_sale,slug,description,discount,sales,source_country,default_delivery_min_days,default_delivery_max_days")
         .eq("is_active", true)
         .or("is_on_sale.eq.true,discount.gt.0")
         .order("discount", { ascending: false })
@@ -546,7 +546,7 @@ function Index() {
       const to = from + PAGE_SIZE - 1;
       const { data, count } = await supabase
         .from("products")
-        .select("id,name,price,original_price,image_url,thumbnail_url,merchant_id,is_new,is_on_sale,slug,description,discount,sales", { count: "exact" })
+        .select("id,name,price,original_price,image_url,thumbnail_url,merchant_id,is_new,is_on_sale,slug,description,discount,sales,source_country,default_delivery_min_days,default_delivery_max_days", { count: "exact" })
         .eq("is_active", true)
         .order("created_at", { ascending: false })
         .order("id", { ascending: false })
