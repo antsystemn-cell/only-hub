@@ -221,8 +221,6 @@ function ProductCard({
     : (p.original_price && Number(p.original_price) > Number(p.price)
       ? Math.round((1 - Number(p.price) / Number(p.original_price)) * 100)
       : 0);
-  const rating = 4.5 + (Math.abs(hashStr(p.id)) % 5) / 10; // pseudo-stable rating display
-  const sold = Number(p.sales) > 0 ? Number(p.sales) : (Math.abs(hashStr(p.id)) % 200) + 5;
   const wished = useIsWishlisted(p.id);
 
   const onToggleWish = (e: React.MouseEvent) => {
@@ -306,12 +304,6 @@ function ProductCard({
             <span className="truncate">{merchant.name}</span>
           </div>
         )}
-        <div className="mt-0.5 flex items-center gap-1 text-[10px] text-muted-foreground sm:text-[11px]">
-          <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
-          <span>{rating.toFixed(1)}</span>
-          <span className="text-foreground/30">·</span>
-          <span>{sold}+ борлуулсан</span>
-        </div>
       </div>
 
     </Card>
