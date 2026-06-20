@@ -13,12 +13,20 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Loader2, RefreshCw } from "lucide-react";
+import { Loader2, RefreshCw, Pencil } from "lucide-react";
 import { toast } from "sonner";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import {
   adminListForeignSyncProducts,
   adminListAllForeignSyncJobs,
   adminListForeignPriceChanges,
+  adminRenameForeignProduct,
 } from "@/lib/foreign-orders/admin-sync.functions";
 import { triggerForeignSourceSync } from "@/lib/foreign-orders/sync.functions";
 import { fmtMnt } from "@/lib/format";
@@ -40,6 +48,22 @@ function AdminForeignSyncPage() {
   const listJobs = useServerFn(adminListAllForeignSyncJobs);
   const listChanges = useServerFn(adminListForeignPriceChanges);
   const triggerFn = useServerFn(triggerForeignSourceSync);
+  const renameFn = useServerFn(adminRenameForeignProduct);
+
+  const [editing, setEditing] = useState<{ id: string; name: string } | null>(null);
+  const [editName, setEditName] = useState("");
+
+  const renameMut = useMutation({
+    mutationFn: (input: { productId: string; name: string }) =>
+      renameFn({ data: input }),
+    onSuccess: () => {
+      toast.success("Барааны нэр шинэчлэгдлээ");
+      setEditing(null);
+      qc.invalidateQueries({ queryKey: ["admin-foreign-sync-products"] });
+      qc.invalidateQueries({ queryKey: ["admin-foreign-sync-jobs"] });
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Нэр солих амжилтгүй"),
+  });
 
   const productsQ = useQuery({
     queryKey: ["admin-foreign-sync-products", status, search],
@@ -162,7 +186,20 @@ function AdminForeignSyncPage() {
                     <div className="text-xs text-muted-foreground">{p.merchants?.slug}</div>
                   </td>
                   <td className="py-2 pr-3">
-                    <div className="font-medium">{p.name}</div>
+                    <div className="flex items-start gap-1">
+                      <div className="font-medium">{p.name}</div>
+                      <button
+                        type="button"
+                        className="text-muted-foreground hover:text-orange-600"
+                        title="Нэр засах"
+                        onClick={() => {
+                          setEditing({ id: p.id, name: p.name });
+                          setEditName(p.name);
+                        }}
+                      >
+                        <Pencil className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
                     {p.source_url && (
                       <a
                         href={p.source_url}
@@ -324,6 +361,34 @@ function AdminForeignSyncPage() {
           </div>
         </Card>
       </div>
+
+      <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Барааны нэр засах</DialogTitle>
+          </DialogHeader>
+          <Input
+            value={editName}
+            onChange={(e) => setEditName(e.target.value)}
+            placeholder="Барааны шинэ нэр"
+            autoFocus
+          />
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditing(null)}>
+              Болих
+            </Button>
+            <Button
+              disabled={renameMut.isPending || !editName.trim() || editName.trim() === editing?.name}
+              onClick={() =>
+                editing && renameMut.mutate({ productId: editing.id, name: editName.trim() })
+              }
+            >
+              {renameMut.isPending && <Loader2 className="mr-1 h-3 w-3 animate-spin" />}
+              Хадгалах
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
