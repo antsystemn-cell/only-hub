@@ -225,6 +225,36 @@ function AdminForeignSyncPage() {
                     )}
                   </td>
                   <td className="py-2 pr-3 text-xs">
+                    <Select
+                      value={
+                        p.source_country === "KR"
+                          ? "KR"
+                          : p.source_country === "CN"
+                          ? "CN"
+                          : ""
+                      }
+                      onValueChange={(v) =>
+                        originMut.mutate({ productId: p.id, origin: v as "KR" | "CN" })
+                      }
+                      disabled={originMut.isPending}
+                    >
+                      <SelectTrigger className="h-8 w-36">
+                        <SelectValue placeholder="Сонгох" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="KR">🇰🇷 Солонгос (8 хоног)</SelectItem>
+                        <SelectItem value="CN">🇨🇳 Хятад (6 хоног)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    {(p.default_delivery_min_days || p.default_delivery_max_days) && (
+                      <div className="mt-1 text-[10px] text-muted-foreground">
+                        {p.default_delivery_min_days === p.default_delivery_max_days
+                          ? `${p.default_delivery_min_days} хоног`
+                          : `${p.default_delivery_min_days}–${p.default_delivery_max_days} хоног`}
+                      </div>
+                    )}
+                  </td>
+                  <td className="py-2 pr-3 text-xs">
                     {p.sync_enabled ? `${p.sync_frequency_hours ?? 24}ц` : "Зогссон"}
                   </td>
                   <td className="py-2 pr-3 text-xs text-muted-foreground">
