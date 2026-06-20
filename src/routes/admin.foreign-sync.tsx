@@ -50,6 +50,7 @@ function AdminForeignSyncPage() {
   const listChanges = useServerFn(adminListForeignPriceChanges);
   const triggerFn = useServerFn(triggerForeignSourceSync);
   const renameFn = useServerFn(adminRenameForeignProduct);
+  const setOriginFn = useServerFn(adminSetForeignProductOrigin);
 
   const [editing, setEditing] = useState<{ id: string; name: string } | null>(null);
   const [editName, setEditName] = useState("");
@@ -64,6 +65,16 @@ function AdminForeignSyncPage() {
       qc.invalidateQueries({ queryKey: ["admin-foreign-sync-jobs"] });
     },
     onError: (e: any) => toast.error(e?.message ?? "Нэр солих амжилтгүй"),
+  });
+
+  const originMut = useMutation({
+    mutationFn: (input: { productId: string; origin: "KR" | "CN" }) =>
+      setOriginFn({ data: input }),
+    onSuccess: (r) => {
+      toast.success(`Хүргэлт ${r.days} хоног болж шинэчлэгдлээ`);
+      qc.invalidateQueries({ queryKey: ["admin-foreign-sync-products"] });
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Шинэчлэх амжилтгүй"),
   });
 
   const productsQ = useQuery({
