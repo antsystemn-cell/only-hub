@@ -13,12 +13,20 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Loader2, RefreshCw } from "lucide-react";
+import { Loader2, RefreshCw, Pencil } from "lucide-react";
 import { toast } from "sonner";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import {
   adminListForeignSyncProducts,
   adminListAllForeignSyncJobs,
   adminListForeignPriceChanges,
+  adminRenameForeignProduct,
 } from "@/lib/foreign-orders/admin-sync.functions";
 import { triggerForeignSourceSync } from "@/lib/foreign-orders/sync.functions";
 import { fmtMnt } from "@/lib/format";
