@@ -129,7 +129,7 @@ export function CountryOriginBadge({
   return (
     <span
       className={`inline-flex items-center rounded-full border border-orange-200 bg-orange-50 font-display text-orange-900 shadow-sm transition-shadow duration-150 hover:shadow-md dark:border-orange-800/60 dark:bg-orange-950/40 dark:text-orange-100 ${config.wrapper} ${className}`}
-      title={`${countryName}аас захиалгаар • ойролцоогоор ${days}-н дотор • ирэх хугацаа ${date}`}
+      title={`${countryName}аас захиалгаар • ойролцоогоор ${days}-н дотор • ирэх өдөр ${date}`}
     >
       <img
         src={flagAsset.url}
@@ -137,7 +137,7 @@ export function CountryOriginBadge({
         className={`shrink-0 rounded-sm object-cover leading-none ${config.flagImg}`}
       />
       <span className={`whitespace-nowrap tracking-tight ${config.text}`}>
-        ирэх хугацаа: <span className="font-semibold">{date}</span>
+        ирэх өдөр: <span className="font-semibold">{date}</span>
       </span>
     </span>
   );
