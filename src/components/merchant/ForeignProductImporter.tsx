@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useNavigate } from "@tanstack/react-router";
+import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,6 +11,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Separator } from "@/components/ui/separator";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { toast } from "sonner";
 import {
   AlertCircle, ArrowLeft, CheckCircle2, Download, ExternalLink, Loader2, Plus, Trash2, X,
@@ -106,6 +114,19 @@ export function ForeignProductImporter({ merchantId, source, onClose }: Props) {
     queryFn: () => fetchSettings({ data: { merchantId, source } }),
   });
   const settingsRow = settingsQuery.data?.[0] ?? null;
+
+  // ----- Categories -----
+  const { data: categories = [] } = useQuery({
+    queryKey: ["categories", merchantId],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("categories")
+        .select("*")
+        .eq("merchant_id", merchantId)
+        .order("position");
+      return data ?? [];
+    },
+  });
 
   const settings: ForeignPricingSettings = {
     defaultProfitPercent: Number(settingsRow?.default_profit_percent ?? 25),
@@ -400,17 +421,40 @@ export function ForeignProductImporter({ merchantId, source, onClose }: Props) {
                   <Input value={preview.brand} onChange={(e) => setPreview({ ...preview, brand: e.target.value })} />
                 </div>
                 <div>
-                  <Label>Эх сурвалжийн линк</Label>
-                  <a
-                    href={preview.sourceUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="mt-2 flex items-center gap-1 truncate text-xs text-orange-600 hover:underline"
+                  <Label>Ангилал</Label>
+                  <Select
+                    value={preview.category}
+                    onValueChange={(v) => setPreview({ ...preview, category: v })}
                   >
-                    {preview.sourceUrl}
-                    <ExternalLink className="h-3 w-3" />
-                  </a>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Ангилал сонгох" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {categories.length === 0 && (
+                        <SelectItem value="__none__" disabled>
+                          Ангилал олдсонгүй
+                        </SelectItem>
+                      )}
+                      {categories.map((c: any) => (
+                        <SelectItem key={c.id} value={c.name}>
+                          {c.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
+              </div>
+              <div>
+                <Label>Эх сурвалжийн линк</Label>
+                <a
+                  href={preview.sourceUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="mt-2 flex items-center gap-1 truncate text-xs text-orange-600 hover:underline"
+                >
+                  {preview.sourceUrl}
+                  <ExternalLink className="h-3 w-3" />
+                </a>
               </div>
               <div>
                 <Label>Тайлбар</Label>
@@ -496,16 +540,11 @@ export function ForeignProductImporter({ merchantId, source, onClose }: Props) {
             );
           })()}
 
-          {(preview.category || preview.baseSourcePrice != null) && (
+          {preview.baseSourcePrice != null && (
             <div className="flex flex-wrap items-center gap-3 rounded-xl border bg-muted/30 p-3 text-sm">
-              {preview.category && (
-                <Badge variant="secondary">Ангилал: {preview.category}</Badge>
-              )}
-              {preview.baseSourcePrice != null && (
-                <Badge variant="secondary">
-                  Үндсэн үнэ: {preview.baseSourcePrice.toLocaleString()} KRW
-                </Badge>
-              )}
+              <Badge variant="secondary">
+                Үндсэн үнэ: {preview.baseSourcePrice.toLocaleString()} KRW
+              </Badge>
               <Badge variant="outline" className="text-xs">
                 Эх сурвалж: {preview.extractionMethod}
               </Badge>
