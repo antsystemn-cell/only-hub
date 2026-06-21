@@ -217,11 +217,6 @@ function ProductCard({
   merchant?: { slug: string; name: string; logo_url?: string | null };
   onQuickView: (p: any) => void;
 }) {
-  const discount = Number(p.discount) > 0
-    ? Number(p.discount)
-    : (p.original_price && Number(p.original_price) > Number(p.price)
-      ? Math.round((1 - Number(p.price) / Number(p.original_price)) * 100)
-      : 0);
   const wished = useIsWishlisted(p.id);
 
   const onToggleWish = (e: React.MouseEvent) => {
@@ -253,17 +248,9 @@ function ProductCard({
             <ShoppingBag className="h-8 w-8" />
           </div>
         )}
-        {discount > 0 && (
-          <span className="absolute left-2 top-2 rounded-md bg-red-500 px-1.5 py-0.5 text-[10px] font-bold text-white shadow-sm">
-            -{discount}%
-          </span>
-        )}
-        {p.is_new && discount === 0 && (
-          <span className="absolute left-2 top-2 rounded-md bg-emerald-500 px-1.5 py-0.5 text-[10px] font-bold text-white shadow-sm">
-            ШИНЭ
-          </span>
-        )}
-        <button
+        <div className="absolute left-2 top-2 z-10">
+          <AvailabilityBadge product={p} size="xs" />
+        </div>
           type="button"
           aria-label={wished ? "Хүссэн жагсаалтаас хасах" : "Хүссэн жагсаалтад нэмэх"}
           aria-pressed={wished}
