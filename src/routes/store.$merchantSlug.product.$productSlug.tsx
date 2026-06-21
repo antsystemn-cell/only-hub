@@ -350,9 +350,6 @@ function ProductDetailPage() {
   };
 
   const hasDiscount = product.original_price != null && Number(product.original_price) > Number(product.price);
-  const discountPct = hasDiscount
-    ? Math.round((1 - Number(product.price) / Number(product.original_price)) * 100)
-    : 0;
 
   // Real rating from reviews; fallback display when no reviews yet
   const reviewCount = reviewStats?.count ?? 0;
