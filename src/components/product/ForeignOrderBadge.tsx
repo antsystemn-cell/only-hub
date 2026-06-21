@@ -134,10 +134,11 @@ export function CountryOriginBadge({
       <img
         src={flagAsset.url}
         alt={countryName}
-        className={`shrink-0 rounded-sm object-cover leading-none ${config.flagImg}`}
+        className={`shrink-0 self-center rounded-sm object-cover leading-none ${config.flagImg}`}
       />
-      <span className={`whitespace-nowrap tracking-tight ${config.text}`}>
-        ирэх өдөр: <span className="font-semibold">{date}</span>
+      <span className={`inline-flex items-baseline gap-0.5 whitespace-nowrap leading-none ${config.text}`}>
+        <span className="text-orange-900/70">ирэх өдөр:</span>
+        <span className="font-semibold tabular-nums text-orange-950">{date}</span>
       </span>
     </span>
   );
