@@ -353,6 +353,11 @@ export function ForeignProductImporter({ merchantId, source, onClose }: Props) {
                 <AlertCircle className="h-3 w-3" /> Үлдэгдэл бага (품절 임박)
               </Badge>
             )}
+            {isTranslating && (
+              <Badge className="gap-1 bg-sky-100 text-sky-800 hover:bg-sky-100">
+                <Loader2 className="h-3 w-3 animate-spin" /> Монгол хэл рүү орчуулж байна...
+              </Badge>
+            )}
           </div>
           {warnings.length > 0 && (
             <Alert className="border-amber-300 bg-amber-50">
