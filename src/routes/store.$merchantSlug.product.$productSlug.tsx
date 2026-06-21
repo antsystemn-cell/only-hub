@@ -417,12 +417,8 @@ function ProductDetailPage() {
                 )}
 
                 {/* Badges top-left */}
-                <div className="absolute left-3 top-3 flex flex-col gap-1.5">
-                  {hasDiscount && (
-                    <Badge className="bg-red-500 px-2 py-0.5 text-xs font-bold text-white hover:bg-red-500">
-                      -{discountPct}%
-                    </Badge>
-                  )}
+                <div className="absolute left-3 top-3 z-10 flex flex-col gap-1.5">
+                  <AvailabilityBadge product={product} size="sm" />
                 </div>
 
                 {/* Heart top-right */}
