@@ -144,4 +144,35 @@ export function CountryOriginBadge({
   );
 }
 
+/** Availability / stock badge: Бэлэн (in stock) or Захиалгаар (foreign/order). */
+export function AvailabilityBadge({
+  product,
+  size = "sm",
+  className = "",
+}: {
+  product: { product_type?: Database["public"]["Enums"]["product_type"] | null };
+  size?: "xs" | "sm" | "md";
+  className?: string;
+}) {
+  const isOrder = isForeignOrder(product);
+  const label = isOrder ? "Захиалгаар" : "Бэлэн";
+  const colors = isOrder
+    ? "bg-amber-500 text-white"
+    : "bg-emerald-500 text-white";
+  const sizeClasses = {
+    xs: "px-1.5 py-0.5 text-[10px]",
+    sm: "px-2 py-0.5 text-[11px]",
+    md: "px-2.5 py-1 text-xs",
+  }[size];
+
+  return (
+    <span
+      className={`inline-flex items-center rounded-md font-semibold shadow-sm ${colors} ${sizeClasses} ${className}`}
+    >
+      {label}
+    </span>
+  );
+}
+
+
 
