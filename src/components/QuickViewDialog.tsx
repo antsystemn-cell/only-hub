@@ -9,7 +9,6 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { fmtMnt } from "@/lib/format";
 import { AvailabilityBadge } from "@/components/product/ForeignOrderBadge";
 import { Store, X } from "lucide-react";
