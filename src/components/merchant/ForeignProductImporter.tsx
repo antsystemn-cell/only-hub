@@ -495,14 +495,14 @@ export function ForeignProductImporter({ merchantId, source, onClose }: Props) {
                             ];
                             setPreview({ ...preview, coverImage: g, gallery: newGallery });
                           }}
-                          className={`relative block h-20 w-20 overflow-hidden rounded-lg border-2 transition ${
+                          className={`relative block h-24 w-24 overflow-hidden rounded-lg border-2 transition ${
                             isCover
                               ? "border-orange-500 ring-2 ring-orange-200"
                               : "border-transparent hover:border-orange-300"
                           }`}
                           title={isCover ? "Үндсэн зураг" : "Үндсэн зураг болгох"}
                         >
-                          <img src={g} className="h-full w-full object-cover" />
+                          <img src={g} className="h-full w-full object-contain" />
                           {isCover && (
                             <span className="absolute bottom-0 left-0 right-0 bg-orange-500/90 py-0.5 text-center text-[10px] font-medium text-white">
                               Үндсэн
