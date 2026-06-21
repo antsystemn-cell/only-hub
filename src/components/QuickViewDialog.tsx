@@ -26,6 +26,7 @@ export type QuickViewProduct = {
   description?: string | null;
   slug?: string | null;
   merchant_id?: string | null;
+  product_type?: "READY_STOCK" | "FOREIGN_ORDER" | null;
 };
 
 type Props = {
