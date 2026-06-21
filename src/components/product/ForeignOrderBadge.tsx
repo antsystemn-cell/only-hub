@@ -3,6 +3,7 @@ import { Globe2, Clock } from "lucide-react";
 import { getForeignSourceDef } from "@/lib/foreign-orders/sources";
 import type { Database } from "@/integrations/supabase/types";
 import southKoreaFlagAsset from "@/assets/south-korea-flag.png.asset.json";
+import chinaFlagAsset from "@/assets/china-flag.png.asset.json";
 
 type Product = {
   product_type?: Database["public"]["Enums"]["product_type"] | null;
