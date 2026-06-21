@@ -19,7 +19,7 @@ import { SiteHeader } from "@/components/site/SiteHeader";
 import { SiteFooter } from "@/components/site/SiteFooter";
 import { ShareMenu } from "@/components/product/ShareMenu";
 import { ReviewsSection } from "@/components/product/ReviewsSection";
-import { ForeignOrderInlineBadge, ForeignOrderPanel, isForeignOrder, CountryOriginBadge } from "@/components/product/ForeignOrderBadge";
+import { ForeignOrderInlineBadge, ForeignOrderPanel, isForeignOrder, CountryOriginBadge, AvailabilityBadge } from "@/components/product/ForeignOrderBadge";
 
 export const Route = createFileRoute("/store/$merchantSlug/product/$productSlug")({
   component: ProductDetailPage,
@@ -120,7 +120,7 @@ function ProductDetailPage() {
     queryKey: ["related-v2", merchant?.id, product?.id, product?.category],
     enabled: !!merchant?.id && !!product?.id,
     queryFn: async () => {
-      const cols = "id,name,price,original_price,thumbnail_url,image_url,slug,is_new,is_on_sale,merchant_id";
+      const cols = "id,name,price,original_price,thumbnail_url,image_url,slug,is_new,is_on_sale,merchant_id,product_type";
       const seen = new Set<string>([product!.id]);
       const pick = (rows: any[]) => rows.filter((r) => !seen.has(r.id) && seen.add(r.id));
       // Tier 1: same store
@@ -350,9 +350,6 @@ function ProductDetailPage() {
   };
 
   const hasDiscount = product.original_price != null && Number(product.original_price) > Number(product.price);
-  const discountPct = hasDiscount
-    ? Math.round((1 - Number(product.price) / Number(product.original_price)) * 100)
-    : 0;
 
   // Real rating from reviews; fallback display when no reviews yet
   const reviewCount = reviewStats?.count ?? 0;
@@ -417,12 +414,8 @@ function ProductDetailPage() {
                 )}
 
                 {/* Badges top-left */}
-                <div className="absolute left-3 top-3 flex flex-col gap-1.5">
-                  {hasDiscount && (
-                    <Badge className="bg-red-500 px-2 py-0.5 text-xs font-bold text-white hover:bg-red-500">
-                      -{discountPct}%
-                    </Badge>
-                  )}
+                <div className="absolute left-3 top-3 z-10 flex flex-col gap-1.5">
+                  <AvailabilityBadge product={product} size="sm" />
                 </div>
 
                 {/* Heart top-right */}
@@ -505,12 +498,7 @@ function ProductDetailPage() {
           <div className="min-w-0">
             {/* Badges */}
             <div className="flex flex-wrap items-center gap-1.5">
-              {product.is_new && (
-                <Badge className="bg-emerald-500 px-2 py-0.5 text-xs font-semibold text-white hover:bg-emerald-500">Шинэ</Badge>
-              )}
-              {product.is_on_sale && (
-                <Badge className="bg-orange-500 px-2 py-0.5 text-xs font-semibold text-white hover:bg-orange-500">Онцлох</Badge>
-              )}
+              <AvailabilityBadge product={product} size="md" />
               {product.category && (
                 <Badge variant="secondary" className="text-xs">{product.category}</Badge>
               )}
@@ -545,10 +533,7 @@ function ProductDetailPage() {
                 {activePriceMax ? ` – ${fmtMnt(activePriceMax)}` : ""}
               </span>
               {hasDiscount && (
-                <>
-                  <span className="text-base text-muted-foreground line-through sm:text-lg">{fmtMnt(Number(product.original_price))}</span>
-                  <Badge className="bg-red-500 text-white hover:bg-red-500">-{discountPct}%</Badge>
-                </>
+                <span className="text-base text-muted-foreground line-through sm:text-lg">{fmtMnt(Number(product.original_price))}</span>
               )}
             </div>
 

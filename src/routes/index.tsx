@@ -14,7 +14,7 @@ import { fmtMnt } from "@/lib/format";
 import { wishlist, useIsWishlisted } from "@/lib/wishlist";
 import { toast } from "sonner";
 import { QuickViewDialog, type QuickViewProduct } from "@/components/QuickViewDialog";
-import { CountryOriginBadge } from "@/components/product/ForeignOrderBadge";
+import { CountryOriginBadge, AvailabilityBadge } from "@/components/product/ForeignOrderBadge";
 import { AccountNav } from "@/components/AccountNav";
 import { useServerFn } from "@tanstack/react-start";
 import { getPublicBrandingFn } from "@/lib/branding.functions";
@@ -217,11 +217,6 @@ function ProductCard({
   merchant?: { slug: string; name: string; logo_url?: string | null };
   onQuickView: (p: any) => void;
 }) {
-  const discount = Number(p.discount) > 0
-    ? Number(p.discount)
-    : (p.original_price && Number(p.original_price) > Number(p.price)
-      ? Math.round((1 - Number(p.price) / Number(p.original_price)) * 100)
-      : 0);
   const wished = useIsWishlisted(p.id);
 
   const onToggleWish = (e: React.MouseEvent) => {
@@ -253,16 +248,9 @@ function ProductCard({
             <ShoppingBag className="h-8 w-8" />
           </div>
         )}
-        {discount > 0 && (
-          <span className="absolute left-2 top-2 rounded-md bg-red-500 px-1.5 py-0.5 text-[10px] font-bold text-white shadow-sm">
-            -{discount}%
-          </span>
-        )}
-        {p.is_new && discount === 0 && (
-          <span className="absolute left-2 top-2 rounded-md bg-emerald-500 px-1.5 py-0.5 text-[10px] font-bold text-white shadow-sm">
-            ШИНЭ
-          </span>
-        )}
+        <div className="absolute left-2 top-2 z-10">
+          <AvailabilityBadge product={p} size="xs" />
+        </div>
         <button
           type="button"
           aria-label={wished ? "Хүссэн жагсаалтаас хасах" : "Хүссэн жагсаалтад нэмэх"}
@@ -517,7 +505,7 @@ function Index() {
     queryFn: async () => {
       const { data } = await supabase
         .from("products")
-        .select("id,name,price,original_price,image_url,thumbnail_url,merchant_id,is_new,is_on_sale,slug,description,discount,sales,source_country,default_delivery_min_days,default_delivery_max_days")
+        .select("id,name,price,original_price,image_url,thumbnail_url,merchant_id,is_new,is_on_sale,slug,description,discount,sales,source_country,default_delivery_min_days,default_delivery_max_days,product_type")
         .eq("is_active", true)
         .eq("is_new", true)
         .order("created_at", { ascending: false })
@@ -532,7 +520,7 @@ function Index() {
     queryFn: async () => {
       const { data } = await supabase
         .from("products")
-        .select("id,name,price,original_price,image_url,thumbnail_url,merchant_id,is_new,is_on_sale,slug,description,discount,sales,source_country,default_delivery_min_days,default_delivery_max_days")
+        .select("id,name,price,original_price,image_url,thumbnail_url,merchant_id,is_new,is_on_sale,slug,description,discount,sales,source_country,default_delivery_min_days,default_delivery_max_days,product_type")
         .eq("is_active", true)
         .or("is_on_sale.eq.true,discount.gt.0")
         .order("discount", { ascending: false })
@@ -550,7 +538,7 @@ function Index() {
       const to = from + PAGE_SIZE - 1;
       const { data, count } = await supabase
         .from("products")
-        .select("id,name,price,original_price,image_url,thumbnail_url,merchant_id,is_new,is_on_sale,slug,description,discount,sales,source_country,default_delivery_min_days,default_delivery_max_days", { count: "exact" })
+        .select("id,name,price,original_price,image_url,thumbnail_url,merchant_id,is_new,is_on_sale,slug,description,discount,sales,source_country,default_delivery_min_days,default_delivery_max_days,product_type", { count: "exact" })
         .eq("is_active", true)
         .order("created_at", { ascending: false })
         .order("id", { ascending: false })

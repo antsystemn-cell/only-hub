@@ -9,8 +9,8 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { fmtMnt } from "@/lib/format";
+import { AvailabilityBadge } from "@/components/product/ForeignOrderBadge";
 import { Store, X } from "lucide-react";
 
 export type QuickViewProduct = {
@@ -25,6 +25,7 @@ export type QuickViewProduct = {
   description?: string | null;
   slug?: string | null;
   merchant_id?: string | null;
+  product_type?: "READY_STOCK" | "FOREIGN_ORDER" | null;
 };
 
 type Props = {
@@ -106,15 +107,8 @@ export function QuickViewDialog({ open, onOpenChange, product, merchantName, mer
                 Зураг алга
               </div>
             )}
-            <div className="absolute left-3 top-3 flex flex-col gap-1">
-              {product.is_new && (
-                <Badge className="bg-primary text-primary-foreground hover:bg-primary">ШИНЭ</Badge>
-              )}
-              {product.is_on_sale && (
-                <Badge className="bg-destructive text-destructive-foreground hover:bg-destructive">
-                  SALE
-                </Badge>
-              )}
+            <div className="absolute left-3 top-3 z-10">
+              <AvailabilityBadge product={product} size="sm" />
             </div>
           </div>
 
