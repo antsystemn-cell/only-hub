@@ -74,7 +74,18 @@ export function ForeignOrderPanel({ product }: { product: Product & { source_nam
   );
 }
 
-/** Country origin badge — flag only. Renders only for KR/CN. */
+/** Estimated arrival date formatted as MM/DD based on delivery days. */
+function estimatedArrivalLabel(p: { source_country?: string | null; default_delivery_min_days?: number | null; default_delivery_max_days?: number | null }): string {
+  const fallbackDays = p.source_country === "KR" ? 8 : p.source_country === "CN" ? 6 : 10;
+  const days = p.default_delivery_max_days ?? p.default_delivery_min_days ?? fallbackDays;
+  const d = new Date();
+  d.setDate(d.getDate() + Number(days));
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${mm}/${dd}`;
+}
+
+/** Country origin + estimated arrival badge. Renders only for KR/CN. */
 export function CountryOriginBadge({
   product,
   size = "sm",
@@ -87,26 +98,27 @@ export function CountryOriginBadge({
   const c = product.source_country;
   if (c !== "KR" && c !== "CN") return null;
   const flag = c === "KR" ? "🇰🇷" : "🇨🇳";
-  const grad =
-    c === "KR"
-      ? "from-rose-500 to-indigo-600"
-      : "from-red-500 to-yellow-500";
+  const date = estimatedArrivalLabel(product);
+  const countryName = c === "KR" ? "Солонгос" : "Хятад";
   const days = deliveryRangeLabel(product as Product);
-  const sz =
-    size === "xs"
-      ? "h-6 w-6"
-      : size === "md"
-      ? "h-9 w-9"
-      : "h-7 w-7";
-  const flagSz =
-    size === "xs" ? "text-base" : size === "md" ? "text-2xl" : "text-xl";
+
+  const isXs = size === "xs";
+  const wrapper = isXs
+    ? "gap-1 px-1.5 py-0.5 text-[10px]"
+    : size === "md"
+    ? "gap-1.5 px-2.5 py-1 text-xs"
+    : "gap-1 px-2 py-0.5 text-[11px]";
+  const flagSz = isXs ? "text-base" : size === "md" ? "text-xl" : "text-lg";
+
   return (
     <span
-      className={`inline-flex items-center justify-center rounded-full bg-gradient-to-br ${grad} shadow-sm ring-1 ring-white/40 ${sz} ${className}`}
-      title={`${c === "KR" ? "Солонгос" : "Хятад"}аас захиалгаар • ${days}`}
+      className={`inline-flex items-center rounded-full border border-border/50 bg-background/90 font-medium text-foreground/70 shadow-sm backdrop-blur-sm ${wrapper} ${className}`}
+      title={`${countryName}аас захиалгаар • ойролцоогоор ${days}-н дотор • ирэх өдөр ${date}`}
     >
       <span className={`leading-none ${flagSz}`}>{flag}</span>
+      <span className="whitespace-nowrap">Ирэх өдөр: {date}</span>
     </span>
   );
 }
+
 
