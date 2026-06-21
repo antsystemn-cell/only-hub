@@ -327,10 +327,10 @@ export function ForeignProductImporter({ merchantId, source, onClose }: Props) {
       </div>
 
       {!hasSettings && (
-        <Alert className="mb-4 border-amber-300 bg-amber-50">
+        <Alert className="mb-3 border-amber-300 bg-amber-50 py-2">
           <AlertCircle className="h-4 w-4 text-amber-600" />
-          <AlertTitle>Үнэ тооцооны тохиргоо дутуу байна</AlertTitle>
-          <AlertDescription className="space-y-2">
+          <AlertTitle className="text-sm">Үнэ тооцооны тохиргоо дутуу байна</AlertTitle>
+          <AlertDescription className="space-y-2 text-xs">
             <p>
               KRW→MNT ханш болон ашгийн хувь тохируулагдаагүй учир үнэ автомат тооцох боломжгүй.
               Доорх форм-оор хурдан тохируулна уу.
