@@ -558,28 +558,28 @@ export function ForeignProductImporter({ merchantId, source, onClose }: Props) {
           })()}
 
           {preview.baseSourcePrice != null && (
-            <div className="flex flex-wrap items-center gap-3 rounded-xl border bg-muted/30 p-3 text-sm">
-              <Badge variant="secondary">
+            <div className="flex flex-wrap items-center gap-2 rounded-lg border bg-muted/30 p-2 text-xs">
+              <Badge variant="secondary" className="text-xs">
                 Үндсэн үнэ: {preview.baseSourcePrice.toLocaleString()} KRW
               </Badge>
-              <Badge variant="outline" className="text-xs">
+              <Badge variant="outline" className="text-[11px]">
                 Эх сурвалж: {preview.extractionMethod}
               </Badge>
             </div>
           )}
 
           {preview.optionGroups.length > 0 && (
-            <div className="rounded-xl border p-3">
-              <Label className="mb-2 block">Сонголтын бүлгүүд</Label>
-              <div className="space-y-2">
+            <div className="rounded-lg border p-2.5">
+              <Label className="mb-1.5 block text-xs">Сонголтын бүлгүүд</Label>
+              <div className="space-y-1.5">
                 {preview.optionGroups.map((g, i) => (
-                  <div key={i} className="flex flex-wrap items-center gap-1.5">
-                    <span className="text-sm font-medium">
+                  <div key={i} className="flex flex-wrap items-center gap-1">
+                    <span className="text-xs font-medium">
                       {g.name}
                       {g.prefix ? `: ${g.prefix}` : ""}
                     </span>
                     {g.values.map((v) => (
-                      <Badge key={v.propertyValueId} variant="outline" className="text-xs">
+                      <Badge key={v.propertyValueId} variant="outline" className="text-[11px]">
                         {v.value}
                         {v.sizeHint ? ` (${v.sizeHint})` : ""}
                       </Badge>
@@ -591,11 +591,11 @@ export function ForeignProductImporter({ merchantId, source, onClose }: Props) {
           )}
 
           {preview.productInfo.length > 0 && (
-            <div className="rounded-xl border p-3">
-              <Label className="mb-2 block">Барааны мэдээлэл</Label>
-              <div className="grid gap-1.5 sm:grid-cols-2">
+            <div className="rounded-lg border p-2.5">
+              <Label className="mb-1.5 block text-xs">Барааны мэдээлэл</Label>
+              <div className="grid gap-1 sm:grid-cols-2 text-xs">
                 {preview.productInfo.map((row, i) => (
-                  <div key={i} className="flex justify-between gap-2 text-sm">
+                  <div key={i} className="flex justify-between gap-2">
                     <span className="text-muted-foreground">{row.label}</span>
                     <span className="font-medium">{row.value}</span>
                   </div>
@@ -605,13 +605,13 @@ export function ForeignProductImporter({ merchantId, source, onClose }: Props) {
           )}
 
           {preview.productIntroSections.length > 0 && (
-            <div className="rounded-xl border p-3">
-              <Label className="mb-2 block">Танилцуулга</Label>
-              <div className="space-y-3">
+            <div className="rounded-lg border p-2.5">
+              <Label className="mb-1.5 block text-xs">Танилцуулга</Label>
+              <div className="space-y-2">
                 {preview.productIntroSections.map((s, i) => (
                   <div key={i}>
-                    <div className="text-sm font-semibold">{s.title}</div>
-                    <p className="whitespace-pre-line text-sm text-muted-foreground">
+                    <div className="text-xs font-semibold">{s.title}</div>
+                    <p className="whitespace-pre-line text-xs text-muted-foreground">
                       {s.content}
                     </p>
                   </div>
@@ -621,12 +621,12 @@ export function ForeignProductImporter({ merchantId, source, onClose }: Props) {
           )}
 
           {preview.deliveryOptions.length > 0 && (
-            <div className="rounded-xl border p-3">
-              <Label className="mb-2 block">Эх сурвалжийн хүргэлт</Label>
-              <div className="space-y-1.5">
+            <div className="rounded-lg border p-2.5">
+              <Label className="mb-1.5 block text-xs">Эх сурвалжийн хүргэлт</Label>
+              <div className="space-y-1">
                 {preview.deliveryOptions.map((d, i) => (
-                  <div key={i} className="flex flex-wrap items-center gap-2 text-sm">
-                    <Badge variant="secondary">{d.type}</Badge>
+                  <div key={i} className="flex flex-wrap items-center gap-2 text-xs">
+                    <Badge variant="secondary" className="text-[11px]">{d.type}</Badge>
                     {d.estimatedDays && (
                       <span className="text-muted-foreground">{d.estimatedDays}</span>
                     )}
@@ -634,7 +634,7 @@ export function ForeignProductImporter({ merchantId, source, onClose }: Props) {
                       <span>{d.displayedPrice.toLocaleString()} KRW</span>
                     )}
                     {d.domesticDeliveryFee != null && (
-                      <span className="text-xs text-muted-foreground">
+                      <span className="text-[11px] text-muted-foreground">
                         Дотоодын хүргэлт: {d.domesticDeliveryFee.toLocaleString()} KRW
                       </span>
                     )}
