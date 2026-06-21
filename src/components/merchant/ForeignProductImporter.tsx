@@ -517,7 +517,7 @@ export function ForeignProductImporter({ merchantId, source, onClose }: Props) {
                           }`}
                           title={isCover ? "Үндсэн зураг" : "Үндсэн зураг болгох"}
                         >
-                          <img src={g} className="h-full w-full object-contain" />
+                          <img src={g} className={`h-full w-full object-${imageFit}`} />
                           {isCover && (
                             <span className="absolute bottom-0 left-0 right-0 bg-orange-500/90 py-0.5 text-center text-[10px] font-medium text-white">
                               Үндсэн
