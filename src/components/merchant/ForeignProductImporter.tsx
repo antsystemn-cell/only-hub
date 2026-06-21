@@ -857,22 +857,22 @@ function SettingsQuickForm({
     <div className="mt-2 grid gap-2 sm:grid-cols-4">
       <div>
         <Label className="text-xs">KRW→MNT ханш</Label>
-        <Input type="number" step="0.01" value={exchangeRate || ""} onChange={(e) => setExchangeRate(Number(e.target.value) || 0)} />
+        <Input className="h-8 text-xs" type="number" step="0.01" value={exchangeRate || ""} onChange={(e) => setExchangeRate(Number(e.target.value) || 0)} />
       </div>
       <div>
         <Label className="text-xs">Ашиг %</Label>
-        <Input type="number" value={profitPercent} onChange={(e) => setProfitPercent(Number(e.target.value) || 0)} />
+        <Input className="h-8 text-xs" type="number" value={profitPercent} onChange={(e) => setProfitPercent(Number(e.target.value) || 0)} />
       </div>
       <div>
         <Label className="text-xs">Карго (MNT)</Label>
-        <Input type="number" value={cargo} onChange={(e) => setCargo(Number(e.target.value) || 0)} />
+        <Input className="h-8 text-xs" type="number" value={cargo} onChange={(e) => setCargo(Number(e.target.value) || 0)} />
       </div>
       <div>
         <Label className="text-xs">Хүргэлт (MNT)</Label>
-        <Input type="number" value={delivery} onChange={(e) => setDelivery(Number(e.target.value) || 0)} />
+        <Input className="h-8 text-xs" type="number" value={delivery} onChange={(e) => setDelivery(Number(e.target.value) || 0)} />
       </div>
       <div className="sm:col-span-4">
-        <Button size="sm" onClick={() => save.mutate()} disabled={save.isPending || exchangeRate <= 0}>
+        <Button size="sm" className="h-8 text-xs" onClick={() => save.mutate()} disabled={save.isPending || exchangeRate <= 0}>
           {save.isPending ? <Loader2 className="mr-2 h-3 w-3 animate-spin" /> : null}
           Тохиргоог хадгалах
         </Button>
