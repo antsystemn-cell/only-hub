@@ -74,14 +74,17 @@ export function ForeignOrderPanel({ product }: { product: Product & { source_nam
   );
 }
 
-/** Estimated arrival date formatted as MM/DD based on delivery days. */
+/** Estimated arrival date formatted as MM/DD in Asia/Ulaanbaatar timezone (UTC+8). */
 function estimatedArrivalLabel(p: { source_country?: string | null; default_delivery_min_days?: number | null; default_delivery_max_days?: number | null }): string {
   const fallbackDays = p.source_country === "KR" ? 8 : p.source_country === "CN" ? 6 : 10;
-  const days = p.default_delivery_max_days ?? p.default_delivery_min_days ?? fallbackDays;
-  const d = new Date();
-  d.setDate(d.getDate() + Number(days));
-  const mm = String(d.getMonth() + 1).padStart(2, "0");
-  const dd = String(d.getDate()).padStart(2, "0");
+  const rawDays = p.default_delivery_max_days ?? p.default_delivery_min_days ?? fallbackDays;
+  const days = Number(rawDays);
+  if (!Number.isFinite(days) || days <= 0) return "—";
+  // Compute "today" in Ulaanbaatar (UTC+8) regardless of server/client timezone.
+  const nowUB = new Date(Date.now() + 8 * 60 * 60 * 1000);
+  nowUB.setUTCDate(nowUB.getUTCDate() + days);
+  const mm = String(nowUB.getUTCMonth() + 1).padStart(2, "0");
+  const dd = String(nowUB.getUTCDate()).padStart(2, "0");
   return `${mm}/${dd}`;
 }
 
