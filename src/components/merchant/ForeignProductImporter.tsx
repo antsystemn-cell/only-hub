@@ -421,17 +421,40 @@ export function ForeignProductImporter({ merchantId, source, onClose }: Props) {
                   <Input value={preview.brand} onChange={(e) => setPreview({ ...preview, brand: e.target.value })} />
                 </div>
                 <div>
-                  <Label>Эх сурвалжийн линк</Label>
-                  <a
-                    href={preview.sourceUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="mt-2 flex items-center gap-1 truncate text-xs text-orange-600 hover:underline"
+                  <Label>Ангилал</Label>
+                  <Select
+                    value={preview.category}
+                    onValueChange={(v) => setPreview({ ...preview, category: v })}
                   >
-                    {preview.sourceUrl}
-                    <ExternalLink className="h-3 w-3" />
-                  </a>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Ангилал сонгох" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {categories.length === 0 && (
+                        <SelectItem value="__none__" disabled>
+                          Ангилал олдсонгүй
+                        </SelectItem>
+                      )}
+                      {categories.map((c: any) => (
+                        <SelectItem key={c.id} value={c.name}>
+                          {c.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
+              </div>
+              <div>
+                <Label>Эх сурвалжийн линк</Label>
+                <a
+                  href={preview.sourceUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="mt-2 flex items-center gap-1 truncate text-xs text-orange-600 hover:underline"
+                >
+                  {preview.sourceUrl}
+                  <ExternalLink className="h-3 w-3" />
+                </a>
               </div>
               <div>
                 <Label>Тайлбар</Label>
