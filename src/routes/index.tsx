@@ -538,7 +538,7 @@ function Index() {
       const to = from + PAGE_SIZE - 1;
       const { data, count } = await supabase
         .from("products")
-        .select("id,name,price,original_price,image_url,thumbnail_url,merchant_id,is_new,is_on_sale,slug,description,discount,sales,source_country,default_delivery_min_days,default_delivery_max_days", { count: "exact" })
+        .select("id,name,price,original_price,image_url,thumbnail_url,merchant_id,is_new,is_on_sale,slug,description,discount,sales,source_country,default_delivery_min_days,default_delivery_max_days,product_type", { count: "exact" })
         .eq("is_active", true)
         .order("created_at", { ascending: false })
         .order("id", { ascending: false })
