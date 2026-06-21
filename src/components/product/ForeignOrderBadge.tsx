@@ -74,7 +74,7 @@ export function ForeignOrderPanel({ product }: { product: Product & { source_nam
   );
 }
 
-/** Country origin badge — flag + country + delivery days. Renders only for KR/CN. */
+/** Country origin badge — large flag + delivery days. Renders only for KR/CN. */
 export function CountryOriginBadge({
   product,
   size = "sm",
@@ -87,7 +87,6 @@ export function CountryOriginBadge({
   const c = product.source_country;
   if (c !== "KR" && c !== "CN") return null;
   const flag = c === "KR" ? "🇰🇷" : "🇨🇳";
-  const country = c === "KR" ? "Солонгос" : "Хятад";
   const grad =
     c === "KR"
       ? "from-rose-500 to-indigo-600"
@@ -99,13 +98,14 @@ export function CountryOriginBadge({
       : size === "md"
       ? "px-2.5 py-1 text-xs gap-1.5"
       : "px-2 py-0.5 text-[11px] gap-1";
+  const flagSz =
+    size === "xs" ? "text-base" : size === "md" ? "text-xl" : "text-lg";
   return (
     <span
       className={`inline-flex items-center rounded-full bg-gradient-to-r ${grad} font-semibold text-white shadow-sm ring-1 ring-white/40 ${sz} ${className}`}
-      title={`${country}аас захиалгаар • ${days}`}
+      title={`${c === "KR" ? "Солонгос" : "Хятад"}аас захиалгаар • ${days}`}
     >
-      <span className="leading-none">{flag}</span>
-      <span className="leading-none">{country}</span>
+      <span className={`leading-none ${flagSz}`}>{flag}</span>
       <span className="rounded-full bg-white/25 px-1.5 py-[1px] leading-none backdrop-blur-sm">{days}</span>
     </span>
   );
