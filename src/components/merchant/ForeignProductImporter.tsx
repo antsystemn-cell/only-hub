@@ -313,14 +313,14 @@ export function ForeignProductImporter({ merchantId, source, onClose }: Props) {
   });
 
   return (
-    <Card className="rounded-2xl p-6">
-      <div className="mb-4 flex items-center gap-3">
-        <Button variant="ghost" size="icon" onClick={onClose}>
+    <Card className="rounded-2xl p-4 md:p-5">
+      <div className="mb-3 flex items-center gap-2">
+        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onClose}>
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div>
-          <h2 className="text-lg font-semibold">{sourceDef.name}-аас бараа татах</h2>
-          <p className="text-sm text-muted-foreground">
+          <h2 className="text-base font-semibold">{sourceDef.name}-аас бараа татах</h2>
+          <p className="text-xs text-muted-foreground">
             {sourceDef.country} • {sourceDef.currency} • {sourceDef.defaultDeliveryMinDays}–{sourceDef.defaultDeliveryMaxDays} хоног
           </p>
         </div>
