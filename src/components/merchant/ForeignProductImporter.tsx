@@ -186,6 +186,67 @@ export function ForeignProductImporter({ merchantId, source, onClose }: Props) {
           ? "Бүх мэдээлэл амжилттай татагдлаа"
           : "Мэдээлэл хэсэгчлэн татагдлаа. Гараар засна уу.",
       );
+
+      // Auto-translate all foreign text → Mongolian in the background.
+      const p2 = res.parsed!;
+      const intro2 = (p2 as any).productIntroSections?.[0]?.content as string | undefined;
+      const payload = {
+        title: p2.title ?? "",
+        brand: (p2 as any).brand ?? "",
+        category: (p2 as any).category ?? "",
+        description: p2.description ?? intro2 ?? "",
+        productInfo: ((p2 as any).productInfo ?? []) as Array<{ label: string; value: string }>,
+        productIntroSections: ((p2 as any).productIntroSections ?? []) as Array<{ title: string; content: string }>,
+        optionGroups: ((p2 as any).optionGroups ?? []) as OptionGroupPreview[],
+        variants: (p2.variants ?? []).map((v: any) => ({
+          sizeLabel: v.sizeLabel ?? "",
+          colorLabel: v.colorLabel ?? null,
+        })),
+      };
+      const tToast = toast.loading("Монгол хэл рүү орчуулж байна...");
+      setIsTranslating(true);
+      translateFn({ data: payload })
+        .then((r) => {
+          if (!r.ok || !r.data) {
+            toast.error(r.message ?? "Орчуулга амжилтгүй", { id: tToast });
+            return;
+          }
+          const t = r.data;
+          setPreview((cur) =>
+            cur
+              ? {
+                  ...cur,
+                  title: t.title || cur.title,
+                  brand: t.brand || cur.brand,
+                  category: t.category || cur.category,
+                  description: t.description || cur.description,
+                  productInfo: t.productInfo?.length ? t.productInfo : cur.productInfo,
+                  productIntroSections: t.productIntroSections?.length
+                    ? t.productIntroSections
+                    : cur.productIntroSections,
+                  optionGroups: t.optionGroups?.length
+                    ? (t.optionGroups as OptionGroupPreview[])
+                    : cur.optionGroups,
+                }
+              : cur,
+          );
+          setVariants((cur) =>
+            cur.map((v, i) => {
+              const tv = t.variants?.[i];
+              if (!tv) return v;
+              return {
+                ...v,
+                sizeLabel: tv.sizeLabel || v.sizeLabel,
+                colorLabel: tv.colorLabel ?? v.colorLabel,
+              };
+            }),
+          );
+          toast.success("Монгол хэл рүү орчууллаа", { id: tToast });
+        })
+        .catch((e: any) => {
+          toast.error(e?.message ?? "Орчуулгын алдаа", { id: tToast });
+        })
+        .finally(() => setIsTranslating(false));
     },
     onError: (e: any) => toast.error(e.message ?? "Татах үед алдаа гарлаа"),
   });
