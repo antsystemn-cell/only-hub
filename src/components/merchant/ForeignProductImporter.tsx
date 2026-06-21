@@ -708,13 +708,13 @@ function VariantsEditor({
 
   return (
     <div>
-      <div className="mb-2 flex items-center justify-between">
-        <Label>Хувилбарууд</Label>
-        <Button size="sm" variant="outline" onClick={add}>
+      <div className="mb-1.5 flex items-center justify-between">
+        <Label className="text-xs">Хувилбарууд</Label>
+        <Button size="sm" variant="outline" className="h-7 text-xs" onClick={add}>
           <Plus className="mr-1 h-3 w-3" /> Нэмэх
         </Button>
       </div>
-      <div className="space-y-2">
+      <div className="space-y-1.5">
         {variants.map((v, i) => {
           const pricing =
             hasSettings && v.sourcePrice > 0
@@ -723,20 +723,20 @@ function VariantsEditor({
           return (
             <div
               key={i}
-              className={`grid grid-cols-12 items-center gap-2 rounded-xl border p-2.5 ${
+              className={`grid grid-cols-12 items-center gap-1.5 rounded-lg border p-2 text-xs ${
                 v.availabilityStatus === "UNAVAILABLE" ? "bg-red-50/50 border-red-200" :
                 v.availabilityStatus === "LOW_STOCK" ? "bg-amber-50/50 border-amber-200" :
                 v.availabilityStatus === "UNKNOWN" ? "bg-muted/40" : ""
               }`}
             >
               <Input
-                className="col-span-3"
+                className="col-span-3 h-8 text-xs"
                 placeholder="Хэмжээ (e.g. 250)"
                 value={v.sizeLabel}
                 onChange={(e) => update(i, { sizeLabel: e.target.value })}
               />
               <Input
-                className="col-span-2"
+                className="col-span-2 h-8 text-xs"
                 placeholder="Өнгө"
                 value={v.colorLabel ?? ""}
                 onChange={(e) => update(i, { colorLabel: e.target.value || null })}
@@ -744,15 +744,16 @@ function VariantsEditor({
               <div className="col-span-2 flex items-center gap-1">
                 <Input
                   type="number"
+                  className="h-8 text-xs"
                   placeholder={`Үнэ ${currency}`}
                   value={v.sourcePrice || ""}
                   onChange={(e) => update(i, { sourcePrice: Number(e.target.value) || 0 })}
                 />
-                <span className="text-xs text-muted-foreground">{currency}</span>
+                <span className="text-[10px] text-muted-foreground">{currency}</span>
               </div>
-              <div className="col-span-2 flex flex-col items-start gap-1">
+              <div className="col-span-2 flex flex-col items-start gap-0.5">
                 <AvailabilityBadge status={v.availabilityStatus} />
-                <label className="flex items-center gap-1 text-[11px] text-muted-foreground">
+                <label className="flex items-center gap-1 text-[10px] text-muted-foreground">
                   <input
                     type="checkbox"
                     checked={v.isPurchasable}
@@ -770,22 +771,22 @@ function VariantsEditor({
                   Зарагдана
                 </label>
               </div>
-              <div className="col-span-2 text-right text-sm font-semibold">
+              <div className="col-span-2 text-right text-xs font-semibold">
                 {pricing ? (
                   <span className="text-orange-600">{fmtMnt(pricing.roundedCustomerPriceMnt)}</span>
                 ) : (
-                  <span className="text-muted-foreground text-xs">—</span>
+                  <span className="text-muted-foreground text-[10px]">—</span>
                 )}
               </div>
-              <Button variant="ghost" size="icon" className="col-span-1" onClick={() => remove(i)}>
-                <Trash2 className="h-4 w-4" />
+              <Button variant="ghost" size="icon" className="col-span-1 h-7 w-7" onClick={() => remove(i)}>
+                <Trash2 className="h-3.5 w-3.5" />
               </Button>
             </div>
           );
         })}
       </div>
       {!hasSettings && (
-        <p className="mt-2 text-xs text-amber-700">
+        <p className="mt-1.5 text-xs text-amber-700">
           Үнэ тооцоог идэвхжүүлэхийн тулд эхлээд тохиргоог хадгална уу.
         </p>
       )}
