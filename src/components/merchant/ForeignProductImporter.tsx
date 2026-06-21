@@ -107,6 +107,7 @@ export function ForeignProductImporter({ merchantId, source, onClose }: Props) {
   const [preview, setPreview] = useState<ParsedPreview | null>(null);
   const [variants, setVariants] = useState<VariantDraft[]>([]);
   const [warnings, setWarnings] = useState<string[]>([]);
+  const [imageFit, setImageFit] = useState<"contain" | "cover">("contain");
 
   // ----- Settings -----
   const fetchSettings = useServerFn(getMerchantForeignSettings);
