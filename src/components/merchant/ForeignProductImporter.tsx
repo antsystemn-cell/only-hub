@@ -373,11 +373,15 @@ export function ForeignProductImporter({ merchantId, source, onClose }: Props) {
 
           <div className="grid gap-4 md:grid-cols-[180px_1fr]">
             <div>
-              {preview.coverImage ? (
-                <img src={preview.coverImage} className="aspect-square w-full rounded-xl object-cover" />
-              ) : (
-                <div className="aspect-square w-full rounded-xl border-2 border-dashed bg-muted" />
-              )}
+              <div className="flex aspect-square w-full items-center justify-center overflow-hidden rounded-xl border bg-muted">
+                {preview.coverImage ? (
+                  <img src={preview.coverImage} className="h-full w-full object-contain" />
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center text-sm text-muted-foreground">
+                    Зураг алга
+                  </div>
+                )}
+              </div>
               <Input
                 className="mt-2 text-xs"
                 placeholder="Үндсэн зураг URL"
