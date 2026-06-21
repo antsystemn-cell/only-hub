@@ -505,7 +505,7 @@ function Index() {
     queryFn: async () => {
       const { data } = await supabase
         .from("products")
-        .select("id,name,price,original_price,image_url,thumbnail_url,merchant_id,is_new,is_on_sale,slug,description,discount,sales,source_country,default_delivery_min_days,default_delivery_max_days")
+        .select("id,name,price,original_price,image_url,thumbnail_url,merchant_id,is_new,is_on_sale,slug,description,discount,sales,source_country,default_delivery_min_days,default_delivery_max_days,product_type")
         .eq("is_active", true)
         .eq("is_new", true)
         .order("created_at", { ascending: false })
