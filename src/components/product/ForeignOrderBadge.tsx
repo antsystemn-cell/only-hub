@@ -105,21 +105,40 @@ export function CountryOriginBadge({
   const countryName = c === "KR" ? "Солонгос" : "Хятад";
   const days = deliveryRangeLabel(product as Product);
 
-  const isXs = size === "xs";
-  const wrapper = isXs
-    ? "gap-1 px-1.5 py-0.5 text-[10px]"
-    : size === "md"
-    ? "gap-1.5 px-2.5 py-1 text-xs"
-    : "gap-1 px-2 py-0.5 text-[11px]";
-  const flagSz = isXs ? "text-base" : size === "md" ? "text-xl" : "text-lg";
+  const config = {
+    xs: {
+      wrapper: "gap-1 px-2 py-0.5",
+      flag: "text-base",
+      text: "text-[10px] font-semibold",
+      showLabel: false,
+    },
+    sm: {
+      wrapper: "gap-1.5 px-2.5 py-1",
+      flag: "text-base",
+      text: "text-xs font-medium",
+      showLabel: true,
+    },
+    md: {
+      wrapper: "gap-2 px-3 py-1.5",
+      flag: "text-lg",
+      text: "text-sm font-medium",
+      showLabel: true,
+    },
+  }[size];
 
   return (
     <span
-      className={`inline-flex items-center rounded-full border border-border/50 bg-background/90 font-medium text-foreground/70 shadow-sm backdrop-blur-sm ${wrapper} ${className}`}
+      className={`inline-flex items-center rounded-full border border-orange-200 bg-orange-50 font-display text-orange-900 shadow-sm transition-shadow duration-150 hover:shadow-md ${config.wrapper} ${className}`}
       title={`${countryName}аас захиалгаар • ойролцоогоор ${days}-н дотор • ирэх өдөр ${date}`}
     >
-      <span className={`leading-none ${flagSz}`}>{flag}</span>
-      <span className="whitespace-nowrap">Ирэх өдөр: {date}</span>
+      <span className={`leading-none ${config.flag}`}>{flag}</span>
+      {config.showLabel ? (
+        <span className={`whitespace-nowrap tracking-tight ${config.text}`}>
+          Ирэх өдөр: <span className="font-semibold">{date}</span>
+        </span>
+      ) : (
+        <span className={`whitespace-nowrap tracking-tight ${config.text}`}>{date}</span>
+      )}
     </span>
   );
 }
