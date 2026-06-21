@@ -18,9 +18,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { toast } from "sonner";
 import {
-  AlertCircle, ArrowLeft, CheckCircle2, Download, ExternalLink, Loader2, Plus, Trash2, X,
+  AlertCircle, ArrowLeft, CheckCircle2, Crop, Download, ExternalLink, Loader2, Maximize, Plus, Trash2, X,
 } from "lucide-react";
 import {
   previewForeignImport,
@@ -106,6 +107,7 @@ export function ForeignProductImporter({ merchantId, source, onClose }: Props) {
   const [preview, setPreview] = useState<ParsedPreview | null>(null);
   const [variants, setVariants] = useState<VariantDraft[]>([]);
   const [warnings, setWarnings] = useState<string[]>([]);
+  const [imageFit, setImageFit] = useState<"contain" | "cover">("contain");
 
   // ----- Settings -----
   const fetchSettings = useServerFn(getMerchantForeignSettings);
@@ -394,11 +396,24 @@ export function ForeignProductImporter({ merchantId, source, onClose }: Props) {
 
           <div className="grid gap-4 md:grid-cols-[260px_1fr]">
             <div>
-              <div className="flex w-full items-center justify-center overflow-hidden rounded-xl border bg-muted">
+              <ToggleGroup
+                type="single"
+                value={imageFit}
+                onValueChange={(v) => v && setImageFit(v as "contain" | "cover")}
+                className="mb-2"
+              >
+                <ToggleGroupItem value="contain" aria-label="Бүтэн харуулах">
+                  <Maximize className="mr-1 h-4 w-4" /> Бүтэн
+                </ToggleGroupItem>
+                <ToggleGroupItem value="cover" aria-label="Crop харуулах">
+                  <Crop className="mr-1 h-4 w-4" /> Crop
+                </ToggleGroupItem>
+              </ToggleGroup>
+              <div className="flex aspect-square w-full items-center justify-center overflow-hidden rounded-xl border bg-muted">
                 {preview.coverImage ? (
-                  <img src={preview.coverImage} className="max-h-[320px] w-full object-contain" />
+                  <img src={preview.coverImage} className={`h-full w-full object-${imageFit}`} />
                 ) : (
-                  <div className="flex aspect-square w-full items-center justify-center text-sm text-muted-foreground">
+                  <div className="flex w-full items-center justify-center text-sm text-muted-foreground">
                     Зураг алга
                   </div>
                 )}
@@ -502,7 +517,7 @@ export function ForeignProductImporter({ merchantId, source, onClose }: Props) {
                           }`}
                           title={isCover ? "Үндсэн зураг" : "Үндсэн зураг болгох"}
                         >
-                          <img src={g} className="h-full w-full object-contain" />
+                          <img src={g} className={`h-full w-full object-${imageFit}`} />
                           {isCover && (
                             <span className="absolute bottom-0 left-0 right-0 bg-orange-500/90 py-0.5 text-center text-[10px] font-medium text-white">
                               Үндсэн
