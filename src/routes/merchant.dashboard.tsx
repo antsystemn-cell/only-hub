@@ -16,6 +16,13 @@ function DashboardShell() {
   const { user, loading, primaryMerchantId, isPlatformAdmin, rolesLoaded, rolesError, refreshRoles } = useAuth();
   const navigate = useNavigate();
 
+  // Track whether we've ever successfully loaded roles. After that, refreshes
+  // (e.g. on tab refocus when supabase fires SIGNED_IN) must not unmount the
+  // dashboard — otherwise any in-progress work like the foreign-product
+  // importer's typed URL is wiped.
+  const everReady = useRef(false);
+  if (user && rolesLoaded && primaryMerchantId) everReady.current = true;
+
   useEffect(() => {
     if (loading || (user && !rolesLoaded) || rolesError) return;
     if (!user) navigate({ to: "/merchant/login" });
@@ -32,7 +39,7 @@ function DashboardShell() {
       .maybeSingle()).data as any,
   });
 
-  if (loading || (user && !rolesLoaded)) {
+  if (!everReady.current && (loading || (user && !rolesLoaded))) {
     return <div className="flex min-h-screen items-center justify-center text-muted-foreground">Уншиж байна...</div>;
   }
 
