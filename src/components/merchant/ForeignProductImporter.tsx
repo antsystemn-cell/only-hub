@@ -396,11 +396,24 @@ export function ForeignProductImporter({ merchantId, source, onClose }: Props) {
 
           <div className="grid gap-4 md:grid-cols-[260px_1fr]">
             <div>
-              <div className="flex w-full items-center justify-center overflow-hidden rounded-xl border bg-muted">
+              <ToggleGroup
+                type="single"
+                value={imageFit}
+                onValueChange={(v) => v && setImageFit(v as "contain" | "cover")}
+                className="mb-2"
+              >
+                <ToggleGroupItem value="contain" aria-label="Бүтэн харуулах">
+                  <Maximize className="mr-1 h-4 w-4" /> Бүтэн
+                </ToggleGroupItem>
+                <ToggleGroupItem value="cover" aria-label="Crop харуулах">
+                  <Crop className="mr-1 h-4 w-4" /> Crop
+                </ToggleGroupItem>
+              </ToggleGroup>
+              <div className="flex aspect-square w-full items-center justify-center overflow-hidden rounded-xl border bg-muted">
                 {preview.coverImage ? (
-                  <img src={preview.coverImage} className="max-h-[320px] w-full object-contain" />
+                  <img src={preview.coverImage} className={`h-full w-full object-${imageFit}`} />
                 ) : (
-                  <div className="flex aspect-square w-full items-center justify-center text-sm text-muted-foreground">
+                  <div className="flex w-full items-center justify-center text-sm text-muted-foreground">
                     Зураг алга
                   </div>
                 )}
