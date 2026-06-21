@@ -419,26 +419,78 @@ export function ForeignProductImporter({ merchantId, source, onClose }: Props) {
             </div>
           </div>
 
-          {preview.gallery.length > 0 && (
-            <div>
-              <Label>Галерей ({preview.gallery.length})</Label>
-              <div className="mt-2 flex flex-wrap gap-2">
-                {preview.gallery.map((g, i) => (
-                  <div key={i} className="relative">
-                    <img src={g} className="h-16 w-16 rounded-lg object-cover" />
-                    <button
-                      onClick={() =>
-                        setPreview({ ...preview, gallery: preview.gallery.filter((_, j) => j !== i) })
-                      }
-                      className="absolute -right-1 -top-1 rounded-full bg-destructive p-0.5 text-destructive-foreground"
-                    >
-                      <X className="h-2.5 w-2.5" />
-                    </button>
-                  </div>
-                ))}
+          {(preview.coverImage || preview.gallery.length > 0) && (() => {
+            const all = [
+              ...(preview.coverImage ? [preview.coverImage] : []),
+              ...preview.gallery.filter((g) => g && g !== preview.coverImage),
+            ];
+            return (
+              <div>
+                <Label>
+                  Зургууд ({all.length})
+                  <span className="ml-2 text-xs font-normal text-muted-foreground">
+                    Үндсэн зураг сонгохдоо доорх зураг дээр дарна уу
+                  </span>
+                </Label>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {all.map((g, i) => {
+                    const isCover = g === preview.coverImage;
+                    return (
+                      <div key={`${g}-${i}`} className="relative">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (isCover) return;
+                            const newGallery = [
+                              ...(preview.coverImage ? [preview.coverImage] : []),
+                              ...preview.gallery.filter((x) => x && x !== g && x !== preview.coverImage),
+                            ];
+                            setPreview({ ...preview, coverImage: g, gallery: newGallery });
+                          }}
+                          className={`relative block h-20 w-20 overflow-hidden rounded-lg border-2 transition ${
+                            isCover
+                              ? "border-orange-500 ring-2 ring-orange-200"
+                              : "border-transparent hover:border-orange-300"
+                          }`}
+                          title={isCover ? "Үндсэн зураг" : "Үндсэн зураг болгох"}
+                        >
+                          <img src={g} className="h-full w-full object-cover" />
+                          {isCover && (
+                            <span className="absolute bottom-0 left-0 right-0 bg-orange-500/90 py-0.5 text-center text-[10px] font-medium text-white">
+                              Үндсэн
+                            </span>
+                          )}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (isCover) {
+                              const next = preview.gallery.filter((x) => x && x !== g);
+                              const [newCover, ...rest] = next;
+                              setPreview({
+                                ...preview,
+                                coverImage: newCover ?? "",
+                                gallery: rest,
+                              });
+                            } else {
+                              setPreview({
+                                ...preview,
+                                gallery: preview.gallery.filter((x) => x !== g),
+                              });
+                            }
+                          }}
+                          className="absolute -right-1 -top-1 z-10 rounded-full bg-destructive p-0.5 text-destructive-foreground shadow"
+                          title="Устгах"
+                        >
+                          <X className="h-2.5 w-2.5" />
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
-            </div>
-          )}
+            );
+          })()}
 
           {(preview.category || preview.baseSourcePrice != null) && (
             <div className="flex flex-wrap items-center gap-3 rounded-xl border bg-muted/30 p-3 text-sm">
