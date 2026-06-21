@@ -127,6 +127,8 @@ export function ForeignProductImporter({ merchantId, source, onClose }: Props) {
 
   const previewFn = useServerFn(previewForeignImport);
   const createFn = useServerFn(createForeignProduct);
+  const translateFn = useServerFn(translateForeignPreview);
+  const [isTranslating, setIsTranslating] = useState(false);
 
   const previewMutation = useMutation({
     mutationFn: async () => {
