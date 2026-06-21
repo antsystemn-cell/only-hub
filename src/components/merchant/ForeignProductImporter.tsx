@@ -491,13 +491,13 @@ export function ForeignProductImporter({ merchantId, source, onClose }: Props) {
             ];
             return (
               <div>
-                <Label>
+                <Label className="text-xs">
                   Зургууд ({all.length})
-                  <span className="ml-2 text-xs font-normal text-muted-foreground">
+                  <span className="ml-2 text-[11px] font-normal text-muted-foreground">
                     Үндсэн зураг сонгохдоо доорх зураг дээр дарна уу
                   </span>
                 </Label>
-                <div className="mt-2 flex flex-wrap gap-2">
+                <div className="mt-1.5 flex flex-wrap gap-1.5">
                   {all.map((g, i) => {
                     const isCover = g === preview.coverImage;
                     return (
@@ -512,7 +512,7 @@ export function ForeignProductImporter({ merchantId, source, onClose }: Props) {
                             ];
                             setPreview({ ...preview, coverImage: g, gallery: newGallery });
                           }}
-                          className={`relative block h-24 w-24 overflow-hidden rounded-lg border-2 transition ${
+                          className={`relative block h-20 w-20 overflow-hidden rounded-lg border-2 transition ${
                             isCover
                               ? "border-orange-500 ring-2 ring-orange-200"
                               : "border-transparent hover:border-orange-300"
