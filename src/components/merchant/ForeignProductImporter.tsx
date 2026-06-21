@@ -115,6 +115,19 @@ export function ForeignProductImporter({ merchantId, source, onClose }: Props) {
   });
   const settingsRow = settingsQuery.data?.[0] ?? null;
 
+  // ----- Categories -----
+  const { data: categories = [] } = useQuery({
+    queryKey: ["categories", merchantId],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("categories")
+        .select("*")
+        .eq("merchant_id", merchantId)
+        .order("position");
+      return data ?? [];
+    },
+  });
+
   const settings: ForeignPricingSettings = {
     defaultProfitPercent: Number(settingsRow?.default_profit_percent ?? 25),
     minimumProfitMnt: Number(settingsRow?.minimum_profit_mnt ?? 0),
