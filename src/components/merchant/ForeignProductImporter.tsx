@@ -368,80 +368,81 @@ export function ForeignProductImporter({ merchantId, source, onClose }: Props) {
       )}
 
       {step === "preview" && preview && (
-        <div className="space-y-5">
-          <div className="flex flex-wrap items-center gap-2">
+        <div className="space-y-4">
+          <div className="flex flex-wrap items-center gap-1.5">
             <ImportStatusBadge status={preview.status} />
             {preview.lowStockWarning && (
-              <Badge className="gap-1 bg-amber-100 text-amber-800 hover:bg-amber-100">
+              <Badge className="gap-1 bg-amber-100 text-amber-800 hover:bg-amber-100 text-[11px]">
                 <AlertCircle className="h-3 w-3" /> Үлдэгдэл бага (품절 임박)
               </Badge>
             )}
             {isTranslating && (
-              <Badge className="gap-1 bg-sky-100 text-sky-800 hover:bg-sky-100">
+              <Badge className="gap-1 bg-sky-100 text-sky-800 hover:bg-sky-100 text-[11px]">
                 <Loader2 className="h-3 w-3 animate-spin" /> Монгол хэл рүү орчуулж байна...
               </Badge>
             )}
           </div>
           {warnings.length > 0 && (
-            <Alert className="border-amber-300 bg-amber-50">
+            <Alert className="border-amber-300 bg-amber-50 py-2">
               <AlertCircle className="h-4 w-4 text-amber-600" />
-              <AlertTitle>Анхааруулга</AlertTitle>
+              <AlertTitle className="text-sm">Анхааруулга</AlertTitle>
               <AlertDescription>
-                <ul className="list-disc pl-5 text-sm">
+                <ul className="list-disc pl-4 text-xs">
                   {warnings.map((w, i) => <li key={i}>{w}</li>)}
                 </ul>
               </AlertDescription>
             </Alert>
           )}
 
-          <div className="grid gap-4 md:grid-cols-[260px_1fr]">
-            <div>
+          <div className="grid gap-4 md:grid-cols-[200px_1fr]">
+            <div className="space-y-2">
               <ToggleGroup
                 type="single"
                 value={imageFit}
                 onValueChange={(v) => v && setImageFit(v as "contain" | "cover")}
-                className="mb-2"
+                className="justify-start"
+                size="sm"
               >
-                <ToggleGroupItem value="contain" aria-label="Бүтэн харуулах">
-                  <Maximize className="mr-1 h-4 w-4" /> Бүтэн
+                <ToggleGroupItem value="contain" aria-label="Бүтэн харуулах" className="text-xs">
+                  <Maximize className="mr-1 h-3 w-3" /> Бүтэн
                 </ToggleGroupItem>
-                <ToggleGroupItem value="cover" aria-label="Crop харуулах">
-                  <Crop className="mr-1 h-4 w-4" /> Crop
+                <ToggleGroupItem value="cover" aria-label="Crop харуулах" className="text-xs">
+                  <Crop className="mr-1 h-3 w-3" /> Crop
                 </ToggleGroupItem>
               </ToggleGroup>
               <div className="flex aspect-square w-full items-center justify-center overflow-hidden rounded-xl border bg-muted">
                 {preview.coverImage ? (
                   <img src={preview.coverImage} className={`h-full w-full object-${imageFit}`} />
                 ) : (
-                  <div className="flex w-full items-center justify-center text-sm text-muted-foreground">
+                  <div className="flex w-full items-center justify-center text-xs text-muted-foreground">
                     Зураг алга
                   </div>
                 )}
               </div>
               <Input
-                className="mt-2 text-xs"
+                className="text-xs h-8"
                 placeholder="Үндсэн зураг URL"
                 value={preview.coverImage}
                 onChange={(e) => setPreview({ ...preview, coverImage: e.target.value })}
               />
             </div>
-            <div className="space-y-3">
+            <div className="space-y-2.5">
               <div>
-                <Label>Барааны нэр</Label>
-                <Input value={preview.title} onChange={(e) => setPreview({ ...preview, title: e.target.value })} />
+                <Label className="text-xs">Барааны нэр</Label>
+                <Input className="h-9" value={preview.title} onChange={(e) => setPreview({ ...preview, title: e.target.value })} />
               </div>
-              <div className="grid gap-3 sm:grid-cols-2">
+              <div className="grid gap-2 sm:grid-cols-3">
                 <div>
-                  <Label>Бренд</Label>
-                  <Input value={preview.brand} onChange={(e) => setPreview({ ...preview, brand: e.target.value })} />
+                  <Label className="text-xs">Бренд</Label>
+                  <Input className="h-9" value={preview.brand} onChange={(e) => setPreview({ ...preview, brand: e.target.value })} />
                 </div>
                 <div>
-                  <Label>Ангилал</Label>
+                  <Label className="text-xs">Ангилал</Label>
                   <Select
                     value={preview.category}
                     onValueChange={(v) => setPreview({ ...preview, category: v })}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="h-9 text-xs">
                       <SelectValue placeholder="Ангилал сонгох" />
                     </SelectTrigger>
                     <SelectContent>
@@ -458,23 +459,24 @@ export function ForeignProductImporter({ merchantId, source, onClose }: Props) {
                     </SelectContent>
                   </Select>
                 </div>
+                <div>
+                  <Label className="text-xs">Эх сурвалжийн линк</Label>
+                  <a
+                    href={preview.sourceUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="mt-1.5 flex items-center gap-1 truncate text-xs text-orange-600 hover:underline"
+                  >
+                    {preview.sourceUrl}
+                    <ExternalLink className="h-3 w-3" />
+                  </a>
+                </div>
               </div>
               <div>
-                <Label>Эх сурвалжийн линк</Label>
-                <a
-                  href={preview.sourceUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="mt-2 flex items-center gap-1 truncate text-xs text-orange-600 hover:underline"
-                >
-                  {preview.sourceUrl}
-                  <ExternalLink className="h-3 w-3" />
-                </a>
-              </div>
-              <div>
-                <Label>Тайлбар</Label>
+                <Label className="text-xs">Тайлбар</Label>
                 <Textarea
-                  rows={3}
+                  rows={2}
+                  className="min-h-[60px] text-sm"
                   value={preview.description}
                   onChange={(e) => setPreview({ ...preview, description: e.target.value })}
                 />
