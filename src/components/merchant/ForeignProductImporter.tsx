@@ -313,24 +313,24 @@ export function ForeignProductImporter({ merchantId, source, onClose }: Props) {
   });
 
   return (
-    <Card className="rounded-2xl p-6">
-      <div className="mb-4 flex items-center gap-3">
-        <Button variant="ghost" size="icon" onClick={onClose}>
+    <Card className="rounded-2xl p-4 md:p-5">
+      <div className="mb-3 flex items-center gap-2">
+        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onClose}>
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div>
-          <h2 className="text-lg font-semibold">{sourceDef.name}-аас бараа татах</h2>
-          <p className="text-sm text-muted-foreground">
+          <h2 className="text-base font-semibold">{sourceDef.name}-аас бараа татах</h2>
+          <p className="text-xs text-muted-foreground">
             {sourceDef.country} • {sourceDef.currency} • {sourceDef.defaultDeliveryMinDays}–{sourceDef.defaultDeliveryMaxDays} хоног
           </p>
         </div>
       </div>
 
       {!hasSettings && (
-        <Alert className="mb-4 border-amber-300 bg-amber-50">
+        <Alert className="mb-3 border-amber-300 bg-amber-50 py-2">
           <AlertCircle className="h-4 w-4 text-amber-600" />
-          <AlertTitle>Үнэ тооцооны тохиргоо дутуу байна</AlertTitle>
-          <AlertDescription className="space-y-2">
+          <AlertTitle className="text-sm">Үнэ тооцооны тохиргоо дутуу байна</AlertTitle>
+          <AlertDescription className="space-y-2 text-xs">
             <p>
               KRW→MNT ханш болон ашгийн хувь тохируулагдаагүй учир үнэ автомат тооцох боломжгүй.
               Доорх форм-оор хурдан тохируулна уу.
@@ -341,15 +341,17 @@ export function ForeignProductImporter({ merchantId, source, onClose }: Props) {
       )}
 
       {step === "url" && (
-        <div className="space-y-3">
-          <Label>{sourceDef.name} барааны линк</Label>
+        <div className="space-y-2">
+          <Label className="text-xs">{sourceDef.name} барааны линк</Label>
           <div className="flex gap-2">
             <Input
+              className="h-9 text-sm"
               placeholder="https://kr.poizon.com/product/..."
               value={url}
               onChange={(e) => setUrl(e.target.value)}
             />
             <Button
+              className="h-9 text-sm"
               onClick={() => previewMutation.mutate()}
               disabled={!url.trim() || previewMutation.isPending}
             >
@@ -361,87 +363,88 @@ export function ForeignProductImporter({ merchantId, source, onClose }: Props) {
               Мэдээлэл татах
             </Button>
           </div>
-          <p className="text-xs text-muted-foreground">
+          <p className="text-[11px] text-muted-foreground">
             Жишээ: https://kr.poizon.com/product/new-balance-530-...-60886973
           </p>
         </div>
       )}
 
       {step === "preview" && preview && (
-        <div className="space-y-5">
-          <div className="flex flex-wrap items-center gap-2">
+        <div className="space-y-4">
+          <div className="flex flex-wrap items-center gap-1.5">
             <ImportStatusBadge status={preview.status} />
             {preview.lowStockWarning && (
-              <Badge className="gap-1 bg-amber-100 text-amber-800 hover:bg-amber-100">
+              <Badge className="gap-1 bg-amber-100 text-amber-800 hover:bg-amber-100 text-[11px]">
                 <AlertCircle className="h-3 w-3" /> Үлдэгдэл бага (품절 임박)
               </Badge>
             )}
             {isTranslating && (
-              <Badge className="gap-1 bg-sky-100 text-sky-800 hover:bg-sky-100">
+              <Badge className="gap-1 bg-sky-100 text-sky-800 hover:bg-sky-100 text-[11px]">
                 <Loader2 className="h-3 w-3 animate-spin" /> Монгол хэл рүү орчуулж байна...
               </Badge>
             )}
           </div>
           {warnings.length > 0 && (
-            <Alert className="border-amber-300 bg-amber-50">
+            <Alert className="border-amber-300 bg-amber-50 py-2">
               <AlertCircle className="h-4 w-4 text-amber-600" />
-              <AlertTitle>Анхааруулга</AlertTitle>
+              <AlertTitle className="text-sm">Анхааруулга</AlertTitle>
               <AlertDescription>
-                <ul className="list-disc pl-5 text-sm">
+                <ul className="list-disc pl-4 text-xs">
                   {warnings.map((w, i) => <li key={i}>{w}</li>)}
                 </ul>
               </AlertDescription>
             </Alert>
           )}
 
-          <div className="grid gap-4 md:grid-cols-[260px_1fr]">
-            <div>
+          <div className="grid gap-4 md:grid-cols-[200px_1fr]">
+            <div className="space-y-2">
               <ToggleGroup
                 type="single"
                 value={imageFit}
                 onValueChange={(v) => v && setImageFit(v as "contain" | "cover")}
-                className="mb-2"
+                className="justify-start"
+                size="sm"
               >
-                <ToggleGroupItem value="contain" aria-label="Бүтэн харуулах">
-                  <Maximize className="mr-1 h-4 w-4" /> Бүтэн
+                <ToggleGroupItem value="contain" aria-label="Бүтэн харуулах" className="text-xs">
+                  <Maximize className="mr-1 h-3 w-3" /> Бүтэн
                 </ToggleGroupItem>
-                <ToggleGroupItem value="cover" aria-label="Crop харуулах">
-                  <Crop className="mr-1 h-4 w-4" /> Crop
+                <ToggleGroupItem value="cover" aria-label="Crop харуулах" className="text-xs">
+                  <Crop className="mr-1 h-3 w-3" /> Crop
                 </ToggleGroupItem>
               </ToggleGroup>
               <div className="flex aspect-square w-full items-center justify-center overflow-hidden rounded-xl border bg-muted">
                 {preview.coverImage ? (
                   <img src={preview.coverImage} className={`h-full w-full object-${imageFit}`} />
                 ) : (
-                  <div className="flex w-full items-center justify-center text-sm text-muted-foreground">
+                  <div className="flex w-full items-center justify-center text-xs text-muted-foreground">
                     Зураг алга
                   </div>
                 )}
               </div>
               <Input
-                className="mt-2 text-xs"
+                className="text-xs h-8"
                 placeholder="Үндсэн зураг URL"
                 value={preview.coverImage}
                 onChange={(e) => setPreview({ ...preview, coverImage: e.target.value })}
               />
             </div>
-            <div className="space-y-3">
+            <div className="space-y-2.5">
               <div>
-                <Label>Барааны нэр</Label>
-                <Input value={preview.title} onChange={(e) => setPreview({ ...preview, title: e.target.value })} />
+                <Label className="text-xs">Барааны нэр</Label>
+                <Input className="h-9" value={preview.title} onChange={(e) => setPreview({ ...preview, title: e.target.value })} />
               </div>
-              <div className="grid gap-3 sm:grid-cols-2">
+              <div className="grid gap-2 sm:grid-cols-3">
                 <div>
-                  <Label>Бренд</Label>
-                  <Input value={preview.brand} onChange={(e) => setPreview({ ...preview, brand: e.target.value })} />
+                  <Label className="text-xs">Бренд</Label>
+                  <Input className="h-9" value={preview.brand} onChange={(e) => setPreview({ ...preview, brand: e.target.value })} />
                 </div>
                 <div>
-                  <Label>Ангилал</Label>
+                  <Label className="text-xs">Ангилал</Label>
                   <Select
                     value={preview.category}
                     onValueChange={(v) => setPreview({ ...preview, category: v })}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="h-9 text-xs">
                       <SelectValue placeholder="Ангилал сонгох" />
                     </SelectTrigger>
                     <SelectContent>
@@ -458,23 +461,24 @@ export function ForeignProductImporter({ merchantId, source, onClose }: Props) {
                     </SelectContent>
                   </Select>
                 </div>
+                <div>
+                  <Label className="text-xs">Эх сурвалжийн линк</Label>
+                  <a
+                    href={preview.sourceUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="mt-1.5 flex items-center gap-1 truncate text-xs text-orange-600 hover:underline"
+                  >
+                    {preview.sourceUrl}
+                    <ExternalLink className="h-3 w-3" />
+                  </a>
+                </div>
               </div>
               <div>
-                <Label>Эх сурвалжийн линк</Label>
-                <a
-                  href={preview.sourceUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="mt-2 flex items-center gap-1 truncate text-xs text-orange-600 hover:underline"
-                >
-                  {preview.sourceUrl}
-                  <ExternalLink className="h-3 w-3" />
-                </a>
-              </div>
-              <div>
-                <Label>Тайлбар</Label>
+                <Label className="text-xs">Тайлбар</Label>
                 <Textarea
-                  rows={3}
+                  rows={2}
+                  className="min-h-[60px] text-sm"
                   value={preview.description}
                   onChange={(e) => setPreview({ ...preview, description: e.target.value })}
                 />
@@ -489,13 +493,13 @@ export function ForeignProductImporter({ merchantId, source, onClose }: Props) {
             ];
             return (
               <div>
-                <Label>
+                <Label className="text-xs">
                   Зургууд ({all.length})
-                  <span className="ml-2 text-xs font-normal text-muted-foreground">
+                  <span className="ml-2 text-[11px] font-normal text-muted-foreground">
                     Үндсэн зураг сонгохдоо доорх зураг дээр дарна уу
                   </span>
                 </Label>
-                <div className="mt-2 flex flex-wrap gap-2">
+                <div className="mt-1.5 flex flex-wrap gap-1.5">
                   {all.map((g, i) => {
                     const isCover = g === preview.coverImage;
                     return (
@@ -510,7 +514,7 @@ export function ForeignProductImporter({ merchantId, source, onClose }: Props) {
                             ];
                             setPreview({ ...preview, coverImage: g, gallery: newGallery });
                           }}
-                          className={`relative block h-24 w-24 overflow-hidden rounded-lg border-2 transition ${
+                          className={`relative block h-20 w-20 overflow-hidden rounded-lg border-2 transition ${
                             isCover
                               ? "border-orange-500 ring-2 ring-orange-200"
                               : "border-transparent hover:border-orange-300"
@@ -556,28 +560,28 @@ export function ForeignProductImporter({ merchantId, source, onClose }: Props) {
           })()}
 
           {preview.baseSourcePrice != null && (
-            <div className="flex flex-wrap items-center gap-3 rounded-xl border bg-muted/30 p-3 text-sm">
-              <Badge variant="secondary">
+            <div className="flex flex-wrap items-center gap-2 rounded-lg border bg-muted/30 p-2 text-xs">
+              <Badge variant="secondary" className="text-xs">
                 Үндсэн үнэ: {preview.baseSourcePrice.toLocaleString()} KRW
               </Badge>
-              <Badge variant="outline" className="text-xs">
+              <Badge variant="outline" className="text-[11px]">
                 Эх сурвалж: {preview.extractionMethod}
               </Badge>
             </div>
           )}
 
           {preview.optionGroups.length > 0 && (
-            <div className="rounded-xl border p-3">
-              <Label className="mb-2 block">Сонголтын бүлгүүд</Label>
-              <div className="space-y-2">
+            <div className="rounded-lg border p-2.5">
+              <Label className="mb-1.5 block text-xs">Сонголтын бүлгүүд</Label>
+              <div className="space-y-1.5">
                 {preview.optionGroups.map((g, i) => (
-                  <div key={i} className="flex flex-wrap items-center gap-1.5">
-                    <span className="text-sm font-medium">
+                  <div key={i} className="flex flex-wrap items-center gap-1">
+                    <span className="text-xs font-medium">
                       {g.name}
                       {g.prefix ? `: ${g.prefix}` : ""}
                     </span>
                     {g.values.map((v) => (
-                      <Badge key={v.propertyValueId} variant="outline" className="text-xs">
+                      <Badge key={v.propertyValueId} variant="outline" className="text-[11px]">
                         {v.value}
                         {v.sizeHint ? ` (${v.sizeHint})` : ""}
                       </Badge>
@@ -589,11 +593,11 @@ export function ForeignProductImporter({ merchantId, source, onClose }: Props) {
           )}
 
           {preview.productInfo.length > 0 && (
-            <div className="rounded-xl border p-3">
-              <Label className="mb-2 block">Барааны мэдээлэл</Label>
-              <div className="grid gap-1.5 sm:grid-cols-2">
+            <div className="rounded-lg border p-2.5">
+              <Label className="mb-1.5 block text-xs">Барааны мэдээлэл</Label>
+              <div className="grid gap-1 sm:grid-cols-2 text-xs">
                 {preview.productInfo.map((row, i) => (
-                  <div key={i} className="flex justify-between gap-2 text-sm">
+                  <div key={i} className="flex justify-between gap-2">
                     <span className="text-muted-foreground">{row.label}</span>
                     <span className="font-medium">{row.value}</span>
                   </div>
@@ -603,13 +607,13 @@ export function ForeignProductImporter({ merchantId, source, onClose }: Props) {
           )}
 
           {preview.productIntroSections.length > 0 && (
-            <div className="rounded-xl border p-3">
-              <Label className="mb-2 block">Танилцуулга</Label>
-              <div className="space-y-3">
+            <div className="rounded-lg border p-2.5">
+              <Label className="mb-1.5 block text-xs">Танилцуулга</Label>
+              <div className="space-y-2">
                 {preview.productIntroSections.map((s, i) => (
                   <div key={i}>
-                    <div className="text-sm font-semibold">{s.title}</div>
-                    <p className="whitespace-pre-line text-sm text-muted-foreground">
+                    <div className="text-xs font-semibold">{s.title}</div>
+                    <p className="whitespace-pre-line text-xs text-muted-foreground">
                       {s.content}
                     </p>
                   </div>
@@ -619,12 +623,12 @@ export function ForeignProductImporter({ merchantId, source, onClose }: Props) {
           )}
 
           {preview.deliveryOptions.length > 0 && (
-            <div className="rounded-xl border p-3">
-              <Label className="mb-2 block">Эх сурвалжийн хүргэлт</Label>
-              <div className="space-y-1.5">
+            <div className="rounded-lg border p-2.5">
+              <Label className="mb-1.5 block text-xs">Эх сурвалжийн хүргэлт</Label>
+              <div className="space-y-1">
                 {preview.deliveryOptions.map((d, i) => (
-                  <div key={i} className="flex flex-wrap items-center gap-2 text-sm">
-                    <Badge variant="secondary">{d.type}</Badge>
+                  <div key={i} className="flex flex-wrap items-center gap-2 text-xs">
+                    <Badge variant="secondary" className="text-[11px]">{d.type}</Badge>
                     {d.estimatedDays && (
                       <span className="text-muted-foreground">{d.estimatedDays}</span>
                     )}
@@ -632,7 +636,7 @@ export function ForeignProductImporter({ merchantId, source, onClose }: Props) {
                       <span>{d.displayedPrice.toLocaleString()} KRW</span>
                     )}
                     {d.domesticDeliveryFee != null && (
-                      <span className="text-xs text-muted-foreground">
+                      <span className="text-[11px] text-muted-foreground">
                         Дотоодын хүргэлт: {d.domesticDeliveryFee.toLocaleString()} KRW
                       </span>
                     )}
@@ -644,7 +648,6 @@ export function ForeignProductImporter({ merchantId, source, onClose }: Props) {
 
           <Separator />
 
-
           <VariantsEditor
             variants={variants}
             setVariants={setVariants}
@@ -653,13 +656,14 @@ export function ForeignProductImporter({ merchantId, source, onClose }: Props) {
             currency={sourceDef.currency}
           />
 
-          <div className="flex justify-end gap-2 pt-2">
-            <Button variant="outline" onClick={() => setStep("url")}>Буцах</Button>
+          <div className="flex justify-end gap-2 pt-1">
+            <Button variant="outline" size="sm" onClick={() => setStep("url")}>Буцах</Button>
             <Button
+              size="sm"
               onClick={() => createMutation.mutate()}
               disabled={!hasSettings || createMutation.isPending || !preview.title.trim()}
             >
-              {createMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+              {createMutation.isPending ? <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> : null}
               Бараа үүсгэх
             </Button>
           </div>
@@ -706,13 +710,13 @@ function VariantsEditor({
 
   return (
     <div>
-      <div className="mb-2 flex items-center justify-between">
-        <Label>Хувилбарууд</Label>
-        <Button size="sm" variant="outline" onClick={add}>
+      <div className="mb-1.5 flex items-center justify-between">
+        <Label className="text-xs">Хувилбарууд</Label>
+        <Button size="sm" variant="outline" className="h-7 text-xs" onClick={add}>
           <Plus className="mr-1 h-3 w-3" /> Нэмэх
         </Button>
       </div>
-      <div className="space-y-2">
+      <div className="space-y-1.5">
         {variants.map((v, i) => {
           const pricing =
             hasSettings && v.sourcePrice > 0
@@ -721,20 +725,20 @@ function VariantsEditor({
           return (
             <div
               key={i}
-              className={`grid grid-cols-12 items-center gap-2 rounded-xl border p-2.5 ${
+              className={`grid grid-cols-12 items-center gap-1.5 rounded-lg border p-2 text-xs ${
                 v.availabilityStatus === "UNAVAILABLE" ? "bg-red-50/50 border-red-200" :
                 v.availabilityStatus === "LOW_STOCK" ? "bg-amber-50/50 border-amber-200" :
                 v.availabilityStatus === "UNKNOWN" ? "bg-muted/40" : ""
               }`}
             >
               <Input
-                className="col-span-3"
+                className="col-span-3 h-8 text-xs"
                 placeholder="Хэмжээ (e.g. 250)"
                 value={v.sizeLabel}
                 onChange={(e) => update(i, { sizeLabel: e.target.value })}
               />
               <Input
-                className="col-span-2"
+                className="col-span-2 h-8 text-xs"
                 placeholder="Өнгө"
                 value={v.colorLabel ?? ""}
                 onChange={(e) => update(i, { colorLabel: e.target.value || null })}
@@ -742,15 +746,16 @@ function VariantsEditor({
               <div className="col-span-2 flex items-center gap-1">
                 <Input
                   type="number"
+                  className="h-8 text-xs"
                   placeholder={`Үнэ ${currency}`}
                   value={v.sourcePrice || ""}
                   onChange={(e) => update(i, { sourcePrice: Number(e.target.value) || 0 })}
                 />
-                <span className="text-xs text-muted-foreground">{currency}</span>
+                <span className="text-[10px] text-muted-foreground">{currency}</span>
               </div>
-              <div className="col-span-2 flex flex-col items-start gap-1">
+              <div className="col-span-2 flex flex-col items-start gap-0.5">
                 <AvailabilityBadge status={v.availabilityStatus} />
-                <label className="flex items-center gap-1 text-[11px] text-muted-foreground">
+                <label className="flex items-center gap-1 text-[10px] text-muted-foreground">
                   <input
                     type="checkbox"
                     checked={v.isPurchasable}
@@ -768,22 +773,22 @@ function VariantsEditor({
                   Зарагдана
                 </label>
               </div>
-              <div className="col-span-2 text-right text-sm font-semibold">
+              <div className="col-span-2 text-right text-xs font-semibold">
                 {pricing ? (
                   <span className="text-orange-600">{fmtMnt(pricing.roundedCustomerPriceMnt)}</span>
                 ) : (
-                  <span className="text-muted-foreground text-xs">—</span>
+                  <span className="text-muted-foreground text-[10px]">—</span>
                 )}
               </div>
-              <Button variant="ghost" size="icon" className="col-span-1" onClick={() => remove(i)}>
-                <Trash2 className="h-4 w-4" />
+              <Button variant="ghost" size="icon" className="col-span-1 h-7 w-7" onClick={() => remove(i)}>
+                <Trash2 className="h-3.5 w-3.5" />
               </Button>
             </div>
           );
         })}
       </div>
       {!hasSettings && (
-        <p className="mt-2 text-xs text-amber-700">
+        <p className="mt-1.5 text-xs text-amber-700">
           Үнэ тооцоог идэвхжүүлэхийн тулд эхлээд тохиргоог хадгална уу.
         </p>
       )}
@@ -854,22 +859,22 @@ function SettingsQuickForm({
     <div className="mt-2 grid gap-2 sm:grid-cols-4">
       <div>
         <Label className="text-xs">KRW→MNT ханш</Label>
-        <Input type="number" step="0.01" value={exchangeRate || ""} onChange={(e) => setExchangeRate(Number(e.target.value) || 0)} />
+        <Input className="h-8 text-xs" type="number" step="0.01" value={exchangeRate || ""} onChange={(e) => setExchangeRate(Number(e.target.value) || 0)} />
       </div>
       <div>
         <Label className="text-xs">Ашиг %</Label>
-        <Input type="number" value={profitPercent} onChange={(e) => setProfitPercent(Number(e.target.value) || 0)} />
+        <Input className="h-8 text-xs" type="number" value={profitPercent} onChange={(e) => setProfitPercent(Number(e.target.value) || 0)} />
       </div>
       <div>
         <Label className="text-xs">Карго (MNT)</Label>
-        <Input type="number" value={cargo} onChange={(e) => setCargo(Number(e.target.value) || 0)} />
+        <Input className="h-8 text-xs" type="number" value={cargo} onChange={(e) => setCargo(Number(e.target.value) || 0)} />
       </div>
       <div>
         <Label className="text-xs">Хүргэлт (MNT)</Label>
-        <Input type="number" value={delivery} onChange={(e) => setDelivery(Number(e.target.value) || 0)} />
+        <Input className="h-8 text-xs" type="number" value={delivery} onChange={(e) => setDelivery(Number(e.target.value) || 0)} />
       </div>
       <div className="sm:col-span-4">
-        <Button size="sm" onClick={() => save.mutate()} disabled={save.isPending || exchangeRate <= 0}>
+        <Button size="sm" className="h-8 text-xs" onClick={() => save.mutate()} disabled={save.isPending || exchangeRate <= 0}>
           {save.isPending ? <Loader2 className="mr-2 h-3 w-3 animate-spin" /> : null}
           Тохиргоог хадгалах
         </Button>
