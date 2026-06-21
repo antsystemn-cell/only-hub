@@ -18,6 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { toast } from "sonner";
 import {
   AlertCircle, ArrowLeft, CheckCircle2, Crop, Download, ExternalLink, Loader2, Maximize, Plus, Trash2, X,
