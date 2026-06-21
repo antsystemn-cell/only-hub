@@ -14,7 +14,7 @@ import { fmtMnt } from "@/lib/format";
 import { wishlist, useIsWishlisted } from "@/lib/wishlist";
 import { toast } from "sonner";
 import { QuickViewDialog, type QuickViewProduct } from "@/components/QuickViewDialog";
-import { CountryOriginBadge } from "@/components/product/ForeignOrderBadge";
+import { CountryOriginBadge, AvailabilityBadge } from "@/components/product/ForeignOrderBadge";
 import { AccountNav } from "@/components/AccountNav";
 import { useServerFn } from "@tanstack/react-start";
 import { getPublicBrandingFn } from "@/lib/branding.functions";
