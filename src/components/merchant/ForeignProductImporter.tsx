@@ -540,16 +540,11 @@ export function ForeignProductImporter({ merchantId, source, onClose }: Props) {
             );
           })()}
 
-          {(preview.category || preview.baseSourcePrice != null) && (
+          {preview.baseSourcePrice != null && (
             <div className="flex flex-wrap items-center gap-3 rounded-xl border bg-muted/30 p-3 text-sm">
-              {preview.category && (
-                <Badge variant="secondary">Ангилал: {preview.category}</Badge>
-              )}
-              {preview.baseSourcePrice != null && (
-                <Badge variant="secondary">
-                  Үндсэн үнэ: {preview.baseSourcePrice.toLocaleString()} KRW
-                </Badge>
-              )}
+              <Badge variant="secondary">
+                Үндсэн үнэ: {preview.baseSourcePrice.toLocaleString()} KRW
+              </Badge>
               <Badge variant="outline" className="text-xs">
                 Эх сурвалж: {preview.extractionMethod}
               </Badge>
