@@ -155,9 +155,6 @@ function StorePage() {
         <div className="mt-6 grid grid-cols-2 gap-2.5 sm:gap-3 md:grid-cols-3 lg:grid-cols-4">
           {(filteredProducts as any[]).map((p) => {
             const hasDiscount = p.original_price && Number(p.original_price) > Number(p.price);
-            const discount = hasDiscount
-              ? Math.round((1 - Number(p.price) / Number(p.original_price)) * 100)
-              : 0;
             return (
               <Link
                 key={p.id}
@@ -173,21 +170,9 @@ function StorePage() {
                         <ShoppingBag className="h-8 w-8" />
                       </div>
                     )}
-                    {discount > 0 && (
-                      <span className="absolute left-2 top-2 rounded-md bg-red-500 px-1.5 py-0.5 text-[10px] font-bold text-white shadow-sm">
-                        -{discount}%
-                      </span>
-                    )}
-                    {p.is_new && discount === 0 && !isForeignOrder(p) && (
-                      <span className="absolute left-2 top-2 rounded-md bg-emerald-500 px-1.5 py-0.5 text-[10px] font-bold text-white shadow-sm">
-                        ШИНЭ
-                      </span>
-                    )}
-                    {isForeignOrder(p) && (
-                      <div className="absolute left-2 top-2">
-                        <ForeignOrderInlineBadge product={p} />
-                      </div>
-                    )}
+                    <div className="absolute left-2 top-2 z-10">
+                      <AvailabilityBadge product={p} size="xs" />
+                    </div>
                   </div>
                   <div className="flex flex-1 flex-col gap-1 p-2.5 sm:p-3">
                     <div className="line-clamp-2 min-h-[2.25rem] text-[12px] font-medium leading-tight text-foreground/90 sm:text-[13px]">
