@@ -128,7 +128,7 @@ export function CountryOriginBadge({
 
   return (
     <span
-      className={`inline-flex items-center rounded-full border border-orange-200 bg-orange-50 font-display text-orange-900 shadow-sm transition-shadow duration-150 hover:shadow-md ${config.wrapper} ${className}`}
+      className={`inline-flex items-center rounded-full border border-orange-200 bg-orange-50 font-display text-orange-900 shadow-sm transition-shadow duration-150 hover:shadow-md dark:border-orange-800/60 dark:bg-orange-950/40 dark:text-orange-100 ${config.wrapper} ${className}`}
       title={`${countryName}аас захиалгаар • ойролцоогоор ${days}-н дотор • ирэх өдөр ${date}`}
     >
       <span className={`leading-none ${config.flag}`}>{flag}</span>
