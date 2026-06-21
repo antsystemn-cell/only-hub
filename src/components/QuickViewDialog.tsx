@@ -108,15 +108,8 @@ export function QuickViewDialog({ open, onOpenChange, product, merchantName, mer
                 Зураг алга
               </div>
             )}
-            <div className="absolute left-3 top-3 flex flex-col gap-1">
-              {product.is_new && (
-                <Badge className="bg-primary text-primary-foreground hover:bg-primary">ШИНЭ</Badge>
-              )}
-              {product.is_on_sale && (
-                <Badge className="bg-destructive text-destructive-foreground hover:bg-destructive">
-                  SALE
-                </Badge>
-              )}
+            <div className="absolute left-3 top-3 z-10">
+              <AvailabilityBadge product={product} size="sm" />
             </div>
           </div>
 
