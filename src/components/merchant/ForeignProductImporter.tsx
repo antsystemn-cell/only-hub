@@ -341,15 +341,17 @@ export function ForeignProductImporter({ merchantId, source, onClose }: Props) {
       )}
 
       {step === "url" && (
-        <div className="space-y-3">
-          <Label>{sourceDef.name} барааны линк</Label>
+        <div className="space-y-2">
+          <Label className="text-xs">{sourceDef.name} барааны линк</Label>
           <div className="flex gap-2">
             <Input
+              className="h-9 text-sm"
               placeholder="https://kr.poizon.com/product/..."
               value={url}
               onChange={(e) => setUrl(e.target.value)}
             />
             <Button
+              className="h-9 text-sm"
               onClick={() => previewMutation.mutate()}
               disabled={!url.trim() || previewMutation.isPending}
             >
@@ -361,7 +363,7 @@ export function ForeignProductImporter({ merchantId, source, onClose }: Props) {
               Мэдээлэл татах
             </Button>
           </div>
-          <p className="text-xs text-muted-foreground">
+          <p className="text-[11px] text-muted-foreground">
             Жишээ: https://kr.poizon.com/product/new-balance-530-...-60886973
           </p>
         </div>
