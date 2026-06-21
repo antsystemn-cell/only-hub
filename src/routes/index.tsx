@@ -251,6 +251,7 @@ function ProductCard({
         <div className="absolute left-2 top-2 z-10">
           <AvailabilityBadge product={p} size="xs" />
         </div>
+        <button
           type="button"
           aria-label={wished ? "Хүссэн жагсаалтаас хасах" : "Хүссэн жагсаалтад нэмэх"}
           aria-pressed={wished}
