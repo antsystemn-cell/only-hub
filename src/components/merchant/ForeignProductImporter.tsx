@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import {
-  AlertCircle, ArrowLeft, CheckCircle2, Download, ExternalLink, Loader2, Plus, Trash2, X,
+  AlertCircle, ArrowLeft, CheckCircle2, Crop, Download, ExternalLink, Loader2, Maximize, Plus, Trash2, X,
 } from "lucide-react";
 import {
   previewForeignImport,
