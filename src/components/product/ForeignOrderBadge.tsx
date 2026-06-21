@@ -3,6 +3,7 @@ import { Globe2, Clock } from "lucide-react";
 import { getForeignSourceDef } from "@/lib/foreign-orders/sources";
 import type { Database } from "@/integrations/supabase/types";
 import southKoreaFlagAsset from "@/assets/south-korea-flag.png.asset.json";
+import chinaFlagAsset from "@/assets/china-flag.png.asset.json";
 
 type Product = {
   product_type?: Database["public"]["Enums"]["product_type"] | null;
@@ -101,28 +102,25 @@ export function CountryOriginBadge({
 }) {
   const c = product.source_country;
   if (c !== "KR" && c !== "CN") return null;
-  const flag = c === "KR" ? "🇰🇷" : "🇨🇳";
   const isKR = c === "KR";
+  const flagAsset = isKR ? southKoreaFlagAsset : chinaFlagAsset;
+  const countryName = isKR ? "Солонгос" : "Хятад";
   const date = estimatedArrivalLabel(product);
-  const countryName = c === "KR" ? "Солонгос" : "Хятад";
   const days = deliveryRangeLabel(product as Product);
 
   const config = {
     xs: {
       wrapper: "gap-1 px-2 py-0.5",
-      flag: "text-base",
       flagImg: "h-3.5 w-auto",
       text: "text-[10px] font-semibold",
     },
     sm: {
       wrapper: "gap-1.5 px-2.5 py-1",
-      flag: "text-base",
       flagImg: "h-4 w-auto",
       text: "text-xs font-medium",
     },
     md: {
       wrapper: "gap-2 px-3 py-1.5",
-      flag: "text-lg",
       flagImg: "h-5 w-auto",
       text: "text-sm font-medium",
     },
@@ -133,15 +131,11 @@ export function CountryOriginBadge({
       className={`inline-flex items-center rounded-full border border-orange-200 bg-orange-50 font-display text-orange-900 shadow-sm transition-shadow duration-150 hover:shadow-md dark:border-orange-800/60 dark:bg-orange-950/40 dark:text-orange-100 ${config.wrapper} ${className}`}
       title={`${countryName}аас захиалгаар • ойролцоогоор ${days}-н дотор • ирэх хугацаа ${date}`}
     >
-      {isKR ? (
-        <img
-          src={southKoreaFlagAsset.url}
-          alt="Солонгос"
-          className={`shrink-0 rounded-sm object-cover leading-none ${config.flagImg}`}
-        />
-      ) : (
-        <span className={`leading-none ${config.flag}`}>{flag}</span>
-      )}
+      <img
+        src={flagAsset.url}
+        alt={countryName}
+        className={`shrink-0 rounded-sm object-cover leading-none ${config.flagImg}`}
+      />
       <span className={`whitespace-nowrap tracking-tight ${config.text}`}>
         ирэх хугацаа: <span className="font-semibold">{date}</span>
       </span>
