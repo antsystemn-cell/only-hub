@@ -646,7 +646,6 @@ export function ForeignProductImporter({ merchantId, source, onClose }: Props) {
 
           <Separator />
 
-
           <VariantsEditor
             variants={variants}
             setVariants={setVariants}
@@ -655,13 +654,14 @@ export function ForeignProductImporter({ merchantId, source, onClose }: Props) {
             currency={sourceDef.currency}
           />
 
-          <div className="flex justify-end gap-2 pt-2">
-            <Button variant="outline" onClick={() => setStep("url")}>Буцах</Button>
+          <div className="flex justify-end gap-2 pt-1">
+            <Button variant="outline" size="sm" onClick={() => setStep("url")}>Буцах</Button>
             <Button
+              size="sm"
               onClick={() => createMutation.mutate()}
               disabled={!hasSettings || createMutation.isPending || !preview.title.trim()}
             >
-              {createMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+              {createMutation.isPending ? <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> : null}
               Бараа үүсгэх
             </Button>
           </div>
