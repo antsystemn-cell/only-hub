@@ -120,7 +120,7 @@ function ProductDetailPage() {
     queryKey: ["related-v2", merchant?.id, product?.id, product?.category],
     enabled: !!merchant?.id && !!product?.id,
     queryFn: async () => {
-      const cols = "id,name,price,original_price,thumbnail_url,image_url,slug,is_new,is_on_sale,merchant_id";
+      const cols = "id,name,price,original_price,thumbnail_url,image_url,slug,is_new,is_on_sale,merchant_id,product_type";
       const seen = new Set<string>([product!.id]);
       const pick = (rows: any[]) => rows.filter((r) => !seen.has(r.id) && seen.add(r.id));
       // Tier 1: same store
