@@ -536,10 +536,7 @@ function ProductDetailPage() {
                 {activePriceMax ? ` – ${fmtMnt(activePriceMax)}` : ""}
               </span>
               {hasDiscount && (
-                <>
-                  <span className="text-base text-muted-foreground line-through sm:text-lg">{fmtMnt(Number(product.original_price))}</span>
-                  <Badge className="bg-red-500 text-white hover:bg-red-500">-{discountPct}%</Badge>
-                </>
+                <span className="text-base text-muted-foreground line-through sm:text-lg">{fmtMnt(Number(product.original_price))}</span>
               )}
             </div>
 
