@@ -501,12 +501,7 @@ function ProductDetailPage() {
           <div className="min-w-0">
             {/* Badges */}
             <div className="flex flex-wrap items-center gap-1.5">
-              {product.is_new && (
-                <Badge className="bg-emerald-500 px-2 py-0.5 text-xs font-semibold text-white hover:bg-emerald-500">Шинэ</Badge>
-              )}
-              {product.is_on_sale && (
-                <Badge className="bg-orange-500 px-2 py-0.5 text-xs font-semibold text-white hover:bg-orange-500">Онцлох</Badge>
-              )}
+              <AvailabilityBadge product={product} size="md" />
               {product.category && (
                 <Badge variant="secondary" className="text-xs">{product.category}</Badge>
               )}
