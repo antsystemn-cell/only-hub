@@ -398,6 +398,8 @@ function OrdersPage() {
           </CollapsibleContent>
         </Collapsible>
       )}
+        </TabsContent>
+      </Tabs>
 
       <ManualOrderDialog open={showManual} onOpenChange={setShowManual} merchantId={merchantId} onCreated={() => qc.invalidateQueries({ queryKey: ["orders", merchantId] })} />
     </div>
