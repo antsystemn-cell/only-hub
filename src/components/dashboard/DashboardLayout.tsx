@@ -4,19 +4,23 @@ import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
-  BarChart3, Package, ShoppingCart, Users, Bot, Settings, LogOut, Store, Menu, ShieldCheck, Truck, CreditCard, Globe2,
+  BarChart3, Package, ShoppingCart, Users, Bot, Settings, LogOut, Store, Menu, ShieldCheck, Truck, CreditCard, Globe2, PackageSearch,
 } from "lucide-react";
 import { useState } from "react";
 import { Sheet, SheetContent, SheetDescription, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { getMerchantCargoCounts } from "@/lib/onlycargo/cargo.functions";
 
 type Tab = { to: string; label: string; icon: typeof BarChart3; end?: boolean };
 const TABS: Tab[] = [
   { to: "/merchant/dashboard", label: "Статистик", icon: BarChart3, end: true },
   { to: "/merchant/dashboard/products", label: "Бараа", icon: Package },
   { to: "/merchant/dashboard/orders", label: "Захиалга", icon: ShoppingCart },
+  { to: "/merchant/dashboard/cargo", label: "Карго", icon: PackageSearch },
   { to: "/merchant/dashboard/foreign-queue", label: "Гадаад захиалга", icon: Globe2 },
   { to: "/merchant/dashboard/foreign-sync", label: "Гадаад sync", icon: Globe2 },
   { to: "/merchant/dashboard/delivery", label: "Хүргэлт удирдах", icon: Truck },
@@ -43,6 +47,20 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
     },
     staleTime: 1000 * 60 * 10,
   });
+
+  const cargoCountsFn = useServerFn(getMerchantCargoCounts);
+  const { data: cargoCounts } = useQuery({
+    queryKey: ["dashboard-cargo-counts", primaryMerchantId],
+    enabled: !!primaryMerchantId,
+    queryFn: () => cargoCountsFn({ data: { merchantId: primaryMerchantId! } }),
+    refetchInterval: 60_000,
+    staleTime: 30_000,
+    retry: false,
+  });
+  const cargoBadge =
+    (cargoCounts?.created ?? 0) +
+    (cargoCounts?.arrived ?? 0) +
+    (cargoCounts?.ready_for_pickup ?? 0);
 
   const SidebarContent = () => (
     <>
@@ -85,7 +103,12 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
               )}
             >
               <tab.icon className="h-4 w-4" />
-              {tab.label}
+              <span className="flex-1">{tab.label}</span>
+              {tab.to === "/merchant/dashboard/cargo" && cargoBadge > 0 && (
+                <Badge variant={active ? "secondary" : "default"} className="h-5 px-1.5 text-xs">
+                  {cargoBadge}
+                </Badge>
+              )}
             </Link>
           );
         })}

@@ -54,6 +54,7 @@ import { Route as MerchantDashboardForeignSyncRouteImport } from './routes/merch
 import { Route as MerchantDashboardForeignQueueRouteImport } from './routes/merchant.dashboard.foreign-queue'
 import { Route as MerchantDashboardDeliveryRouteImport } from './routes/merchant.dashboard.delivery'
 import { Route as MerchantDashboardChatbotRouteImport } from './routes/merchant.dashboard.chatbot'
+import { Route as MerchantDashboardCargoRouteImport } from './routes/merchant.dashboard.cargo'
 import { Route as MerchantDashboardBackupOldDeliveryRouteImport } from './routes/merchant.dashboard.backup-old-delivery'
 import { Route as AuthTokiLoginRouteImport } from './routes/auth.toki.login'
 import { Route as AuthTokiCallbackRouteImport } from './routes/auth.toki.callback'
@@ -306,6 +307,11 @@ const MerchantDashboardChatbotRoute =
     path: '/chatbot',
     getParentRoute: () => MerchantDashboardRoute,
   } as any)
+const MerchantDashboardCargoRoute = MerchantDashboardCargoRouteImport.update({
+  id: '/cargo',
+  path: '/cargo',
+  getParentRoute: () => MerchantDashboardRoute,
+} as any)
 const MerchantDashboardBackupOldDeliveryRoute =
   MerchantDashboardBackupOldDeliveryRouteImport.update({
     id: '/backup-old-delivery',
@@ -444,6 +450,7 @@ export interface FileRoutesByFullPath {
   '/auth/toki/callback': typeof AuthTokiCallbackRoute
   '/auth/toki/login': typeof AuthTokiLoginRoute
   '/merchant/dashboard/backup-old-delivery': typeof MerchantDashboardBackupOldDeliveryRoute
+  '/merchant/dashboard/cargo': typeof MerchantDashboardCargoRoute
   '/merchant/dashboard/chatbot': typeof MerchantDashboardChatbotRoute
   '/merchant/dashboard/delivery': typeof MerchantDashboardDeliveryRoute
   '/merchant/dashboard/foreign-queue': typeof MerchantDashboardForeignQueueRoute
@@ -507,6 +514,7 @@ export interface FileRoutesByTo {
   '/auth/toki/callback': typeof AuthTokiCallbackRoute
   '/auth/toki/login': typeof AuthTokiLoginRoute
   '/merchant/dashboard/backup-old-delivery': typeof MerchantDashboardBackupOldDeliveryRoute
+  '/merchant/dashboard/cargo': typeof MerchantDashboardCargoRoute
   '/merchant/dashboard/chatbot': typeof MerchantDashboardChatbotRoute
   '/merchant/dashboard/delivery': typeof MerchantDashboardDeliveryRoute
   '/merchant/dashboard/foreign-queue': typeof MerchantDashboardForeignQueueRoute
@@ -573,6 +581,7 @@ export interface FileRoutesById {
   '/auth/toki/callback': typeof AuthTokiCallbackRoute
   '/auth/toki/login': typeof AuthTokiLoginRoute
   '/merchant/dashboard/backup-old-delivery': typeof MerchantDashboardBackupOldDeliveryRoute
+  '/merchant/dashboard/cargo': typeof MerchantDashboardCargoRoute
   '/merchant/dashboard/chatbot': typeof MerchantDashboardChatbotRoute
   '/merchant/dashboard/delivery': typeof MerchantDashboardDeliveryRoute
   '/merchant/dashboard/foreign-queue': typeof MerchantDashboardForeignQueueRoute
@@ -640,6 +649,7 @@ export interface FileRouteTypes {
     | '/auth/toki/callback'
     | '/auth/toki/login'
     | '/merchant/dashboard/backup-old-delivery'
+    | '/merchant/dashboard/cargo'
     | '/merchant/dashboard/chatbot'
     | '/merchant/dashboard/delivery'
     | '/merchant/dashboard/foreign-queue'
@@ -703,6 +713,7 @@ export interface FileRouteTypes {
     | '/auth/toki/callback'
     | '/auth/toki/login'
     | '/merchant/dashboard/backup-old-delivery'
+    | '/merchant/dashboard/cargo'
     | '/merchant/dashboard/chatbot'
     | '/merchant/dashboard/delivery'
     | '/merchant/dashboard/foreign-queue'
@@ -768,6 +779,7 @@ export interface FileRouteTypes {
     | '/auth/toki/callback'
     | '/auth/toki/login'
     | '/merchant/dashboard/backup-old-delivery'
+    | '/merchant/dashboard/cargo'
     | '/merchant/dashboard/chatbot'
     | '/merchant/dashboard/delivery'
     | '/merchant/dashboard/foreign-queue'
@@ -1145,6 +1157,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MerchantDashboardChatbotRouteImport
       parentRoute: typeof MerchantDashboardRoute
     }
+    '/merchant/dashboard/cargo': {
+      id: '/merchant/dashboard/cargo'
+      path: '/cargo'
+      fullPath: '/merchant/dashboard/cargo'
+      preLoaderRoute: typeof MerchantDashboardCargoRouteImport
+      parentRoute: typeof MerchantDashboardRoute
+    }
     '/merchant/dashboard/backup-old-delivery': {
       id: '/merchant/dashboard/backup-old-delivery'
       path: '/backup-old-delivery'
@@ -1331,6 +1350,7 @@ const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
 interface MerchantDashboardRouteChildren {
   MerchantDashboardBackupOldDeliveryRoute: typeof MerchantDashboardBackupOldDeliveryRoute
+  MerchantDashboardCargoRoute: typeof MerchantDashboardCargoRoute
   MerchantDashboardChatbotRoute: typeof MerchantDashboardChatbotRoute
   MerchantDashboardDeliveryRoute: typeof MerchantDashboardDeliveryRoute
   MerchantDashboardForeignQueueRoute: typeof MerchantDashboardForeignQueueRoute
@@ -1347,6 +1367,7 @@ interface MerchantDashboardRouteChildren {
 const MerchantDashboardRouteChildren: MerchantDashboardRouteChildren = {
   MerchantDashboardBackupOldDeliveryRoute:
     MerchantDashboardBackupOldDeliveryRoute,
+  MerchantDashboardCargoRoute: MerchantDashboardCargoRoute,
   MerchantDashboardChatbotRoute: MerchantDashboardChatbotRoute,
   MerchantDashboardDeliveryRoute: MerchantDashboardDeliveryRoute,
   MerchantDashboardForeignQueueRoute: MerchantDashboardForeignQueueRoute,
