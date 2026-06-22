@@ -801,6 +801,7 @@ export type Database = {
           is_active: boolean
           logo_url: string | null
           name: string
+          onlycargo_customer_code: string | null
           owner_id: string | null
           policy_return: string | null
           policy_shipping: string | null
@@ -835,6 +836,7 @@ export type Database = {
           is_active?: boolean
           logo_url?: string | null
           name: string
+          onlycargo_customer_code?: string | null
           owner_id?: string | null
           policy_return?: string | null
           policy_shipping?: string | null
@@ -869,6 +871,7 @@ export type Database = {
           is_active?: boolean
           logo_url?: string | null
           name?: string
+          onlycargo_customer_code?: string | null
           owner_id?: string | null
           policy_return?: string | null
           policy_shipping?: string | null
