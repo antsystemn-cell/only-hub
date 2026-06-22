@@ -138,3 +138,38 @@ export const updateMerchantCargoCode = createServerFn({ method: "POST" })
     if (error) throw new Response(error.message, { status: 500 });
     return { ok: true };
   });
+
+const CreateInput = z.object({
+  merchantId: z.string().uuid(),
+  trackNumber: z.string().trim().min(3).max(80),
+  phone: z.string().trim().min(6).max(20),
+  description: z.string().trim().max(500).optional(),
+  weight: z.number().positive().max(10000).optional(),
+  length: z.number().positive().max(1000).optional(),
+  width: z.number().positive().max(1000).optional(),
+  height: z.number().positive().max(1000).optional(),
+});
+
+export const createMerchantCargo = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) => CreateInput.parse(i))
+  .handler(async ({ data, context }) => {
+    const customerCode = await resolveCustomerCode(
+      context.supabase,
+      data.merchantId,
+      context.userId,
+    );
+    const { onlyCargo } = await import("./client.server");
+    const dims =
+      data.length || data.width || data.height
+        ? { length: data.length, width: data.width, height: data.height }
+        : undefined;
+    return onlyCargo.createShipment({
+      trackNumber: data.trackNumber,
+      phone: data.phone,
+      customerCode,
+      description: data.description,
+      weight: data.weight,
+      dimensions: dims,
+    });
+  });
