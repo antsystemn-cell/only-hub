@@ -8,8 +8,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
+import { TokiSignInButton } from "@/components/auth/TokiSignInButton";
 
-const searchSchema = z.object({ redirect: z.string().optional() });
+const searchSchema = z.object({ redirect: z.string().optional(), error: z.string().optional() });
 
 export const Route = createFileRoute("/login")({
   validateSearch: (s) => searchSchema.parse(s),
@@ -36,6 +37,22 @@ function LoginPage() {
       window.location.href = to;
     }
   }, [user, search.redirect]);
+
+  useEffect(() => {
+    if (search.error) {
+      const map: Record<string, string> = {
+        toki_state_mismatch: "Toki нэвтрэлт амжилтгүй (state mismatch). Дахин оролдоно уу.",
+        toki_token_failed: "Toki серверээс токен авч чадсангүй.",
+        toki_no_identity: "Toki хэрэглэгчийн мэдээлэл олдсонгүй.",
+        toki_user_create_failed: "Хэрэглэгч үүсгэхэд алдаа гарлаа.",
+        toki_session_failed: "Сесс үүсгэхэд алдаа гарлаа.",
+        toki_not_configured: "Toki Sign in тохиргоо дутуу байна.",
+        toki_failed: "Toki нэвтрэлт амжилтгүй.",
+      };
+      toast.error(map[search.error] ?? "Нэвтрэхэд алдаа гарлаа");
+    }
+  }, [search.error]);
+
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -65,6 +82,12 @@ function LoginPage() {
           </div>
           <Button type="submit" className="w-full" disabled={loading}>{loading ? "Нэвтэрч байна..." : "Нэвтрэх"}</Button>
         </form>
+        <div className="my-5 flex items-center gap-3 text-xs text-muted-foreground">
+          <span className="h-px flex-1 bg-border" />
+          <span>эсвэл</span>
+          <span className="h-px flex-1 bg-border" />
+        </div>
+        <TokiSignInButton redirect={search.redirect && search.redirect.startsWith("/") ? search.redirect : "/"} />
         <p className="mt-4 text-center text-sm text-muted-foreground">
           Бүртгэлгүй юу? <Link to="/register" className="text-primary hover:underline">Бүртгүүлэх</Link>
         </p>

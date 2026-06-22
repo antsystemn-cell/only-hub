@@ -55,6 +55,8 @@ import { Route as MerchantDashboardForeignQueueRouteImport } from './routes/merc
 import { Route as MerchantDashboardDeliveryRouteImport } from './routes/merchant.dashboard.delivery'
 import { Route as MerchantDashboardChatbotRouteImport } from './routes/merchant.dashboard.chatbot'
 import { Route as MerchantDashboardBackupOldDeliveryRouteImport } from './routes/merchant.dashboard.backup-old-delivery'
+import { Route as AuthTokiLoginRouteImport } from './routes/auth.toki.login'
+import { Route as AuthTokiCallbackRouteImport } from './routes/auth.toki.callback'
 import { Route as AdminBlogNewRouteImport } from './routes/admin.blog.new'
 import { Route as AdminBlogIdRouteImport } from './routes/admin.blog.$id'
 import { Route as StoreMerchantSlugProductProductSlugRouteImport } from './routes/store.$merchantSlug.product.$productSlug'
@@ -309,6 +311,16 @@ const MerchantDashboardBackupOldDeliveryRoute =
     path: '/backup-old-delivery',
     getParentRoute: () => MerchantDashboardRoute,
   } as any)
+const AuthTokiLoginRoute = AuthTokiLoginRouteImport.update({
+  id: '/auth/toki/login',
+  path: '/auth/toki/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthTokiCallbackRoute = AuthTokiCallbackRouteImport.update({
+  id: '/auth/toki/callback',
+  path: '/auth/toki/callback',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminBlogNewRoute = AdminBlogNewRouteImport.update({
   id: '/blog/new',
   path: '/blog/new',
@@ -423,6 +435,8 @@ export interface FileRoutesByFullPath {
   '/blog/': typeof BlogIndexRoute
   '/admin/blog/$id': typeof AdminBlogIdRoute
   '/admin/blog/new': typeof AdminBlogNewRoute
+  '/auth/toki/callback': typeof AuthTokiCallbackRoute
+  '/auth/toki/login': typeof AuthTokiLoginRoute
   '/merchant/dashboard/backup-old-delivery': typeof MerchantDashboardBackupOldDeliveryRoute
   '/merchant/dashboard/chatbot': typeof MerchantDashboardChatbotRoute
   '/merchant/dashboard/delivery': typeof MerchantDashboardDeliveryRoute
@@ -483,6 +497,8 @@ export interface FileRoutesByTo {
   '/blog': typeof BlogIndexRoute
   '/admin/blog/$id': typeof AdminBlogIdRoute
   '/admin/blog/new': typeof AdminBlogNewRoute
+  '/auth/toki/callback': typeof AuthTokiCallbackRoute
+  '/auth/toki/login': typeof AuthTokiLoginRoute
   '/merchant/dashboard/backup-old-delivery': typeof MerchantDashboardBackupOldDeliveryRoute
   '/merchant/dashboard/chatbot': typeof MerchantDashboardChatbotRoute
   '/merchant/dashboard/delivery': typeof MerchantDashboardDeliveryRoute
@@ -546,6 +562,8 @@ export interface FileRoutesById {
   '/blog/': typeof BlogIndexRoute
   '/admin/blog/$id': typeof AdminBlogIdRoute
   '/admin/blog/new': typeof AdminBlogNewRoute
+  '/auth/toki/callback': typeof AuthTokiCallbackRoute
+  '/auth/toki/login': typeof AuthTokiLoginRoute
   '/merchant/dashboard/backup-old-delivery': typeof MerchantDashboardBackupOldDeliveryRoute
   '/merchant/dashboard/chatbot': typeof MerchantDashboardChatbotRoute
   '/merchant/dashboard/delivery': typeof MerchantDashboardDeliveryRoute
@@ -610,6 +628,8 @@ export interface FileRouteTypes {
     | '/blog/'
     | '/admin/blog/$id'
     | '/admin/blog/new'
+    | '/auth/toki/callback'
+    | '/auth/toki/login'
     | '/merchant/dashboard/backup-old-delivery'
     | '/merchant/dashboard/chatbot'
     | '/merchant/dashboard/delivery'
@@ -670,6 +690,8 @@ export interface FileRouteTypes {
     | '/blog'
     | '/admin/blog/$id'
     | '/admin/blog/new'
+    | '/auth/toki/callback'
+    | '/auth/toki/login'
     | '/merchant/dashboard/backup-old-delivery'
     | '/merchant/dashboard/chatbot'
     | '/merchant/dashboard/delivery'
@@ -732,6 +754,8 @@ export interface FileRouteTypes {
     | '/blog/'
     | '/admin/blog/$id'
     | '/admin/blog/new'
+    | '/auth/toki/callback'
+    | '/auth/toki/login'
     | '/merchant/dashboard/backup-old-delivery'
     | '/merchant/dashboard/chatbot'
     | '/merchant/dashboard/delivery'
@@ -777,6 +801,8 @@ export interface RootRouteChildren {
   StoreMerchantSlugRoute: typeof StoreMerchantSlugRouteWithChildren
   TrackTokenRoute: typeof TrackTokenRoute
   BlogIndexRoute: typeof BlogIndexRoute
+  AuthTokiCallbackRoute: typeof AuthTokiCallbackRoute
+  AuthTokiLoginRoute: typeof AuthTokiLoginRoute
   ApiPublicDeliveryWebhookRoute: typeof ApiPublicDeliveryWebhookRoute
   ApiPublicHooksForeignQueueAdvanceRoute: typeof ApiPublicHooksForeignQueueAdvanceRoute
   ApiPublicHooksForeignSourceSyncRoute: typeof ApiPublicHooksForeignSourceSyncRoute
@@ -1113,6 +1139,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MerchantDashboardBackupOldDeliveryRouteImport
       parentRoute: typeof MerchantDashboardRoute
     }
+    '/auth/toki/login': {
+      id: '/auth/toki/login'
+      path: '/auth/toki/login'
+      fullPath: '/auth/toki/login'
+      preLoaderRoute: typeof AuthTokiLoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth/toki/callback': {
+      id: '/auth/toki/callback'
+      path: '/auth/toki/callback'
+      fullPath: '/auth/toki/callback'
+      preLoaderRoute: typeof AuthTokiCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/blog/new': {
       id: '/admin/blog/new'
       path: '/blog/new'
@@ -1337,6 +1377,8 @@ const rootRouteChildren: RootRouteChildren = {
   StoreMerchantSlugRoute: StoreMerchantSlugRouteWithChildren,
   TrackTokenRoute: TrackTokenRoute,
   BlogIndexRoute: BlogIndexRoute,
+  AuthTokiCallbackRoute: AuthTokiCallbackRoute,
+  AuthTokiLoginRoute: AuthTokiLoginRoute,
   ApiPublicDeliveryWebhookRoute: ApiPublicDeliveryWebhookRoute,
   ApiPublicHooksForeignQueueAdvanceRoute:
     ApiPublicHooksForeignQueueAdvanceRoute,
