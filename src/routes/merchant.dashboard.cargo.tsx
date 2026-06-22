@@ -70,6 +70,7 @@ function CargoView({ merchantId }: { merchantId: string }) {
   const [page, setPage] = useState(1);
   const pageSize = 20;
   const [openTrack, setOpenTrack] = useState<string | null>(null);
+  const [createOpen, setCreateOpen] = useState(false);
 
   const { data: merchant } = useQuery({
     queryKey: ["merchant-onlycargo", merchantId],
