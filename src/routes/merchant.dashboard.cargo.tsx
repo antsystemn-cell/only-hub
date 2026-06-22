@@ -414,3 +414,166 @@ function fmtDate(d: any) {
     return String(d);
   }
 }
+
+function CreateCargoDialog({
+  merchantId,
+  open,
+  onClose,
+}: {
+  merchantId: string;
+  open: boolean;
+  onClose: () => void;
+}) {
+  const qc = useQueryClient();
+  const createFn = useServerFn(createMerchantCargo);
+  const [form, setForm] = useState({
+    trackNumber: "",
+    phone: "",
+    description: "",
+    weight: "",
+    length: "",
+    width: "",
+    height: "",
+  });
+
+  const reset = () =>
+    setForm({
+      trackNumber: "",
+      phone: "",
+      description: "",
+      weight: "",
+      length: "",
+      width: "",
+      height: "",
+    });
+
+  const mut = useMutation({
+    mutationFn: () => {
+      const num = (v: string) => {
+        const n = Number(v);
+        return Number.isFinite(n) && n > 0 ? n : undefined;
+      };
+      return createFn({
+        data: {
+          merchantId,
+          trackNumber: form.trackNumber.trim(),
+          phone: form.phone.trim(),
+          description: form.description.trim() || undefined,
+          weight: num(form.weight),
+          length: num(form.length),
+          width: num(form.width),
+          height: num(form.height),
+        },
+      });
+    },
+    onSuccess: () => {
+      toast.success("Ачаа амжилттай бүртгэгдлээ");
+      qc.invalidateQueries({ queryKey: ["onlycargo-list", merchantId] });
+      qc.invalidateQueries({ queryKey: ["onlycargo-counts", merchantId] });
+      reset();
+      onClose();
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Бүртгэхэд алдаа гарлаа"),
+  });
+
+  const canSubmit =
+    form.trackNumber.trim().length >= 3 && form.phone.trim().length >= 6 && !mut.isPending;
+
+  return (
+    <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Шинэ ачаа бүртгэх</DialogTitle>
+          <DialogDescription>
+            OnlyCargo систем дээр трак дугаараа бүртгэнэ.
+          </DialogDescription>
+        </DialogHeader>
+        <form
+          className="space-y-4"
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (canSubmit) mut.mutate();
+          }}
+        >
+          <div className="grid grid-cols-2 gap-3">
+            <div className="col-span-2 space-y-1.5">
+              <Label htmlFor="trackNumber">Трак дугаар *</Label>
+              <Input
+                id="trackNumber"
+                value={form.trackNumber}
+                onChange={(e) => setForm((f) => ({ ...f, trackNumber: e.target.value }))}
+                placeholder="ONLY12345"
+                maxLength={80}
+                required
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="phone">Утас *</Label>
+              <Input
+                id="phone"
+                value={form.phone}
+                onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
+                placeholder="88660000"
+                inputMode="tel"
+                maxLength={20}
+                required
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="weight">Жин (кг)</Label>
+              <Input
+                id="weight"
+                value={form.weight}
+                onChange={(e) => setForm((f) => ({ ...f, weight: e.target.value }))}
+                placeholder="1.2"
+                inputMode="decimal"
+              />
+            </div>
+            <div className="col-span-2 space-y-1.5">
+              <Label htmlFor="description">Тайлбар</Label>
+              <Input
+                id="description"
+                value={form.description}
+                onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
+                placeholder="Гутал 2ш"
+                maxLength={500}
+              />
+            </div>
+            <div className="col-span-2">
+              <Label className="text-xs text-muted-foreground">Хэмжээ (см)</Label>
+              <div className="grid grid-cols-3 gap-2 mt-1.5">
+                <Input
+                  value={form.length}
+                  onChange={(e) => setForm((f) => ({ ...f, length: e.target.value }))}
+                  placeholder="Урт"
+                  inputMode="decimal"
+                />
+                <Input
+                  value={form.width}
+                  onChange={(e) => setForm((f) => ({ ...f, width: e.target.value }))}
+                  placeholder="Өргөн"
+                  inputMode="decimal"
+                />
+                <Input
+                  value={form.height}
+                  onChange={(e) => setForm((f) => ({ ...f, height: e.target.value }))}
+                  placeholder="Өндөр"
+                  inputMode="decimal"
+                />
+              </div>
+            </div>
+          </div>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button type="button" variant="outline" onClick={onClose} disabled={mut.isPending}>
+              Болих
+            </Button>
+            <Button type="submit" disabled={!canSubmit}>
+              {mut.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Бүртгэх
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
