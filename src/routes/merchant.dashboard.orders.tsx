@@ -476,6 +476,11 @@ function OrderRow({ order, checked, onCheck, onStatus, onPayment, productImages,
                 <span className="opacity-70">• {order.delivery_order_id}</span>
               </span>
             )}
+            {order.has_foreign_order_items && (
+              <span className="inline-flex items-center gap-1 rounded-md bg-indigo-500/10 px-2 py-0.5 text-xs text-indigo-700">
+                <Globe2 className="h-3 w-3" /> Гадаад захиалга
+              </span>
+            )}
           </div>
           {itemList.length > 0 && (
             <div className="mt-2 flex items-center gap-2">
@@ -568,30 +573,11 @@ function OrderRow({ order, checked, onCheck, onStatus, onPayment, productImages,
                 </div>
               </div>
             ) : (
-              <ul className="space-y-1.5">
-                {itemList.map((it: any, i: number) => {
-                  const url = itemImageUrl(it);
-                  return (
-                    <li key={i} className="flex items-center gap-2.5">
-                      <div className="h-10 w-10 shrink-0 overflow-hidden rounded-md bg-muted">
-                        {url ? (
-                          <img
-                            src={url}
-                            alt={it?.name ?? ""}
-                            loading="lazy"
-                            decoding="async"
-                            className="h-full w-full object-cover"
-                          />
-                        ) : null}
-                      </div>
-                      <span className="flex-1 min-w-0 truncate">
-                        {it.name} × {it.quantity}{it.color ? ` • ${it.color}` : ""}{it.size ? ` • ${it.size}` : ""}
-                      </span>
-                      <span className="shrink-0 tabular-nums">{fmtMnt((it.price ?? 0) * (it.quantity ?? 1))}</span>
-                    </li>
-                  );
-                })}
-              </ul>
+              <GroupedItemsList
+                items={itemList}
+                queueByIndex={queueByIndex}
+                itemImageUrl={itemImageUrl}
+              />
             )}
           </div>
           <AddressEditor order={order} />
