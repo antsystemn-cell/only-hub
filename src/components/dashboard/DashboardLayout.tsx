@@ -48,6 +48,20 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
     staleTime: 1000 * 60 * 10,
   });
 
+  const cargoCountsFn = useServerFn(getMerchantCargoCounts);
+  const { data: cargoCounts } = useQuery({
+    queryKey: ["dashboard-cargo-counts", primaryMerchantId],
+    enabled: !!primaryMerchantId,
+    queryFn: () => cargoCountsFn({ data: { merchantId: primaryMerchantId! } }),
+    refetchInterval: 60_000,
+    staleTime: 30_000,
+    retry: false,
+  });
+  const cargoBadge =
+    (cargoCounts?.created ?? 0) +
+    (cargoCounts?.arrived ?? 0) +
+    (cargoCounts?.ready_for_pickup ?? 0);
+
   const SidebarContent = () => (
     <>
       <Link to="/merchant/dashboard" className="mb-8 flex items-center gap-2 px-2">
