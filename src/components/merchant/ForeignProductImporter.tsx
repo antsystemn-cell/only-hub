@@ -11,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Separator } from "@/components/ui/separator";
+import { Switch } from "@/components/ui/switch";
 import {
   Select,
   SelectContent,
@@ -108,6 +109,18 @@ export function ForeignProductImporter({ merchantId, source, onClose }: Props) {
   const [variants, setVariants] = useState<VariantDraft[]>([]);
   const [warnings, setWarnings] = useState<string[]>([]);
   const [imageFit, setImageFit] = useState<"contain" | "cover">("contain");
+  // Auto AI translation is OFF by default. Admins translate manually for now;
+  // toggle this to re-enable the background Mongolian translation on preview.
+  const [autoTranslate, setAutoTranslate] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    return window.localStorage.getItem("foreign-importer-auto-translate") === "1";
+  });
+  const toggleAutoTranslate = (v: boolean) => {
+    setAutoTranslate(v);
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem("foreign-importer-auto-translate", v ? "1" : "0");
+    }
+  };
 
   // ----- Settings -----
   const fetchSettings = useServerFn(getMerchantForeignSettings);
@@ -211,6 +224,8 @@ export function ForeignProductImporter({ merchantId, source, onClose }: Props) {
       );
 
       // Auto-translate all foreign text → Mongolian in the background.
+      // Гарал үүсэл: админ автомат орчуулгыг toggle-оор асаасан үед л ажиллана.
+      if (!autoTranslate) return;
       const p2 = res.parsed!;
       const intro2 = (p2 as any).productIntroSections?.[0]?.content as string | undefined;
       const payload = {
@@ -366,6 +381,23 @@ export function ForeignProductImporter({ merchantId, source, onClose }: Props) {
           <p className="text-[11px] text-muted-foreground">
             Жишээ: https://kr.poizon.com/product/new-balance-530-...-60886973
           </p>
+          <div className="mt-2 flex items-start justify-between gap-3 rounded-md border border-border/60 bg-muted/30 px-3 py-2">
+            <div className="space-y-0.5">
+              <Label htmlFor="auto-translate-toggle" className="text-xs font-medium">
+                AI автомат орчуулга (Монгол хэл рүү)
+              </Label>
+              <p className="text-[11px] text-muted-foreground">
+                {autoTranslate
+                  ? "Идэвхтэй. Мэдээлэл татсаны дараа AI автоматаар орчуулна."
+                  : "Идэвхгүй. Орчуулгыг гараар хийнэ. Шаардлагатай үед эндээс асаана уу."}
+              </p>
+            </div>
+            <Switch
+              id="auto-translate-toggle"
+              checked={autoTranslate}
+              onCheckedChange={toggleAutoTranslate}
+            />
+          </div>
         </div>
       )}
 
