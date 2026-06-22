@@ -119,11 +119,9 @@ export const Route = createFileRoute("/api/public/hooks/onlycargo")({
         try {
           const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
           await supabaseAdmin.from("webhook_events").insert({
-            source: "onlycargo",
-            event_type: event,
-            external_id: trackNumber,
+            provider: "onlycargo",
+            event_key: `${event}:${trackNumber ?? "unknown"}:${Date.now()}`,
             payload: payload as never,
-            status: "received",
           });
           // TODO: invalidate any cargo cache, push realtime notification to merchant,
           // and insert into notifications_log once merchant linkage by customer_code is wired.
