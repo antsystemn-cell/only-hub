@@ -146,14 +146,14 @@ export const onlyCargo = {
   },
 
   getHistory(trackNumber: string) {
-    return call<{ history: Array<{ status: string; at: string; note?: string }> } | unknown[]>(
+    return call<any>(
       `/shipments/${encodeURIComponent(trackNumber)}/history`,
       { method: "GET" },
     );
   },
 
   getImages(trackNumber: string) {
-    return call<{ images: string[] } | unknown[]>(
+    return call<any>(
       `/shipments/${encodeURIComponent(trackNumber)}/images`,
       { method: "GET" },
     );
