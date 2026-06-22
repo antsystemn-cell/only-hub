@@ -87,15 +87,11 @@ function MerchantDeliveryPage() {
   });
 
   if (!primaryMerchantId) {
-    return (
-      <DashboardLayout>
-        <p className="text-muted-foreground">Та эхлээд дэлгүүртэй холбогдох ёстой.</p>
-      </DashboardLayout>
-    );
+    return <p className="text-muted-foreground">Та эхлээд дэлгүүртэй холбогдох ёстой.</p>;
   }
 
   return (
-    <DashboardLayout>
+    <div>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold">Хүргэлт</h1>
@@ -135,7 +131,7 @@ function MerchantDeliveryPage() {
           ))}
         </div>
       )}
-    </DashboardLayout>
+    </div>
   );
 }
 
