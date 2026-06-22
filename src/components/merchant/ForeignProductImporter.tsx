@@ -109,6 +109,18 @@ export function ForeignProductImporter({ merchantId, source, onClose }: Props) {
   const [variants, setVariants] = useState<VariantDraft[]>([]);
   const [warnings, setWarnings] = useState<string[]>([]);
   const [imageFit, setImageFit] = useState<"contain" | "cover">("contain");
+  // Auto AI translation is OFF by default. Admins translate manually for now;
+  // toggle this to re-enable the background Mongolian translation on preview.
+  const [autoTranslate, setAutoTranslate] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    return window.localStorage.getItem("foreign-importer-auto-translate") === "1";
+  });
+  const toggleAutoTranslate = (v: boolean) => {
+    setAutoTranslate(v);
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem("foreign-importer-auto-translate", v ? "1" : "0");
+    }
+  };
 
   // ----- Settings -----
   const fetchSettings = useServerFn(getMerchantForeignSettings);
