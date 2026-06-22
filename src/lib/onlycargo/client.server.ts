@@ -172,4 +172,18 @@ export const onlyCargo = {
       { method: "GET" },
     );
   },
+
+  createShipment(payload: {
+    trackNumber: string;
+    phone: string;
+    customerCode: string;
+    description?: string;
+    weight?: number;
+    dimensions?: { length?: number; width?: number; height?: number };
+  }) {
+    return call<OnlyCargoShipment>("/shipments", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  },
 };
