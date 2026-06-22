@@ -241,6 +241,18 @@ function OrdersPage() {
         </div>
       </div>
 
+      <Tabs defaultValue="local" className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="local">Дотоод захиалга</TabsTrigger>
+          <TabsTrigger value="foreign">Гадаад захиалга</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="foreign" className="mt-0">
+          <ForeignQueueView />
+        </TabsContent>
+
+        <TabsContent value="local" className="mt-0 space-y-6">
+
       <Card className="rounded-2xl p-4">
         <div className="mb-4 grid gap-2 md:grid-cols-[1fr_180px_180px_140px_140px]">
           <div className="relative">
