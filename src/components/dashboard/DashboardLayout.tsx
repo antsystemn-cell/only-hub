@@ -103,7 +103,12 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
               )}
             >
               <tab.icon className="h-4 w-4" />
-              {tab.label}
+              <span className="flex-1">{tab.label}</span>
+              {tab.to === "/merchant/dashboard/cargo" && cargoBadge > 0 && (
+                <Badge variant={active ? "secondary" : "default"} className="h-5 px-1.5 text-xs">
+                  {cargoBadge}
+                </Badge>
+              )}
             </Link>
           );
         })}
