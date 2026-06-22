@@ -370,6 +370,7 @@ function OrdersPage() {
             <OrderRow
               key={o.id} order={o}
               productImages={productImages}
+              queueByIndex={queueByOrder[o.id] ?? {}}
               checked={selected.has(o.id)}
               onCheck={(v) => {
                 const next = new Set(selected); v ? next.add(o.id) : next.delete(o.id); setSelected(next);
@@ -424,10 +425,11 @@ function OrdersPage() {
   );
 }
 
-function OrderRow({ order, checked, onCheck, onStatus, onPayment, productImages }: {
+function OrderRow({ order, checked, onCheck, onStatus, onPayment, productImages, queueByIndex }: {
   order: any; checked: boolean; onCheck: (v: boolean) => void;
   onStatus: (s: string) => void; onPayment: (s: string) => void;
   productImages: Record<string, string>;
+  queueByIndex: Record<number, any>;
 }) {
   const [open, setOpen] = useState(false);
   const [editingItems, setEditingItems] = useState(false);
