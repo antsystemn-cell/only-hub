@@ -12,8 +12,8 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ForeignQueueView } from "@/components/dashboard/ForeignQueueView";
+import { FOREIGN_SOURCES } from "@/lib/foreign-orders/sources";
+import { Globe2, ExternalLink, Package } from "lucide-react";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
@@ -133,6 +133,33 @@ function OrdersPage() {
     },
   });
 
+  // Live queue status for foreign-order items, keyed by orderId -> itemIndex.
+  const foreignOrderIds = useMemo(
+    () => (orders as any[]).filter((o) => o.has_foreign_order_items).map((o) => o.id),
+    [orders],
+  );
+  const { data: queueByOrder = {} } = useQuery<Record<string, Record<number, any>>>({
+    queryKey: ["orders-foreign-queue", merchantId, foreignOrderIds.join(",")],
+    enabled: foreignOrderIds.length > 0,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("source_purchase_queue")
+        .select(
+          "id,order_id,order_item_index,status,source,source_url,source_price,source_currency,source_price_mnt,customer_paid_price_mnt,selected_size_label,source_variant_id,notes,updated_at",
+        )
+        .in("order_id", foreignOrderIds);
+      const map: Record<string, Record<number, any>> = {};
+      (data ?? []).forEach((row: any) => {
+        const oid = row.order_id;
+        const idx = row.order_item_index ?? 0;
+        if (!map[oid]) map[oid] = {};
+        map[oid][idx] = row;
+      });
+      return map;
+    },
+  });
+
+
   const filtered = useMemo(() => orders.filter((o: any) => {
     if (search && !((o.phone ?? "").includes(search) || (o.external_ref ?? "").toLowerCase().includes(search.toLowerCase()))) return false;
     if (statusFilter !== "all" && o.status !== statusFilter) return false;
@@ -241,17 +268,8 @@ function OrdersPage() {
         </div>
       </div>
 
-      <Tabs defaultValue="local" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="local">Дотоод захиалга</TabsTrigger>
-          <TabsTrigger value="foreign">Гадаад захиалга</TabsTrigger>
-        </TabsList>
+      <div className="space-y-6">
 
-        <TabsContent value="foreign" className="mt-0">
-          <ForeignQueueView />
-        </TabsContent>
-
-        <TabsContent value="local" className="mt-0 space-y-6">
 
       <Card className="rounded-2xl p-4">
         <div className="mb-4 grid gap-2 md:grid-cols-[1fr_180px_180px_140px_140px]">
@@ -352,6 +370,7 @@ function OrdersPage() {
             <OrderRow
               key={o.id} order={o}
               productImages={productImages}
+              queueByIndex={queueByOrder[o.id] ?? {}}
               checked={selected.has(o.id)}
               onCheck={(v) => {
                 const next = new Set(selected); v ? next.add(o.id) : next.delete(o.id); setSelected(next);
@@ -398,18 +417,19 @@ function OrdersPage() {
           </CollapsibleContent>
         </Collapsible>
       )}
-        </TabsContent>
-      </Tabs>
+      </div>
+
 
       <ManualOrderDialog open={showManual} onOpenChange={setShowManual} merchantId={merchantId} onCreated={() => qc.invalidateQueries({ queryKey: ["orders", merchantId] })} />
     </div>
   );
 }
 
-function OrderRow({ order, checked, onCheck, onStatus, onPayment, productImages }: {
+function OrderRow({ order, checked, onCheck, onStatus, onPayment, productImages, queueByIndex }: {
   order: any; checked: boolean; onCheck: (v: boolean) => void;
   onStatus: (s: string) => void; onPayment: (s: string) => void;
   productImages: Record<string, string>;
+  queueByIndex: Record<number, any>;
 }) {
   const [open, setOpen] = useState(false);
   const [editingItems, setEditingItems] = useState(false);
@@ -454,6 +474,11 @@ function OrderRow({ order, checked, onCheck, onStatus, onPayment, productImages 
                 <Truck className="h-3 w-3" />
                 {DELIVERY_STATUS_LABELS[order.delivery_status ?? "submitted"] ?? order.delivery_status}
                 <span className="opacity-70">• {order.delivery_order_id}</span>
+              </span>
+            )}
+            {order.has_foreign_order_items && (
+              <span className="inline-flex items-center gap-1 rounded-md bg-indigo-500/10 px-2 py-0.5 text-xs text-indigo-700">
+                <Globe2 className="h-3 w-3" /> Гадаад захиалга
               </span>
             )}
           </div>
@@ -548,30 +573,11 @@ function OrderRow({ order, checked, onCheck, onStatus, onPayment, productImages 
                 </div>
               </div>
             ) : (
-              <ul className="space-y-1.5">
-                {itemList.map((it: any, i: number) => {
-                  const url = itemImageUrl(it);
-                  return (
-                    <li key={i} className="flex items-center gap-2.5">
-                      <div className="h-10 w-10 shrink-0 overflow-hidden rounded-md bg-muted">
-                        {url ? (
-                          <img
-                            src={url}
-                            alt={it?.name ?? ""}
-                            loading="lazy"
-                            decoding="async"
-                            className="h-full w-full object-cover"
-                          />
-                        ) : null}
-                      </div>
-                      <span className="flex-1 min-w-0 truncate">
-                        {it.name} × {it.quantity}{it.color ? ` • ${it.color}` : ""}{it.size ? ` • ${it.size}` : ""}
-                      </span>
-                      <span className="shrink-0 tabular-nums">{fmtMnt((it.price ?? 0) * (it.quantity ?? 1))}</span>
-                    </li>
-                  );
-                })}
-              </ul>
+              <GroupedItemsList
+                items={itemList}
+                queueByIndex={queueByIndex}
+                itemImageUrl={itemImageUrl}
+              />
             )}
           </div>
           <AddressEditor order={order} />
@@ -934,6 +940,151 @@ function AddressEditor({ order }: { order: any }) {
         <p className="text-xs text-muted-foreground">
           ⚠️ Хадгалахад хүргэлтийн систем рүү шинэ хаяг автоматаар дамжина.
         </p>
+      )}
+    </div>
+  );
+}
+
+const FOREIGN_QUEUE_STATUS_LABEL: Record<string, string> = {
+  PAID: "Төлбөр төлсөн",
+  WAITING_SOURCE_PURCHASE: "Эх сурвалжаас худалдан авах хүлээгдэж буй",
+  SOURCE_PURCHASED: "Эх сурвалжаас худалдаж авсан",
+  KOREA_WAREHOUSE_RECEIVED: "Солонгос агуулахад ирсэн",
+  INTERNATIONAL_TRANSIT: "Олон улсын тээвэрт",
+  UB_ARRIVED: "УБ-д ирсэн",
+  DELIVERY_ASSIGNED: "Хүргэлтэд гарсан",
+  DELIVERED: "Хүргэгдсэн",
+  SOURCE_PURCHASE_FAILED: "Худалдан авалт амжилтгүй",
+  REFUNDED: "Буцаалт хийсэн",
+  CANCELLED: "Цуцалсан",
+};
+const FOREIGN_QUEUE_STATUS_TONE: Record<string, string> = {
+  PAID: "bg-slate-100 text-slate-700",
+  WAITING_SOURCE_PURCHASE: "bg-amber-100 text-amber-700",
+  SOURCE_PURCHASED: "bg-blue-100 text-blue-700",
+  KOREA_WAREHOUSE_RECEIVED: "bg-indigo-100 text-indigo-700",
+  INTERNATIONAL_TRANSIT: "bg-purple-100 text-purple-700",
+  UB_ARRIVED: "bg-cyan-100 text-cyan-700",
+  DELIVERY_ASSIGNED: "bg-emerald-100 text-emerald-700",
+  DELIVERED: "bg-green-100 text-green-700",
+  SOURCE_PURCHASE_FAILED: "bg-red-100 text-red-700",
+  REFUNDED: "bg-gray-100 text-gray-700",
+  CANCELLED: "bg-gray-100 text-gray-700",
+};
+
+function GroupedItemsList({
+  items,
+  queueByIndex,
+  itemImageUrl,
+}: {
+  items: any[];
+  queueByIndex: Record<number, any>;
+  itemImageUrl: (it: any) => string | null;
+}) {
+  const foreign: Array<{ it: any; i: number }> = [];
+  const ready: Array<{ it: any; i: number }> = [];
+  items.forEach((it, i) => {
+    if (it?.foreign) foreign.push({ it, i });
+    else ready.push({ it, i });
+  });
+
+  return (
+    <div className="space-y-4">
+      {ready.length > 0 && (
+        <section>
+          <div className="mb-1.5 flex items-center gap-2 text-[11px] font-semibold uppercase text-emerald-700">
+            <Package className="h-3.5 w-3.5" /> Бэлэн бараа ({ready.length})
+          </div>
+          <ul className="space-y-1.5">
+            {ready.map(({ it, i }) => {
+              const url = itemImageUrl(it);
+              return (
+                <li key={i} className="flex items-center gap-2.5">
+                  <div className="h-10 w-10 shrink-0 overflow-hidden rounded-md bg-muted">
+                    {url ? <img src={url} alt={it?.name ?? ""} loading="lazy" decoding="async" className="h-full w-full object-cover" /> : null}
+                  </div>
+                  <span className="flex-1 min-w-0 truncate">
+                    {it.name} × {it.quantity}{it.color ? ` • ${it.color}` : ""}{it.size ? ` • ${it.size}` : ""}
+                  </span>
+                  <span className="shrink-0 tabular-nums">{fmtMnt((it.price ?? 0) * (it.quantity ?? 1))}</span>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      )}
+
+      {foreign.length > 0 && (
+        <section>
+          <div className="mb-1.5 flex items-center gap-2 text-[11px] font-semibold uppercase text-indigo-700">
+            <Globe2 className="h-3.5 w-3.5" /> Гадаадаас захиалга ({foreign.length})
+          </div>
+          <ul className="space-y-2">
+            {foreign.map(({ it, i }) => {
+              const url = itemImageUrl(it);
+              const f = it.foreign ?? {};
+              const queue = queueByIndex[i];
+              const sourceUrl = queue?.source_url ?? f.source_url ?? null;
+              const sourceDef = FOREIGN_SOURCES[(queue?.source ?? f.foreign_source) as keyof typeof FOREIGN_SOURCES];
+              const sourcePrice = queue?.source_price ?? f.source_price;
+              const sourceCurrency = queue?.source_currency ?? f.source_currency;
+              const sourcePriceMnt = queue?.source_price_mnt ?? f.source_price_mnt;
+              const paidMnt = queue?.customer_paid_price_mnt ?? f.customer_paid_price_mnt ?? it.price;
+              const sizeLabel = queue?.selected_size_label ?? it.size;
+              const sku = queue?.source_variant_id ?? null;
+              const status = queue?.status ?? "PAID";
+
+              return (
+                <li key={i} className="rounded-lg border border-indigo-200/70 bg-indigo-50/30 p-2.5">
+                  <div className="flex items-start gap-2.5">
+                    <div className="h-12 w-12 shrink-0 overflow-hidden rounded-md bg-muted">
+                      {url ? <img src={url} alt={it?.name ?? ""} loading="lazy" decoding="async" className="h-full w-full object-cover" /> : null}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <span className="truncate font-medium">{it.name} × {it.quantity}</span>
+                        <span className={`rounded px-1.5 py-0.5 text-[10px] font-medium ${FOREIGN_QUEUE_STATUS_TONE[status] ?? "bg-gray-100 text-gray-700"}`}>
+                          {FOREIGN_QUEUE_STATUS_LABEL[status] ?? status}
+                        </span>
+                        {sourceDef && (
+                          <span className="rounded border border-indigo-200 bg-white px-1.5 py-0.5 text-[10px] text-indigo-700">
+                            {sourceDef.name}
+                          </span>
+                        )}
+                      </div>
+                      <div className="mt-1 grid gap-x-3 gap-y-0.5 text-xs text-muted-foreground sm:grid-cols-2">
+                        {sizeLabel && <div>Хэмжээ: <b className="text-foreground">{sizeLabel}</b></div>}
+                        {it.color && <div>Өнгө: <b className="text-foreground">{it.color}</b></div>}
+                        {sku && <div className="truncate">SKU: <span className="text-foreground">{sku}</span></div>}
+                        {(f.delivery_min_days || f.delivery_max_days) && (
+                          <div>Хүргэлт: <b className="text-foreground">{f.delivery_min_days ?? "?"}–{f.delivery_max_days ?? "?"} өдөр</b></div>
+                        )}
+                        <div>
+                          Эх үнэ: <b className="text-foreground">{sourcePrice ?? "—"} {sourceCurrency ?? ""}</b>
+                          {sourcePriceMnt != null && <> ({fmtMnt(Number(sourcePriceMnt))})</>}
+                        </div>
+                        <div>Хэрэглэгчээс: <b className="text-foreground">{fmtMnt(Number(paidMnt ?? 0))}</b></div>
+                      </div>
+                      {sourceUrl && (
+                        <a href={sourceUrl} target="_blank" rel="noreferrer" className="mt-1 inline-flex items-center gap-1 text-xs font-medium text-indigo-600 hover:underline">
+                          <ExternalLink className="h-3 w-3" /> Эх сурвалжийн линк
+                        </a>
+                      )}
+                      {queue?.notes && (
+                        <div className="mt-1 rounded bg-white/70 px-2 py-1 text-xs text-foreground/80">
+                          <span className="text-muted-foreground">Тэмдэглэл: </span>{queue.notes}
+                        </div>
+                      )}
+                    </div>
+                    <span className="shrink-0 self-start tabular-nums font-medium">
+                      {fmtMnt((it.price ?? 0) * (it.quantity ?? 1))}
+                    </span>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
       )}
     </div>
   );
