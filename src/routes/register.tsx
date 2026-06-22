@@ -78,6 +78,12 @@ function RegisterPage() {
           </div>
           <Button type="submit" className="w-full" disabled={loading}>{loading ? "Үүсгэж байна..." : "Бүртгүүлэх"}</Button>
         </form>
+        <div className="my-5 flex items-center gap-3 text-xs text-muted-foreground">
+          <span className="h-px flex-1 bg-border" />
+          <span>эсвэл</span>
+          <span className="h-px flex-1 bg-border" />
+        </div>
+        <TokiSignInButton redirect="/" />
         <p className="mt-4 text-center text-sm text-muted-foreground">
           Бүртгэлтэй юу? <Link to="/login" className="text-primary hover:underline">Нэвтрэх</Link>
         </p>
