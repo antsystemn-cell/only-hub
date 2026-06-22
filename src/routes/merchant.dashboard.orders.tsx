@@ -133,6 +133,33 @@ function OrdersPage() {
     },
   });
 
+  // Live queue status for foreign-order items, keyed by orderId -> itemIndex.
+  const foreignOrderIds = useMemo(
+    () => (orders as any[]).filter((o) => o.has_foreign_order_items).map((o) => o.id),
+    [orders],
+  );
+  const { data: queueByOrder = {} } = useQuery<Record<string, Record<number, any>>>({
+    queryKey: ["orders-foreign-queue", merchantId, foreignOrderIds.join(",")],
+    enabled: foreignOrderIds.length > 0,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("source_purchase_queue")
+        .select(
+          "id,order_id,order_item_index,status,source,source_url,source_price,source_currency,source_price_mnt,customer_paid_price_mnt,selected_size_label,source_variant_id,notes,updated_at",
+        )
+        .in("order_id", foreignOrderIds);
+      const map: Record<string, Record<number, any>> = {};
+      (data ?? []).forEach((row: any) => {
+        const oid = row.order_id;
+        const idx = row.order_item_index ?? 0;
+        if (!map[oid]) map[oid] = {};
+        map[oid][idx] = row;
+      });
+      return map;
+    },
+  });
+
+
   const filtered = useMemo(() => orders.filter((o: any) => {
     if (search && !((o.phone ?? "").includes(search) || (o.external_ref ?? "").toLowerCase().includes(search.toLowerCase()))) return false;
     if (statusFilter !== "all" && o.status !== statusFilter) return false;
