@@ -281,6 +281,12 @@ function CargoView({ merchantId }: { merchantId: string }) {
         trackNumber={openTrack}
         onClose={() => setOpenTrack(null)}
       />
+
+      <CreateCargoDialog
+        merchantId={merchantId}
+        open={createOpen}
+        onClose={() => setCreateOpen(false)}
+      />
     </div>
   );
 }
