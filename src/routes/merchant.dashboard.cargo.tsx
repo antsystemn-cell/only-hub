@@ -130,15 +130,22 @@ function CargoView({ merchantId }: { merchantId: string }) {
             OnlyCargo системээс таны дэлгүүрийн ачаа.
           </p>
         </div>
-        <Button
-          variant="outline"
-          onClick={() => {
-            qc.invalidateQueries({ queryKey: ["onlycargo-list", merchantId] });
-            qc.invalidateQueries({ queryKey: ["onlycargo-counts", merchantId] });
-          }}
-        >
-          <RefreshCw className="mr-2 h-4 w-4" /> Шинэчлэх
-        </Button>
+        <div className="flex gap-2">
+          {hasCode && (
+            <Button onClick={() => setCreateOpen(true)}>
+              <Plus className="mr-2 h-4 w-4" /> Шинэ ачаа бүртгэх
+            </Button>
+          )}
+          <Button
+            variant="outline"
+            onClick={() => {
+              qc.invalidateQueries({ queryKey: ["onlycargo-list", merchantId] });
+              qc.invalidateQueries({ queryKey: ["onlycargo-counts", merchantId] });
+            }}
+          >
+            <RefreshCw className="mr-2 h-4 w-4" /> Шинэчлэх
+          </Button>
+        </div>
       </div>
 
       {!hasCode ? (
