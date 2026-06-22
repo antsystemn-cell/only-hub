@@ -27,7 +27,7 @@ export interface OnlyCargoShipment {
   updated_at?: string | null;
   arrived_at?: string | null;
   picked_up_at?: string | null;
-  [k: string]: unknown;
+  [k: string]: any;
 }
 
 export interface ListResult<T> {
