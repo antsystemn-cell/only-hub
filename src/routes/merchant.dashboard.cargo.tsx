@@ -24,7 +24,7 @@ import {
   updateMerchantCargoCode,
 } from "@/lib/onlycargo/cargo.functions";
 
-export const Route = createFileRoute("/_authenticated/merchant/dashboard/cargo")({
+export const Route = createFileRoute("/merchant/dashboard/cargo")({
   component: CargoPage,
 });
 
