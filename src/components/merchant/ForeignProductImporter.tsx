@@ -224,6 +224,8 @@ export function ForeignProductImporter({ merchantId, source, onClose }: Props) {
       );
 
       // Auto-translate all foreign text → Mongolian in the background.
+      // Гарал үүсэл: админ автомат орчуулгыг toggle-оор асаасан үед л ажиллана.
+      if (!autoTranslate) return;
       const p2 = res.parsed!;
       const intro2 = (p2 as any).productIntroSections?.[0]?.content as string | undefined;
       const payload = {
