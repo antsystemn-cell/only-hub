@@ -381,6 +381,23 @@ export function ForeignProductImporter({ merchantId, source, onClose }: Props) {
           <p className="text-[11px] text-muted-foreground">
             Жишээ: https://kr.poizon.com/product/new-balance-530-...-60886973
           </p>
+          <div className="mt-2 flex items-start justify-between gap-3 rounded-md border border-border/60 bg-muted/30 px-3 py-2">
+            <div className="space-y-0.5">
+              <Label htmlFor="auto-translate-toggle" className="text-xs font-medium">
+                AI автомат орчуулга (Монгол хэл рүү)
+              </Label>
+              <p className="text-[11px] text-muted-foreground">
+                {autoTranslate
+                  ? "Идэвхтэй. Мэдээлэл татсаны дараа AI автоматаар орчуулна."
+                  : "Идэвхгүй. Орчуулгыг гараар хийнэ. Шаардлагатай үед эндээс асаана уу."}
+              </p>
+            </div>
+            <Switch
+              id="auto-translate-toggle"
+              checked={autoTranslate}
+              onCheckedChange={toggleAutoTranslate}
+            />
+          </div>
         </div>
       )}
 
