@@ -12,8 +12,10 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FOREIGN_SOURCES } from "@/lib/foreign-orders/sources";
 import { Globe2, ExternalLink, Package } from "lucide-react";
+import { ForeignQueueView } from "@/components/dashboard/ForeignQueueView";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
@@ -77,6 +79,22 @@ function OrdersPage() {
   const bulkPaidFn = useServerFn(bulkMarkPaid);
   const bulkDeliveryFn = useServerFn(bulkCreateDelivery);
   const bulkDeleteFn = useServerFn(bulkDeleteOrders);
+
+  const { data: merchantCaps } = useQuery({
+    queryKey: ["merchant-caps", merchantId],
+    enabled: !!merchantId,
+    staleTime: 1000 * 60 * 10,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("merchants")
+        .select("can_create_foreign_order_products")
+        .eq("id", merchantId)
+        .maybeSingle();
+      return data;
+    },
+  });
+  const canForeign = !!merchantCaps?.can_create_foreign_order_products;
+
 
   const { data: orders = [], isLoading: ordersLoading } = useQuery({
     queryKey: ["orders", merchantId],
@@ -268,7 +286,15 @@ function OrdersPage() {
         </div>
       </div>
 
-      <div className="space-y-6">
+      <Tabs defaultValue="orders" className="space-y-6">
+        {canForeign && (
+          <TabsList>
+            <TabsTrigger value="orders">Захиалга</TabsTrigger>
+            <TabsTrigger value="foreign-queue">Гадаад захиалгын дараалал</TabsTrigger>
+          </TabsList>
+        )}
+        <TabsContent value="orders" className="mt-0 space-y-6">
+
 
 
       <Card className="rounded-2xl p-4">
@@ -417,7 +443,14 @@ function OrdersPage() {
           </CollapsibleContent>
         </Collapsible>
       )}
-      </div>
+        </TabsContent>
+        {canForeign && (
+          <TabsContent value="foreign-queue" className="mt-0">
+            <ForeignQueueView />
+          </TabsContent>
+        )}
+      </Tabs>
+
 
 
       <ManualOrderDialog open={showManual} onOpenChange={setShowManual} merchantId={merchantId} onCreated={() => qc.invalidateQueries({ queryKey: ["orders", merchantId] })} />

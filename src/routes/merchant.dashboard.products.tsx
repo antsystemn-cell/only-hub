@@ -20,6 +20,8 @@ import { fmtMnt, slugify } from "@/lib/format";
 import { uploadOptimized } from "@/lib/image";
 import { AddProductTypeDialog } from "@/components/merchant/AddProductTypeDialog";
 import { ForeignProductImporter } from "@/components/merchant/ForeignProductImporter";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ForeignSyncView } from "@/components/dashboard/ForeignSyncView";
 import type { Database } from "@/integrations/supabase/types";
 
 type ForeignSource = Database["public"]["Enums"]["foreign_source"];
@@ -80,6 +82,20 @@ function ProductsPage() {
       return data ?? [];
     },
   });
+  const { data: merchantCaps } = useQuery({
+    queryKey: ["merchant-caps", merchantId],
+    enabled: !!merchantId,
+    staleTime: 1000 * 60 * 10,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("merchants")
+        .select("can_create_foreign_order_products")
+        .eq("id", merchantId)
+        .maybeSingle();
+      return data;
+    },
+  });
+  const canForeign = !!merchantCaps?.can_create_foreign_order_products;
   const { data: categories = [] } = useQuery({
     queryKey: ["categories", merchantId],
     queryFn: async () => {
@@ -182,6 +198,15 @@ function ProductsPage() {
           onClose={() => setForeignImporterSource(null)}
         />
       )}
+
+      <Tabs defaultValue="products" className="space-y-6">
+        {canForeign && (
+          <TabsList>
+            <TabsTrigger value="products">Бараа</TabsTrigger>
+            <TabsTrigger value="foreign-sync">Гадаад Sync</TabsTrigger>
+          </TabsList>
+        )}
+        <TabsContent value="products" className="mt-0 space-y-6">
 
       {showForm && (
         <Card className="rounded-2xl p-6">
@@ -543,6 +568,13 @@ function ProductsPage() {
           ))}
         </div>
       </Card>
+        </TabsContent>
+        {canForeign && (
+          <TabsContent value="foreign-sync" className="mt-0">
+            <ForeignSyncView />
+          </TabsContent>
+        )}
+      </Tabs>
     </div>
   );
 }
