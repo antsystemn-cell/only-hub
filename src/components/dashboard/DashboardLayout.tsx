@@ -39,12 +39,16 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
     queryFn: async () => {
       const { data } = await supabase
         .from("merchants")
-        .select("id,name,slug")
+        .select("id,name,slug,logo_url")
         .in("id", merchantIds);
       return data ?? [];
     },
     staleTime: 1000 * 60 * 10,
   });
+  const activeMerchant = merchants.find((m: any) => m.id === primaryMerchantId) as
+    | { id: string; name: string; slug: string; logo_url: string | null }
+    | undefined;
+  const activeLogoUrl = activeMerchant?.logo_url ?? null;
 
   const cargoCountsFn = useServerFn(getMerchantCargoCounts);
   const { data: cargoCounts } = useQuery({
@@ -63,8 +67,12 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
   const SidebarContent = () => (
     <>
       <Link to="/merchant/dashboard" className="mb-8 flex items-center gap-2 px-2">
-        <Store className="h-6 w-6 text-primary" />
-        <span className="text-xl font-bold">Only</span>
+        {activeLogoUrl ? (
+          <img src={activeLogoUrl} alt={activeMerchant?.name ?? "logo"} className="h-7 w-7 rounded object-cover" />
+        ) : (
+          <Store className="h-6 w-6 text-primary" />
+        )}
+        <span className="text-xl font-bold truncate">{activeMerchant?.name ?? "Only"}</span>
       </Link>
 
       {merchantIds.length > 1 && (
