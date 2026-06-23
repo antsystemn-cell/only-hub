@@ -80,6 +80,22 @@ function OrdersPage() {
   const bulkDeliveryFn = useServerFn(bulkCreateDelivery);
   const bulkDeleteFn = useServerFn(bulkDeleteOrders);
 
+  const { data: merchantCaps } = useQuery({
+    queryKey: ["merchant-caps", merchantId],
+    enabled: !!merchantId,
+    staleTime: 1000 * 60 * 10,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("merchants")
+        .select("can_create_foreign_order_products")
+        .eq("id", merchantId)
+        .maybeSingle();
+      return data;
+    },
+  });
+  const canForeign = !!merchantCaps?.can_create_foreign_order_products;
+
+
   const { data: orders = [], isLoading: ordersLoading } = useQuery({
     queryKey: ["orders", merchantId],
     // Don't fire the query with an empty merchantId — it would return zero
