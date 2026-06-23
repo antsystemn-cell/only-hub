@@ -659,7 +659,7 @@ function ProductDetailPage() {
           {/* === Right column (desktop only) === */}
           <aside className="hidden flex-col gap-4 lg:flex">
             {/* Delivery card (dynamic from merchant.shipping_config) */}
-            <ShippingCard merchant={merchant} />
+            <ShippingCard merchant={merchant} product={product} />
 
 
             {/* Store card */}
