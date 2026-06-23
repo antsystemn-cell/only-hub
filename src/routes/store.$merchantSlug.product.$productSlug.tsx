@@ -38,7 +38,7 @@ function ProductDetailPage() {
   const { data: merchant } = useQuery({
     queryKey: ["merchant", merchantSlug],
     queryFn: async () =>
-      (await supabase.from("merchants").select("id,name,slug,logo_url,description,shipping_config,policy_shipping,policy_return,followers_count").eq("slug", merchantSlug).maybeSingle()).data,
+      (await supabase.from("merchants").select("id,name,slug,logo_url,description,shipping_config,policy_shipping,policy_return,followers_count,can_create_foreign_order_products").eq("slug", merchantSlug).maybeSingle()).data,
   });
 
   const { data: product, isLoading } = useQuery({
