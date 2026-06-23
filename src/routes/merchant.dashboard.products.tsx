@@ -568,6 +568,13 @@ function ProductsPage() {
           ))}
         </div>
       </Card>
+        </TabsContent>
+        {canForeign && (
+          <TabsContent value="foreign-sync" className="mt-0">
+            <ForeignSyncView />
+          </TabsContent>
+        )}
+      </Tabs>
     </div>
   );
 }
