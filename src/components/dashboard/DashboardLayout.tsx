@@ -39,12 +39,16 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
     queryFn: async () => {
       const { data } = await supabase
         .from("merchants")
-        .select("id,name,slug")
+        .select("id,name,slug,logo_url")
         .in("id", merchantIds);
       return data ?? [];
     },
     staleTime: 1000 * 60 * 10,
   });
+  const activeMerchant = merchants.find((m: any) => m.id === primaryMerchantId) as
+    | { id: string; name: string; slug: string; logo_url: string | null }
+    | undefined;
+  const activeLogoUrl = activeMerchant?.logo_url ?? null;
 
   const cargoCountsFn = useServerFn(getMerchantCargoCounts);
   const { data: cargoCounts } = useQuery({
