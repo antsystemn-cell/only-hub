@@ -286,7 +286,15 @@ function OrdersPage() {
         </div>
       </div>
 
-      <div className="space-y-6">
+      <Tabs defaultValue="orders" className="space-y-6">
+        {canForeign && (
+          <TabsList>
+            <TabsTrigger value="orders">Захиалга</TabsTrigger>
+            <TabsTrigger value="foreign-queue">Гадаад захиалгын дараалал</TabsTrigger>
+          </TabsList>
+        )}
+        <TabsContent value="orders" className="mt-0 space-y-6">
+
 
 
       <Card className="rounded-2xl p-4">
