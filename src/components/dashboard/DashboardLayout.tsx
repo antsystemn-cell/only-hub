@@ -67,8 +67,12 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
   const SidebarContent = () => (
     <>
       <Link to="/merchant/dashboard" className="mb-8 flex items-center gap-2 px-2">
-        <Store className="h-6 w-6 text-primary" />
-        <span className="text-xl font-bold">Only</span>
+        {activeLogoUrl ? (
+          <img src={activeLogoUrl} alt={activeMerchant?.name ?? "logo"} className="h-7 w-7 rounded object-cover" />
+        ) : (
+          <Store className="h-6 w-6 text-primary" />
+        )}
+        <span className="text-xl font-bold truncate">{activeMerchant?.name ?? "Only"}</span>
       </Link>
 
       {merchantIds.length > 1 && (
