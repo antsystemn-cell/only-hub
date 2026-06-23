@@ -443,7 +443,14 @@ function OrdersPage() {
           </CollapsibleContent>
         </Collapsible>
       )}
-      </div>
+        </TabsContent>
+        {canForeign && (
+          <TabsContent value="foreign-queue" className="mt-0">
+            <ForeignQueueView />
+          </TabsContent>
+        )}
+      </Tabs>
+
 
 
       <ManualOrderDialog open={showManual} onOpenChange={setShowManual} merchantId={merchantId} onCreated={() => qc.invalidateQueries({ queryKey: ["orders", merchantId] })} />
