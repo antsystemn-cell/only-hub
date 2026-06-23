@@ -13,8 +13,9 @@ import { wishlist, useIsWishlisted } from "@/lib/wishlist";
 import {
   Minus, Plus, ShoppingCart, ChevronRight, Check, ChevronLeft, Heart,
   Truck, Shield, ShieldCheck, Store as StoreIcon, Play, Star,
-  RotateCcw, BadgeCheck, Zap, CreditCard,
+  RotateCcw, BadgeCheck, Zap, CreditCard, Globe2,
 } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 import { SiteHeader } from "@/components/site/SiteHeader";
 import { SiteFooter } from "@/components/site/SiteFooter";
 import { ShareMenu } from "@/components/product/ShareMenu";
@@ -38,7 +39,7 @@ function ProductDetailPage() {
   const { data: merchant } = useQuery({
     queryKey: ["merchant", merchantSlug],
     queryFn: async () =>
-      (await supabase.from("merchants").select("id,name,slug,logo_url,description,shipping_config,policy_shipping,policy_return,followers_count").eq("slug", merchantSlug).maybeSingle()).data,
+      (await supabase.from("merchants").select("id,name,slug,logo_url,description,shipping_config,policy_shipping,policy_return,followers_count,can_create_foreign_order_products").eq("slug", merchantSlug).maybeSingle()).data,
   });
 
   const { data: product, isLoading } = useQuery({
@@ -659,7 +660,7 @@ function ProductDetailPage() {
           {/* === Right column (desktop only) === */}
           <aside className="hidden flex-col gap-4 lg:flex">
             {/* Delivery card (dynamic from merchant.shipping_config) */}
-            <ShippingCard merchant={merchant} />
+            <ShippingCard merchant={merchant} product={product} />
 
 
             {/* Store card */}
@@ -877,7 +878,7 @@ type ShippingItem = {
   label?: string;
 };
 
-function ShippingCard({ merchant }: { merchant: any }) {
+function ShippingCard({ merchant, product }: { merchant: any; product?: any }) {
   const cfg = (merchant?.shipping_config ?? {}) as {
     ub?: ShippingItem;
     local?: ShippingItem;
@@ -888,6 +889,22 @@ function ShippingCard({ merchant }: { merchant: any }) {
   const ub = { ...defaultUb, ...(cfg.ub ?? {}) };
   const local = { ...defaultLocal, ...(cfg.local ?? {}) };
   const extras = Array.isArray(cfg.extras) ? cfg.extras : [];
+
+  const isForeign = product?.product_type === "FOREIGN_ORDER";
+  const minD = product?.default_delivery_min_days ?? null;
+  const maxD = product?.default_delivery_max_days ?? null;
+  const foreignDaysLabel =
+    minD && maxD && minD !== maxD
+      ? `${minD}-${maxD} өдөр`
+      : maxD
+        ? `${maxD} өдөр`
+        : minD
+          ? `${minD} өдөр`
+          : "10-14 өдөр";
+
+  const canToggle = !!merchant?.can_create_foreign_order_products;
+  const [showForeign, setShowForeign] = useState(true);
+  const visibleForeign = isForeign && showForeign;
 
   const renderRow = (it: ShippingItem, key: string) => {
     const priceLabel =
@@ -910,6 +927,12 @@ function ShippingCard({ merchant }: { merchant: any }) {
                 {it.description || it.duration}
               </div>
             )}
+            {visibleForeign && (
+              <div className="mt-0.5 inline-flex items-center gap-1 rounded-md bg-indigo-50 px-1.5 py-0.5 text-[10px] font-medium text-indigo-700">
+                <Globe2 className="h-3 w-3" />
+                Гадаад захиалга: +{foreignDaysLabel}
+              </div>
+            )}
           </div>
         </div>
         <span className={priceClass}>{priceLabel}</span>
@@ -919,8 +942,30 @@ function ShippingCard({ merchant }: { merchant: any }) {
 
   return (
     <Card className="rounded-2xl border-border/60 bg-white p-4">
-      <h3 className="mb-3 text-sm font-semibold">Хүргэлтийн мэдээлэл</h3>
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <h3 className="text-sm font-semibold">Хүргэлтийн мэдээлэл</h3>
+        {canToggle && isForeign && (
+          <label className="flex items-center gap-2 text-xs text-muted-foreground">
+            <span>Гадаад захиалга</span>
+            <Switch checked={showForeign} onCheckedChange={setShowForeign} />
+          </label>
+        )}
+      </div>
       <ul className="space-y-3 text-sm">
+        {visibleForeign && (
+          <li className="flex items-start justify-between gap-3 rounded-lg bg-indigo-50/60 p-2">
+            <div className="flex items-start gap-2">
+              <Globe2 className="mt-0.5 h-4 w-4 text-indigo-600" />
+              <div>
+                <div className="font-medium text-indigo-900">Гадаадаас ирэх хугацаа</div>
+                <div className="text-xs text-indigo-700/80">
+                  Захиалга баталгаажсанаас хойш ойролцоогоор
+                </div>
+              </div>
+            </div>
+            <span className="font-semibold text-indigo-900">{foreignDaysLabel}</span>
+          </li>
+        )}
         {renderRow(ub, "ub")}
         {renderRow(local, "local")}
         {extras.map((it, i) => renderRow(it, `ex-${i}`))}
