@@ -199,6 +199,15 @@ function ProductsPage() {
         />
       )}
 
+      <Tabs defaultValue="products" className="space-y-6">
+        {canForeign && (
+          <TabsList>
+            <TabsTrigger value="products">Бараа</TabsTrigger>
+            <TabsTrigger value="foreign-sync">Гадаад Sync</TabsTrigger>
+          </TabsList>
+        )}
+        <TabsContent value="products" className="mt-0 space-y-6">
+
       {showForm && (
         <Card className="rounded-2xl p-6">
           <h2 className="mb-4 text-lg font-semibold">{editId ? "Засварлах" : "Шинэ бүтээгдэхүүн"}</h2>
