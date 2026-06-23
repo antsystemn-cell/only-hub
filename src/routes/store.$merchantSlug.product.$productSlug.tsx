@@ -13,8 +13,9 @@ import { wishlist, useIsWishlisted } from "@/lib/wishlist";
 import {
   Minus, Plus, ShoppingCart, ChevronRight, Check, ChevronLeft, Heart,
   Truck, Shield, ShieldCheck, Store as StoreIcon, Play, Star,
-  RotateCcw, BadgeCheck, Zap, CreditCard,
+  RotateCcw, BadgeCheck, Zap, CreditCard, Globe2,
 } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 import { SiteHeader } from "@/components/site/SiteHeader";
 import { SiteFooter } from "@/components/site/SiteFooter";
 import { ShareMenu } from "@/components/product/ShareMenu";
