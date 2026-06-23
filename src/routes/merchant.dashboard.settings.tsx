@@ -787,13 +787,16 @@ function ShippingPolicyTab() {
     queryKey: ["merchant-policy", merchantId],
     enabled: !!merchantId,
     queryFn: async () =>
-      (await supabase.from("merchants").select("shipping_config,policy_shipping,policy_return").eq("id", merchantId!).maybeSingle()).data,
+      (await supabase.from("merchants").select("shipping_config,policy_shipping,policy_return,can_create_foreign_order_products").eq("id", merchantId!).maybeSingle()).data,
   });
 
   type ShipItem = { title: string; description?: string; duration?: string; price?: number; free?: boolean; label?: string };
-  const cfg = (m?.shipping_config ?? {}) as { ub?: ShipItem; local?: ShipItem; extras?: ShipItem[] };
+  type ForeignCfg = { show: boolean; min_days: number | null; max_days: number | null; note: string };
+  const cfg = (m?.shipping_config ?? {}) as { ub?: ShipItem; local?: ShipItem; extras?: ShipItem[]; foreign?: Partial<ForeignCfg> };
+  const canForeign = !!m?.can_create_foreign_order_products;
   const [ub, setUb] = useState<ShipItem>({ title: "Улаанбаатар дотор", duration: "24-48 цаг", price: 0, free: true });
   const [local, setLocal] = useState<ShipItem>({ title: "Орон нутагт", duration: "2-4 хоног", price: 6000 });
+  const [foreign, setForeign] = useState<ForeignCfg>({ show: true, min_days: 10, max_days: 14, note: "" });
   const [policyShip, setPolicyShip] = useState("");
   const [policyReturn, setPolicyReturn] = useState("");
   const [hydrated, setHydrated] = useState(false);
@@ -801,6 +804,14 @@ function ShippingPolicyTab() {
   if (m && !hydrated) {
     if (cfg.ub) setUb({ ...ub, ...cfg.ub });
     if (cfg.local) setLocal({ ...local, ...cfg.local });
+    if (cfg.foreign) {
+      setForeign({
+        show: cfg.foreign.show !== false,
+        min_days: cfg.foreign.min_days ?? 10,
+        max_days: cfg.foreign.max_days ?? 14,
+        note: cfg.foreign.note ?? "",
+      });
+    }
     setPolicyShip(m.policy_shipping ?? "");
     setPolicyReturn(m.policy_return ?? "");
     setHydrated(true);
@@ -810,7 +821,17 @@ function ShippingPolicyTab() {
     mutationFn: async () => {
       if (!merchantId) throw new Error("merchant байхгүй");
       const payload = {
-        shipping_config: { ub, local, extras: cfg.extras ?? [] },
+        shipping_config: {
+          ub,
+          local,
+          extras: cfg.extras ?? [],
+          foreign: {
+            show: foreign.show,
+            min_days: foreign.min_days,
+            max_days: foreign.max_days,
+            note: foreign.note || null,
+          },
+        },
         policy_shipping: policyShip || null,
         policy_return: policyReturn || null,
       };
@@ -843,6 +864,71 @@ function ShippingPolicyTab() {
       </div>
       <ShipRow value={ub} onChange={setUb} label="Улаанбаатар" />
       <ShipRow value={local} onChange={setLocal} label="Орон нутаг" />
+
+      {canForeign && (
+        <div className="rounded-xl border-2 border-indigo-200 bg-gradient-to-br from-indigo-50/50 to-white p-5">
+          <div className="mb-4 flex items-start justify-between gap-4">
+            <div className="flex items-start gap-3">
+              <div className="rounded-lg bg-indigo-100 p-2 text-indigo-700">
+                <span className="block h-5 w-5 text-center text-sm font-bold">✈</span>
+              </div>
+              <div>
+                <h3 className="text-sm font-semibold text-indigo-950">Гадаадаас захиалгын ирэх хугацаа</h3>
+                <p className="mt-0.5 text-xs text-indigo-700/80">
+                  Зөвхөн гадаадаас захиалгат бараа дээр барааны дэлгэрэнгүй хуудсанд харагдана.
+                </p>
+              </div>
+            </div>
+            <label className="flex shrink-0 items-center gap-2 rounded-lg bg-white/70 px-3 py-1.5 text-xs font-medium text-indigo-900 shadow-sm">
+              <span>{foreign.show ? "Харуулна" : "Нуусан"}</span>
+              <Switch checked={foreign.show} onCheckedChange={(v) => setForeign({ ...foreign, show: v })} />
+            </label>
+          </div>
+          <div className={`grid gap-3 transition-opacity md:grid-cols-3 ${foreign.show ? "" : "opacity-50"}`}>
+            <div>
+              <Label>Хамгийн бага (өдөр)</Label>
+              <Input
+                type="number"
+                min={1}
+                value={foreign.min_days ?? ""}
+                onChange={(e) => setForeign({ ...foreign, min_days: e.target.value ? Number(e.target.value) : null })}
+                disabled={!foreign.show}
+              />
+            </div>
+            <div>
+              <Label>Хамгийн их (өдөр)</Label>
+              <Input
+                type="number"
+                min={1}
+                value={foreign.max_days ?? ""}
+                onChange={(e) => setForeign({ ...foreign, max_days: e.target.value ? Number(e.target.value) : null })}
+                disabled={!foreign.show}
+              />
+            </div>
+            <div>
+              <Label>Нэмэлт тайлбар</Label>
+              <Input
+                placeholder="Захиалга баталгаажсанаас хойш ойролцоогоор"
+                value={foreign.note}
+                onChange={(e) => setForeign({ ...foreign, note: e.target.value })}
+                disabled={!foreign.show}
+              />
+            </div>
+          </div>
+          <div className="mt-3 rounded-lg bg-white/60 px-3 py-2 text-xs text-indigo-900">
+            <span className="font-semibold">Урьдчилсан харагдац:</span>{" "}
+            {foreign.show ? (
+              <>Гадаадаас ирэх хугацаа · <span className="font-semibold">
+                {foreign.min_days && foreign.max_days && foreign.min_days !== foreign.max_days
+                  ? `${foreign.min_days}-${foreign.max_days} өдөр`
+                  : `${foreign.max_days ?? foreign.min_days ?? "—"} өдөр`}
+              </span></>
+            ) : (
+              <span className="text-muted-foreground">Хэрэглэгчид харагдахгүй.</span>
+            )}
+          </div>
+        </div>
+      )}
 
       <div className="border-t pt-6">
         <h2 className="text-lg font-semibold">Хүргэлтийн нөхцөл</h2>
