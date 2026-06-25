@@ -48,8 +48,6 @@ function AdminNotificationsPage() {
   });
   const qStats = useQuery({
     queryKey: ["admin-notif-stats"],
-  const qStats = useQuery({
-    queryKey: ["admin-notif-stats"],
     queryFn: () => stats({ data: {} }),
   });
   const listCargoHooks = useServerFn(listOnlycargoWebhookEventsFn);
