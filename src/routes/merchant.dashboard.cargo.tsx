@@ -25,6 +25,7 @@ import {
   getMerchantCargoCounts,
   updateMerchantCargoCode,
   createMerchantCargo,
+  markMerchantCargoNotificationsRead,
 } from "@/lib/onlycargo/cargo.functions";
 
 export const Route = createFileRoute("/merchant/dashboard/cargo")({
