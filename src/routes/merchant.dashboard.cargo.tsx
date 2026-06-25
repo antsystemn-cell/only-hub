@@ -74,6 +74,18 @@ function CargoView({ merchantId }: { merchantId: string }) {
   const [openTrack, setOpenTrack] = useState<string | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
 
+  // Mark cargo notifications as read on page open → clears the sidebar badge.
+  const markReadFn = useServerFn(markMerchantCargoNotificationsRead);
+  useEffect(() => {
+    markReadFn({ data: { merchantId } })
+      .then((res) => {
+        if (res?.marked && res.marked > 0) {
+          qc.invalidateQueries({ queryKey: ["dashboard-cargo-unread", merchantId] });
+        }
+      })
+      .catch(() => {});
+  }, [merchantId, markReadFn, qc]);
+
   const { data: merchant } = useQuery({
     queryKey: ["merchant-onlycargo", merchantId],
     queryFn: async () => {
