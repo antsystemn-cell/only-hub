@@ -21,14 +21,26 @@ export const Route = createFileRoute("/merchant/dashboard/inventory/")({
 
 function InventoryListPage() {
   const { primaryMerchantId } = useAuth();
+  const qc = useQueryClient();
   const [q, setQ] = useState("");
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState<string>("active");
   const [lowStock, setLowStock] = useState(false);
   const [page, setPage] = useState(1);
+  const [linkTarget, setLinkTarget] = useState<any | null>(null);
   const pageSize = 20;
 
   const listFn = useServerFn(listInventoryItems);
+  const syncFn = useServerFn(manualSyncInventoryLink);
+  const syncMut = useMutation({
+    mutationFn: (inventoryItemId: string) =>
+      syncFn({ data: { merchantId: primaryMerchantId!, inventoryItemId } }),
+    onSuccess: (r: any) => {
+      toast.success(`Stock шинэчиллээ (${r?.synced ?? 0})`);
+      qc.invalidateQueries({ queryKey: ["inventory-list"] });
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Алдаа"),
+  });
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ["inventory-list", primaryMerchantId, search, status, lowStock, page],
     enabled: !!primaryMerchantId,
