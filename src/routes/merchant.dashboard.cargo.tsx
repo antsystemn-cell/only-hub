@@ -640,10 +640,13 @@ function CreateCargoDialog({
         },
       });
     },
-    onSuccess: () => {
+    onSuccess: async () => {
       toast.success("Ачаа амжилттай бүртгэгдлээ");
-      qc.invalidateQueries({ queryKey: ["onlycargo-list", merchantId] });
-      qc.invalidateQueries({ queryKey: ["onlycargo-counts", merchantId] });
+      // Force a fresh fetch from OnlyCargo so the new row appears immediately.
+      await Promise.all([
+        qc.refetchQueries({ queryKey: ["onlycargo-list", merchantId] }),
+        qc.refetchQueries({ queryKey: ["onlycargo-counts", merchantId] }),
+      ]);
       reset();
       onClose();
     },
