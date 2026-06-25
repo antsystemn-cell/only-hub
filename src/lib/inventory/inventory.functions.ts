@@ -85,6 +85,8 @@ export const findInventoryByCargoTracking = createServerFn({ method: "POST" })
 // ────────────────────────────────────────────────
 // Create inventory item from cargo
 // ────────────────────────────────────────────────
+const ELIGIBLE_CARGO_STATUSES = new Set(["arrived", "ready_for_pickup", "completed"]);
+
 export const createInventoryFromCargo = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) =>
@@ -94,9 +96,13 @@ export const createInventoryFromCargo = createServerFn({ method: "POST" })
       cargoId: z.string().trim().max(120).optional(),
       name: z.string().trim().min(1).max(200),
       sku: z.string().trim().max(80).optional(),
-      quantity: z.number().positive().max(1_000_000),
-      unit: z.string().trim().max(20).default("pcs"),
-      costPrice: z.number().nonnegative().optional(),
+      quantity: z.number().refine((n) => Number.isFinite(n), "invalid").positive().max(1_000_000),
+      unit: z.string().trim().min(1).max(20).default("pcs"),
+      costPrice: z
+        .number()
+        .refine((n) => Number.isFinite(n), "invalid")
+        .nonnegative()
+        .optional(),
       warehouseLocation: z.string().trim().max(120).optional(),
       note: z.string().trim().max(500).optional(),
       allowDuplicate: z.boolean().default(false),
@@ -105,60 +111,112 @@ export const createInventoryFromCargo = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertMerchantAccess(context.supabase, context.userId, data.merchantId);
 
-    // Duplicate protection unless explicitly allowed
-    if (!data.allowDuplicate) {
-      const { data: existing } = await context.supabase
-        .from("inventory_items")
-        .select("id")
-        .eq("merchant_id", data.merchantId)
-        .eq("source_cargo_tracking_number", data.trackingNumber)
-        .limit(1);
-      if (existing && existing.length > 0) {
-        return {
-          ok: false as const,
-          duplicate: true,
-          existingId: (existing[0] as any).id,
-          message: "Энэ карго аль хэдийн нөөцөд бүртгэгдсэн байна.",
-        };
+    // ── Server-side cargo validation ───────────────────────────────
+    // Resolve this merchant's OnlyCargo customer code, then verify the
+    // tracking number really belongs to them and is in an eligible status.
+    const { data: merchant, error: mErr } = await context.supabase
+      .from("merchants")
+      .select("onlycargo_customer_code")
+      .eq("id", data.merchantId)
+      .maybeSingle();
+    if (mErr) throw new Response(mErr.message, { status: 500 });
+    const customerCode = (merchant as any)?.onlycargo_customer_code?.trim();
+    if (!customerCode) {
+      throw new Response(
+        "OnlyCargo customer code тохируулаагүй байна. Тохиргоо хэсгээс оруулна уу.",
+        { status: 400 },
+      );
+    }
+
+    const isAdmin = await isPlatformAdmin(context.supabase, context.userId);
+
+    let cargo: any = null;
+    try {
+      const { onlyCargo } = await import("@/lib/onlycargo/client.server");
+      cargo = await onlyCargo.getShipment(data.trackingNumber);
+    } catch (e: any) {
+      const status = typeof e?.status === "number" ? e.status : 502;
+      if (status === 404) {
+        throw new Response("Энэ track № системд олдсонгүй.", { status: 404 });
+      }
+      throw new Response(
+        "Каргоны мэдээлэл татаж чадсангүй. Дахин оролдоно уу.",
+        { status: 502 },
+      );
+    }
+    if (!cargo || !cargo.track_number) {
+      throw new Response("Энэ track № системд олдсонгүй.", { status: 404 });
+    }
+
+    const shipmentCode = (cargo.customer_code ?? cargo.customerCode ?? null) as string | null;
+    const shipmentMerchantId = (cargo.merchant_id ?? cargo.merchantId ?? null) as string | null;
+    if (!isAdmin) {
+      const codeMatches = shipmentCode && shipmentCode === customerCode;
+      const merchantMatches = shipmentMerchantId && shipmentMerchantId === data.merchantId;
+      if (!codeMatches && !merchantMatches) {
+        throw new Response("Энэ карго танд хамаарахгүй байна.", { status: 403 });
       }
     }
 
-    const { data: created, error: insErr } = await context.supabase
+    const cargoStatus = String(cargo.status ?? "").toLowerCase();
+    if (!ELIGIBLE_CARGO_STATUSES.has(cargoStatus)) {
+      throw new Response(
+        "Энэ карго хараахан нөөцөд бүртгэх боломжтой төлөвт ороогүй байна.",
+        { status: 409 },
+      );
+    }
+
+    // ── Duplicate protection ───────────────────────────────────────
+    const { data: existing, error: dupErr } = await context.supabase
       .from("inventory_items")
-      .insert({
-        merchant_id: data.merchantId,
-        name: data.name,
-        sku: data.sku ?? null,
-        quantity_on_hand: data.quantity,
-        unit: data.unit,
-        cost_price: data.costPrice ?? null,
-        warehouse_location: data.warehouseLocation ?? null,
-        source_type: "cargo",
-        source_cargo_tracking_number: data.trackingNumber,
-        source_cargo_id: data.cargoId ?? null,
-        created_by: context.userId,
-      })
-      .select("id")
-      .single();
-    if (insErr || !created) throw new Response(insErr?.message ?? "create failed", { status: 500 });
+      .select("id,name,quantity_on_hand,unit")
+      .eq("merchant_id", data.merchantId)
+      .eq("source_cargo_tracking_number", data.trackingNumber)
+      .order("created_at", { ascending: false });
+    if (dupErr) throw new Response(dupErr.message, { status: 500 });
+    if (existing && existing.length > 0 && !data.allowDuplicate) {
+      return {
+        ok: false as const,
+        duplicate: true,
+        existing,
+        existingId: (existing[0] as any).id,
+        message: "Энэ карго аль хэдийн нөөцөд бүртгэгдсэн байна.",
+      };
+    }
 
-    const { error: movErr } = await context.supabase
-      .from("inventory_movements")
-      .insert({
-        merchant_id: data.merchantId,
-        inventory_item_id: (created as any).id,
-        movement_type: "cargo_received",
-        quantity: data.quantity,
-        before_quantity: 0,
-        after_quantity: data.quantity,
-        source_type: "cargo",
-        source_reference: data.trackingNumber,
-        note: data.note ?? null,
-        created_by: context.userId,
-      });
-    if (movErr) throw new Response(movErr.message, { status: 500 });
+    // ── Atomic create (item + movement together) ──────────────────
+    const note = data.allowDuplicate && existing && existing.length > 0
+      ? `[duplicate-confirmed] ${data.note ?? ""}`.trim()
+      : data.note ?? null;
 
-    return { ok: true as const, itemId: (created as any).id };
+    const { data: itemId, error: rpcErr } = await context.supabase.rpc(
+      "create_inventory_from_cargo",
+      {
+        _merchant_id: data.merchantId,
+        _name: data.name,
+        _sku: data.sku ?? null,
+        _quantity: data.quantity,
+        _unit: data.unit,
+        _cost_price: data.costPrice ?? null,
+        _warehouse_location: data.warehouseLocation ?? null,
+        _tracking_number: data.trackingNumber,
+        _cargo_id: data.cargoId ?? null,
+        _note: note,
+        _created_by: context.userId,
+      },
+    );
+    if (rpcErr) {
+      const msg = rpcErr.message ?? "create failed";
+      if (msg.includes("invalid_quantity")) {
+        throw new Response("Тоо ширхэг буруу.", { status: 400 });
+      }
+      if (msg.includes("invalid_unit")) {
+        throw new Response("Нэгж буруу.", { status: 400 });
+      }
+      throw new Response(msg, { status: 500 });
+    }
+
+    return { ok: true as const, itemId: itemId as string };
   });
 
 // ────────────────────────────────────────────────
