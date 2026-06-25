@@ -13,7 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { getMerchantCargoCounts } from "@/lib/onlycargo/cargo.functions";
+import { getMerchantCargoUnreadCount } from "@/lib/onlycargo/cargo.functions";
 
 type Tab = { to: string; label: string; icon: typeof BarChart3; end?: boolean };
 const TABS: Tab[] = [
