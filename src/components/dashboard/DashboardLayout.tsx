@@ -50,19 +50,16 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
     | undefined;
   const activeLogoUrl = activeMerchant?.logo_url ?? null;
 
-  const cargoCountsFn = useServerFn(getMerchantCargoCounts);
-  const { data: cargoCounts } = useQuery({
-    queryKey: ["dashboard-cargo-counts", primaryMerchantId],
+  const cargoUnreadFn = useServerFn(getMerchantCargoUnreadCount);
+  const { data: cargoUnread } = useQuery({
+    queryKey: ["dashboard-cargo-unread", primaryMerchantId],
     enabled: !!primaryMerchantId,
-    queryFn: () => cargoCountsFn({ data: { merchantId: primaryMerchantId! } }),
+    queryFn: () => cargoUnreadFn({ data: { merchantId: primaryMerchantId! } }),
     refetchInterval: 60_000,
     staleTime: 30_000,
     retry: false,
   });
-  const cargoBadge =
-    (cargoCounts?.created ?? 0) +
-    (cargoCounts?.arrived ?? 0) +
-    (cargoCounts?.ready_for_pickup ?? 0);
+  const cargoBadge = cargoUnread?.unread ?? 0;
 
   const SidebarContent = () => (
     <>
