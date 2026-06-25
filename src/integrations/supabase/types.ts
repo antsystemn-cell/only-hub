@@ -1254,6 +1254,7 @@ export type Database = {
           name: string
           onlycargo_customer_code: string | null
           onlycargo_last_synced_at: string | null
+          onlycargo_phone: string | null
           onlycargo_sync_error: string | null
           owner_id: string | null
           policy_return: string | null
@@ -1291,6 +1292,7 @@ export type Database = {
           name: string
           onlycargo_customer_code?: string | null
           onlycargo_last_synced_at?: string | null
+          onlycargo_phone?: string | null
           onlycargo_sync_error?: string | null
           owner_id?: string | null
           policy_return?: string | null
@@ -1328,6 +1330,7 @@ export type Database = {
           name?: string
           onlycargo_customer_code?: string | null
           onlycargo_last_synced_at?: string | null
+          onlycargo_phone?: string | null
           onlycargo_sync_error?: string | null
           owner_id?: string | null
           policy_return?: string | null

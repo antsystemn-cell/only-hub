@@ -58,6 +58,7 @@ export interface ListShipmentsParams {
   q?: string;
   merchant_id?: string;
   customer_code?: string;
+  phone?: string;
   from?: string;
   to?: string;
 }
@@ -102,6 +103,12 @@ async function call<T>(
   if (!res.ok) {
     const text = await res.text().catch(() => "");
     console.error("[onlycargo] HTTP", res.status, path, text.slice(0, 500));
+    if (path === "/shipments" && init.method === "POST" && res.status === 403) {
+      throw new Response(
+        "OnlyCargo API түлхүүр ачаа үүсгэх эрхгүй байна. Карго системийн админ дээр бүртгэсэн ачаа утасны дугаараар танай дэлгүүртэй автоматаар холбогдоно; Only Hub-ээс шууд бүртгэхэд create эрхтэй API түлхүүр шаардлагатай.",
+        { status: 403 },
+      );
+    }
     throw new Response(text || `OnlyCargo алдаа: ${res.status}`, { status: res.status });
   }
   if (res.status === 204) return undefined as T;
@@ -116,6 +123,11 @@ function pick<T = unknown>(obj: Record<string, any>, ...keys: string[]): T | und
     if (obj[k] !== undefined && obj[k] !== null) return obj[k] as T;
   }
   return undefined;
+}
+
+function normalizePhone(value: string | null | undefined) {
+  const digits = String(value ?? "").replace(/\D/g, "");
+  return digits.startsWith("976") && digits.length === 11 ? digits.slice(3) : digits;
 }
 
 export function normalizeShipment(raw: any): OnlyCargoShipment {
@@ -138,7 +150,7 @@ export function normalizeShipment(raw: any): OnlyCargoShipment {
       status: pick<string>(src, "status") ?? "unknown",
       customer_code: pick<string>(src, "customer_code", "customerCode") ?? null,
       merchant_id: pick<string>(src, "merchant_id", "merchantId") ?? null,
-      phone: pick<string>(src, "phone", "phoneNumber") ?? null,
+      phone: normalizePhone(pick<string>(src, "phone", "phone_number", "phoneNumber", "customer_phone", "customerPhone")) || null,
       weight: pick<number>(src, "weight"),
       volume: pick<number>(src, "volume", "volumeM3", "volume_m3"),
       length: pick<number>(src, "length"),
@@ -242,6 +254,7 @@ export const onlyCargo = {
       q: params.q,
       merchant_id: params.merchant_id,
       customer_code: params.customer_code,
+      phone: params.phone,
       from: params.from,
       to: params.to,
     });
@@ -343,7 +356,11 @@ export const onlyCargo = {
     const body = {
       track_number: payload.trackNumber,
       trackNumber: payload.trackNumber,
-      phone: payload.phone,
+      phone: normalizePhone(payload.phone),
+      phone_number: normalizePhone(payload.phone),
+      phoneNumber: normalizePhone(payload.phone),
+      customer_phone: normalizePhone(payload.phone),
+      customerPhone: normalizePhone(payload.phone),
       customer_code: payload.customerCode,
       customerCode: payload.customerCode,
       description: payload.description,

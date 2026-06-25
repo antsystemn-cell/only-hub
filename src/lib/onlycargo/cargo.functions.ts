@@ -12,8 +12,18 @@ const ListInput = z.object({
   to: z.string().optional(),
 });
 
-async function resolveCustomerCode(supabase: any, merchantId: string, userId: string) {
-  // Verify access + read customer_code
+function normalizeCargoPhone(value: string | null | undefined) {
+  const digits = String(value ?? "").replace(/\D/g, "");
+  return digits.startsWith("976") && digits.length === 11 ? digits.slice(3) : digits;
+}
+
+function generateHiddenCargoCode(merchantId: string) {
+  const uuid = globalThis.crypto?.randomUUID?.().replace(/-/g, "");
+  return `oh_${uuid || merchantId.replace(/-/g, "")}_${Date.now().toString(36)}`;
+}
+
+async function resolveCargoLink(supabase: any, merchantId: string, userId: string) {
+  // Verify access + read hidden customer_code and visible cargo phone.
   const { data: access } = await supabase.rpc("has_merchant_access", {
     _user_id: userId,
     _merchant_id: merchantId,
@@ -22,25 +32,26 @@ async function resolveCustomerCode(supabase: any, merchantId: string, userId: st
 
   const { data: merchant, error } = await supabase
     .from("merchants")
-    .select("onlycargo_customer_code")
+    .select("onlycargo_customer_code,onlycargo_phone")
     .eq("id", merchantId)
     .maybeSingle();
   if (error) throw new Response(error.message, { status: 500 });
-  const code = merchant?.onlycargo_customer_code as string | null | undefined;
-  if (!code || !code.trim()) {
+  const code = (merchant?.onlycargo_customer_code as string | null | undefined)?.trim() ?? "";
+  const phone = normalizeCargoPhone(merchant?.onlycargo_phone as string | null | undefined);
+  if (!phone) {
     throw new Response(
-      "OnlyCargo customer code тохируулаагүй байна. Тохиргоо хэсгээс оруулна уу.",
+      "Каргоны утасны дугаар тохируулаагүй байна.",
       { status: 400 },
     );
   }
-  return code.trim();
+  return { customerCode: code || null, phone };
 }
 
 export const listMerchantCargo = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) => ListInput.parse(i))
   .handler(async ({ data, context }) => {
-    const customerCode = await resolveCustomerCode(
+    const cargoLink = await resolveCargoLink(
       context.supabase,
       data.merchantId,
       context.userId,
@@ -53,7 +64,7 @@ export const listMerchantCargo = createServerFn({ method: "POST" })
       q: data.q,
       from: data.from,
       to: data.to,
-      customer_code: customerCode,
+      phone: cargoLink.phone,
     });
   });
 
@@ -61,7 +72,7 @@ export const getMerchantCargoCounts = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) => z.object({ merchantId: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }) => {
-    const customerCode = await resolveCustomerCode(
+    const cargoLink = await resolveCargoLink(
       context.supabase,
       data.merchantId,
       context.userId,
@@ -71,7 +82,7 @@ export const getMerchantCargoCounts = createServerFn({ method: "POST" })
     const results = await Promise.all(
       statuses.map((s) =>
         onlyCargo
-          .listShipments({ status: s, customer_code: customerCode, pageSize: 1, page: 1 })
+          .listShipments({ status: s, phone: cargoLink.phone, pageSize: 1, page: 1 })
           .then((r) => [s, r.total ?? r.data.length] as const)
           .catch(() => [s, 0] as const),
       ),
@@ -88,7 +99,7 @@ export const getMerchantCargoDetail = createServerFn({ method: "POST" })
     }).parse(i),
   )
   .handler(async ({ data, context }) => {
-    const customerCode = await resolveCustomerCode(
+    const cargoLink = await resolveCargoLink(
       context.supabase,
       data.merchantId,
       context.userId,
@@ -111,9 +122,13 @@ export const getMerchantCargoDetail = createServerFn({ method: "POST" })
       (detail?.merchant_id as string | null | undefined) ??
       ((detail as Record<string, unknown> | null | undefined)?.merchantId as string | undefined) ??
       null;
+    const shipmentPhone =
+      (detail?.phone as string | null | undefined) ??
+      ((detail as Record<string, unknown> | null | undefined)?.phoneNumber as string | undefined) ??
+      null;
 
     if (!isAdmin) {
-      if (!shipmentCode && !shipmentMerchantId) {
+      if (!shipmentCode && !shipmentMerchantId && !shipmentPhone) {
         console.warn("[cargo] unresolved shipment access blocked", {
           trackNumber: data.trackNumber,
           merchantId: data.merchantId,
@@ -123,14 +138,16 @@ export const getMerchantCargoDetail = createServerFn({ method: "POST" })
           { status: 403 },
         );
       }
-      const codeMatches = shipmentCode && shipmentCode === customerCode;
+      const codeMatches = shipmentCode && cargoLink.customerCode && shipmentCode === cargoLink.customerCode;
       const merchantMatches = shipmentMerchantId && shipmentMerchantId === data.merchantId;
-      if (!codeMatches && !merchantMatches) {
+      const phoneMatches = shipmentPhone && normalizeCargoPhone(shipmentPhone) === cargoLink.phone;
+      if (!codeMatches && !merchantMatches && !phoneMatches) {
         console.warn("[cargo] cross-merchant access blocked", {
           trackNumber: data.trackNumber,
           merchantId: data.merchantId,
           shipmentCode,
           shipmentMerchantId,
+          shipmentPhone,
         });
         throw new Response("Forbidden", { status: 403 });
       }
@@ -179,10 +196,55 @@ export const updateMerchantCargoCode = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+export const updateMerchantCargoPhone = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) =>
+    z.object({
+      merchantId: z.string().uuid(),
+      phone: z.string().trim().min(6).max(30),
+    }).parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    const { data: isOwner } = await context.supabase.rpc("is_merchant_owner", {
+      _user_id: context.userId,
+      _merchant_id: data.merchantId,
+    });
+    const { data: isAdmin } = await context.supabase.rpc("is_platform_admin", {
+      _user_id: context.userId,
+    });
+    if (!isOwner && !isAdmin) throw new Response("Forbidden", { status: 403 });
+
+    const { data: merchant, error: readErr } = await context.supabase
+      .from("merchants")
+      .select("onlycargo_customer_code")
+      .eq("id", data.merchantId)
+      .maybeSingle();
+    if (readErr) throw new Response(readErr.message, { status: 500 });
+
+    const normalizedPhone = normalizeCargoPhone(data.phone);
+    if (normalizedPhone.length < 6) {
+      throw new Response("Каргоны утасны дугаар буруу байна.", { status: 400 });
+    }
+
+    const existingCode = (merchant?.onlycargo_customer_code as string | null | undefined)?.trim();
+    const nextCode = existingCode || generateHiddenCargoCode(data.merchantId);
+
+    const { error } = await context.supabase
+      .from("merchants")
+      .update({
+        onlycargo_phone: normalizedPhone,
+        onlycargo_customer_code: nextCode,
+        onlycargo_sync_error: null,
+      })
+      .eq("id", data.merchantId);
+    if (error) throw new Response(error.message, { status: 500 });
+    return { ok: true };
+  });
+
 const CreateInput = z.object({
   merchantId: z.string().uuid(),
   trackNumber: z.string().trim().min(3).max(80),
-  phone: z.string().trim().min(6).max(20),
+  phone: z.string().trim().min(6).max(30).optional(),
   description: z.string().trim().max(500).optional(),
   weight: z.number().positive().max(10000).optional(),
   length: z.number().positive().max(1000).optional(),
@@ -194,7 +256,7 @@ export const createMerchantCargo = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) => CreateInput.parse(i))
   .handler(async ({ data, context }) => {
-    const customerCode = await resolveCustomerCode(
+    const cargoLink = await resolveCargoLink(
       context.supabase,
       data.merchantId,
       context.userId,
@@ -206,8 +268,8 @@ export const createMerchantCargo = createServerFn({ method: "POST" })
         : undefined;
     return onlyCargo.createShipment({
       trackNumber: data.trackNumber,
-      phone: data.phone,
-      customerCode,
+      phone: cargoLink.phone,
+      customerCode: cargoLink.customerCode ?? `oh_${data.merchantId.replace(/-/g, "")}`,
       description: data.description,
       weight: data.weight,
       dimensions: dims,

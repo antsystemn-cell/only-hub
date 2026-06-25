@@ -15,6 +15,11 @@ async function isPlatformAdmin(supabase: any, userId: string) {
   return !!data;
 }
 
+function normalizeCargoPhone(value: string | null | undefined) {
+  const digits = String(value ?? "").replace(/\D/g, "");
+  return digits.startsWith("976") && digits.length === 11 ? digits.slice(3) : digits;
+}
+
 // ────────────────────────────────────────────────
 // List inventory items
 // ────────────────────────────────────────────────
@@ -112,18 +117,19 @@ export const createInventoryFromCargo = createServerFn({ method: "POST" })
     await assertMerchantAccess(context.supabase, context.userId, data.merchantId);
 
     // ── Server-side cargo validation ───────────────────────────────
-    // Resolve this merchant's OnlyCargo customer code, then verify the
-    // tracking number really belongs to them and is in an eligible status.
+    // Resolve this merchant's cargo phone + hidden OnlyCargo customer code,
+    // then verify the tracking number really belongs to them and is eligible.
     const { data: merchant, error: mErr } = await context.supabase
       .from("merchants")
-      .select("onlycargo_customer_code")
+      .select("onlycargo_customer_code,onlycargo_phone")
       .eq("id", data.merchantId)
       .maybeSingle();
     if (mErr) throw new Response(mErr.message, { status: 500 });
     const customerCode = (merchant as any)?.onlycargo_customer_code?.trim();
-    if (!customerCode) {
+    const cargoPhone = normalizeCargoPhone((merchant as any)?.onlycargo_phone);
+    if (!cargoPhone) {
       throw new Response(
-        "OnlyCargo customer code тохируулаагүй байна. Тохиргоо хэсгээс оруулна уу.",
+        "Каргоны утасны дугаар тохируулаагүй байна.",
         { status: 400 },
       );
     }
@@ -150,10 +156,12 @@ export const createInventoryFromCargo = createServerFn({ method: "POST" })
 
     const shipmentCode = (cargo.customer_code ?? cargo.customerCode ?? null) as string | null;
     const shipmentMerchantId = (cargo.merchant_id ?? cargo.merchantId ?? null) as string | null;
+    const shipmentPhone = (cargo.phone ?? cargo.phoneNumber ?? null) as string | null;
     if (!isAdmin) {
       const codeMatches = shipmentCode && shipmentCode === customerCode;
       const merchantMatches = shipmentMerchantId && shipmentMerchantId === data.merchantId;
-      if (!codeMatches && !merchantMatches) {
+      const phoneMatches = shipmentPhone && normalizeCargoPhone(shipmentPhone) === cargoPhone;
+      if (!codeMatches && !merchantMatches && !phoneMatches) {
         throw new Response("Энэ карго танд хамаарахгүй байна.", { status: 403 });
       }
     }

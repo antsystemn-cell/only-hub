@@ -23,7 +23,7 @@ import {
   listMerchantCargo,
   getMerchantCargoDetail,
   getMerchantCargoCounts,
-  updateMerchantCargoCode,
+  updateMerchantCargoPhone,
   createMerchantCargo,
   markMerchantCargoNotificationsRead,
 } from "@/lib/onlycargo/cargo.functions";
@@ -72,7 +72,6 @@ function CargoView({ merchantId }: { merchantId: string }) {
   const [page, setPage] = useState(1);
   const pageSize = 20;
   const [openTrack, setOpenTrack] = useState<string | null>(null);
-  const [createOpen, setCreateOpen] = useState(false);
 
   // Mark cargo notifications as read on page open → clears the sidebar badge.
   const markReadFn = useServerFn(markMerchantCargoNotificationsRead);
@@ -91,14 +90,15 @@ function CargoView({ merchantId }: { merchantId: string }) {
     queryFn: async () => {
       const { data } = await supabase
         .from("merchants")
-        .select("id,name,onlycargo_customer_code")
+        .select("id,name,onlycargo_customer_code,onlycargo_phone,onlycargo_sync_error,onlycargo_last_synced_at")
         .eq("id", merchantId)
         .maybeSingle();
       return data;
     },
   });
 
-  const hasCode = !!merchant?.onlycargo_customer_code?.trim();
+  const cargoPhone = ((merchant as any)?.onlycargo_phone as string | null | undefined)?.trim() ?? "";
+  const hasCargoPhone = !!cargoPhone;
 
   const listFn = useServerFn(listMerchantCargo);
   const countsFn = useServerFn(getMerchantCargoCounts);
@@ -117,14 +117,14 @@ function CargoView({ merchantId }: { merchantId: string }) {
           q: search || undefined,
         },
       }),
-    enabled: hasCode,
+    enabled: hasCargoPhone,
     staleTime: 30_000,
   });
 
   const countsQuery = useQuery({
     queryKey: ["onlycargo-counts", merchantId],
     queryFn: () => countsFn({ data: { merchantId } }),
-    enabled: hasCode,
+    enabled: hasCargoPhone,
     refetchInterval: 60_000,
     staleTime: 30_000,
   });
@@ -145,11 +145,6 @@ function CargoView({ merchantId }: { merchantId: string }) {
           </p>
         </div>
         <div className="flex gap-2">
-          {hasCode && (
-            <Button onClick={() => setCreateOpen(true)}>
-              <Plus className="mr-2 h-4 w-4" /> Шинэ ачаа бүртгэх
-            </Button>
-          )}
           <Button
             variant="outline"
             onClick={() => {
@@ -162,10 +157,30 @@ function CargoView({ merchantId }: { merchantId: string }) {
         </div>
       </div>
 
-      {!hasCode ? (
-        <SetupCustomerCode merchantId={merchantId} />
+      {!hasCargoPhone ? (
+        <SetupCargoPhone merchantId={merchantId} />
       ) : (
         <>
+          <Card className="p-4 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+            <div>
+              <div className="text-sm font-medium">Карго холболт</div>
+              <p className="text-sm text-muted-foreground">
+                Карго систем дээр ачаа энэ утсаар бүртгэгдэхэд танай дэлгүүртэй автоматаар холбогдоно.
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Ачааг OnlyCargo үндсэн админ дээр бүртгэнэ; Only Hub жагсаалт нь тухайн утсаар шууд татагдана.
+              </p>
+              {(merchant as any)?.onlycargo_sync_error && (
+                <p className="text-xs text-destructive mt-1">
+                  Сүүлийн синк алдаа: {(merchant as any).onlycargo_sync_error}
+                </p>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              <Badge variant="secondary" className="font-mono">{cargoPhone}</Badge>
+              <SetupCargoPhone merchantId={merchantId} currentPhone={cargoPhone} compact />
+            </div>
+          </Card>
           <Tabs value={tab} onValueChange={(v) => { setTab(v as any); setPage(1); }}>
             <TabsList className="flex flex-wrap">
               {TAB_STATUSES.map((t) => {
@@ -296,45 +311,96 @@ function CargoView({ merchantId }: { merchantId: string }) {
         onClose={() => setOpenTrack(null)}
       />
 
-      <CreateCargoDialog
-        merchantId={merchantId}
-        open={createOpen}
-        onClose={() => setCreateOpen(false)}
-      />
     </div>
   );
 }
 
-function SetupCustomerCode({ merchantId }: { merchantId: string }) {
-  const [code, setCode] = useState("");
+function SetupCargoPhone({
+  merchantId,
+  currentPhone = "",
+  compact = false,
+}: {
+  merchantId: string;
+  currentPhone?: string;
+  compact?: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const [phone, setPhone] = useState(currentPhone);
   const qc = useQueryClient();
-  const updateFn = useServerFn(updateMerchantCargoCode);
+
+  useEffect(() => {
+    if (!open) setPhone(currentPhone);
+  }, [currentPhone, open]);
+
+  const updateFn = useServerFn(updateMerchantCargoPhone);
   const mut = useMutation({
-    mutationFn: (customerCode: string) => updateFn({ data: { merchantId, customerCode } }),
+    mutationFn: (nextPhone: string) => updateFn({ data: { merchantId, phone: nextPhone } }),
     onSuccess: () => {
       toast.success("Хадгалагдлаа");
+      setOpen(false);
       qc.invalidateQueries({ queryKey: ["merchant-onlycargo", merchantId] });
+      qc.invalidateQueries({ queryKey: ["onlycargo-list", merchantId] });
+      qc.invalidateQueries({ queryKey: ["onlycargo-counts", merchantId] });
     },
     onError: (e: any) => toast.error(e?.message ?? "Алдаа"),
   });
+
+  if (compact) {
+    return (
+      <Dialog open={open} onOpenChange={setOpen}>
+        <Button type="button" variant="outline" size="sm" onClick={() => setOpen(true)}>
+          Солих
+        </Button>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Каргоны утас солих</DialogTitle>
+            <DialogDescription>
+              Карго систем дээр ачаагаа бүртгүүлэх утасны дугаараа оруулна уу.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <Input
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              placeholder="жишээ нь: 88660000"
+              inputMode="tel"
+              maxLength={30}
+            />
+            <div className="flex justify-end gap-2">
+              <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+                Болих
+              </Button>
+              <Button disabled={phone.trim().length < 6 || mut.isPending} onClick={() => mut.mutate(phone.trim())}>
+                {mut.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Хадгалах
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
   return (
     <Card className="p-6 space-y-4 max-w-xl">
       <div>
-        <h2 className="font-semibold">OnlyCargo customer code тохируулах</h2>
+        <h2 className="font-semibold">Каргоны утас тохируулах</h2>
         <p className="text-sm text-muted-foreground mt-1">
-          Танай дэлгүүрийн OnlyCargo дээрх customer code-ыг оруулна уу. Зөвхөн дэлгүүрийн эзэн
-          тохируулах боломжтой.
+          Карго систем дээр ачаагаа бүртгүүлэх утасны дугаараа оруулна уу. Дотоод холболтын код
+          backend дээр автоматаар үүсэж, merchant-д тусад нь харагдахгүй.
         </p>
       </div>
       <div className="flex gap-2">
         <Input
-          value={code}
-          onChange={(e) => setCode(e.target.value)}
-          placeholder="жишээ нь: ONLY-001"
+          value={phone}
+          onChange={(e) => setPhone(e.target.value)}
+          placeholder="жишээ нь: 88660000"
+          inputMode="tel"
+          maxLength={30}
         />
         <Button
-          disabled={!code.trim() || mut.isPending}
-          onClick={() => mut.mutate(code.trim())}
+          disabled={phone.trim().length < 6 || mut.isPending}
+          onClick={() => mut.mutate(phone.trim())}
         >
           {mut.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           Хадгалах
@@ -422,11 +488,7 @@ function CargoDetailDialog({
             <Card className="p-4 space-y-3">
               <div className="flex items-center justify-between gap-3 flex-wrap">
                 <StatusBadge status={currentStatus} />
-                {detail.customer_code && (
-                  <span className="text-xs text-muted-foreground font-mono">
-                    Code: {detail.customer_code}
-                  </span>
-                )}
+                <span className="text-xs text-muted-foreground">Утасны дугаараар холбогдсон</span>
               </div>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
                 <Info label="Утас" value={detail.phone ?? "-"} />
@@ -591,10 +653,12 @@ function fmtDate(d: any) {
 
 function CreateCargoDialog({
   merchantId,
+  cargoPhone,
   open,
   onClose,
 }: {
   merchantId: string;
+  cargoPhone: string;
   open: boolean;
   onClose: () => void;
 }) {
@@ -602,7 +666,6 @@ function CreateCargoDialog({
   const createFn = useServerFn(createMerchantCargo);
   const [form, setForm] = useState({
     trackNumber: "",
-    phone: "",
     description: "",
     weight: "",
     length: "",
@@ -613,7 +676,6 @@ function CreateCargoDialog({
   const reset = () =>
     setForm({
       trackNumber: "",
-      phone: "",
       description: "",
       weight: "",
       length: "",
@@ -631,7 +693,6 @@ function CreateCargoDialog({
         data: {
           merchantId,
           trackNumber: form.trackNumber.trim(),
-          phone: form.phone.trim(),
           description: form.description.trim() || undefined,
           weight: num(form.weight),
           length: num(form.length),
@@ -654,7 +715,7 @@ function CreateCargoDialog({
   });
 
   const canSubmit =
-    form.trackNumber.trim().length >= 3 && form.phone.trim().length >= 6 && !mut.isPending;
+    form.trackNumber.trim().length >= 3 && !mut.isPending;
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
@@ -662,7 +723,7 @@ function CreateCargoDialog({
         <DialogHeader>
           <DialogTitle>Шинэ ачаа бүртгэх</DialogTitle>
           <DialogDescription>
-            OnlyCargo систем дээр трак дугаараа бүртгэнэ.
+            OnlyCargo систем дээр трак дугаараа бүртгэнэ. Утас нь таны карго холболтын дугаараар явна.
           </DialogDescription>
         </DialogHeader>
         <form
@@ -685,16 +746,10 @@ function CreateCargoDialog({
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="phone">Утас *</Label>
-              <Input
-                id="phone"
-                value={form.phone}
-                onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
-                placeholder="88660000"
-                inputMode="tel"
-                maxLength={20}
-                required
-              />
+              <Label>Карго утас</Label>
+              <div className="h-10 rounded-md border bg-muted/40 px-3 flex items-center text-sm font-mono">
+                {cargoPhone || "-"}
+              </div>
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="weight">Жин (кг)</Label>
