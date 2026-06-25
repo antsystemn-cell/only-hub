@@ -24,6 +24,7 @@ import {
   getMerchantCargoDetail,
   getMerchantCargoCounts,
   updateMerchantCargoPhone,
+  createMerchantCargo,
   markMerchantCargoNotificationsRead,
 } from "@/lib/onlycargo/cargo.functions";
 
