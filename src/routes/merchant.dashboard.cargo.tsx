@@ -17,14 +17,13 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Loader2, RefreshCw, Search, Package, Plus, MapPin, Image as ImageIcon, Scale, Ruler, FileText, CheckCircle2, Circle } from "lucide-react";
+import { Loader2, RefreshCw, Search, Package, MapPin, Image as ImageIcon, Scale, Ruler, FileText, CheckCircle2, Circle } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import {
   listMerchantCargo,
   getMerchantCargoDetail,
   getMerchantCargoCounts,
   updateMerchantCargoPhone,
-  createMerchantCargo,
   markMerchantCargoNotificationsRead,
 } from "@/lib/onlycargo/cargo.functions";
 
