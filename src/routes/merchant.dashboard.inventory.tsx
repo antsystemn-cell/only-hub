@@ -6,12 +6,12 @@ export const Route = createFileRoute("/merchant/dashboard/inventory")({
   component: InventoryLayout,
 });
 
-const TABS = [
+const TABS: { to: string; label: string; end?: boolean }[] = [
   { to: "/merchant/dashboard/inventory", label: "Нөөцийн жагсаалт", end: true },
   { to: "/merchant/dashboard/inventory/from-cargo", label: "Каргогоос нэмэх" },
   { to: "/merchant/dashboard/inventory/movements", label: "Нөөцийн хөдөлгөөн" },
   { to: "/merchant/dashboard/inventory/settings", label: "Тохиргоо" },
-] as const;
+];
 
 function InventoryLayout() {
   const path = useRouterState({ select: (s) => s.location.pathname });

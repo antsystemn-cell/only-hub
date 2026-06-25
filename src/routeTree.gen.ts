@@ -33,6 +33,7 @@ import { Route as AdminOrdersRouteImport } from './routes/admin.orders'
 import { Route as AdminNotificationsRouteImport } from './routes/admin.notifications'
 import { Route as AdminMessageTestRouteImport } from './routes/admin.message-test'
 import { Route as AdminMerchantsRouteImport } from './routes/admin.merchants'
+import { Route as AdminInventoryRouteImport } from './routes/admin.inventory'
 import { Route as AdminForeignSyncRouteImport } from './routes/admin.foreign-sync'
 import { Route as AdminForeignOrdersRouteImport } from './routes/admin.foreign-orders'
 import { Route as AdminDeliveryRouteImport } from './routes/admin.delivery'
@@ -50,6 +51,7 @@ import { Route as MerchantDashboardSettingsRouteImport } from './routes/merchant
 import { Route as MerchantDashboardProductsRouteImport } from './routes/merchant.dashboard.products'
 import { Route as MerchantDashboardPaymentsRouteImport } from './routes/merchant.dashboard.payments'
 import { Route as MerchantDashboardOrdersRouteImport } from './routes/merchant.dashboard.orders'
+import { Route as MerchantDashboardInventoryRouteImport } from './routes/merchant.dashboard.inventory'
 import { Route as MerchantDashboardForeignSyncRouteImport } from './routes/merchant.dashboard.foreign-sync'
 import { Route as MerchantDashboardForeignQueueRouteImport } from './routes/merchant.dashboard.foreign-queue'
 import { Route as MerchantDashboardDeliveryRouteImport } from './routes/merchant.dashboard.delivery'
@@ -60,8 +62,12 @@ import { Route as AuthTokiLoginRouteImport } from './routes/auth.toki.login'
 import { Route as AuthTokiCallbackRouteImport } from './routes/auth.toki.callback'
 import { Route as AdminBlogNewRouteImport } from './routes/admin.blog.new'
 import { Route as AdminBlogIdRouteImport } from './routes/admin.blog.$id'
+import { Route as MerchantDashboardInventoryIndexRouteImport } from './routes/merchant.dashboard.inventory.index'
 import { Route as StoreMerchantSlugProductProductSlugRouteImport } from './routes/store.$merchantSlug.product.$productSlug'
 import { Route as StoreMerchantSlugOrderOrderIdRouteImport } from './routes/store.$merchantSlug.order.$orderId'
+import { Route as MerchantDashboardInventorySettingsRouteImport } from './routes/merchant.dashboard.inventory.settings'
+import { Route as MerchantDashboardInventoryMovementsRouteImport } from './routes/merchant.dashboard.inventory.movements'
+import { Route as MerchantDashboardInventoryFromCargoRouteImport } from './routes/merchant.dashboard.inventory.from-cargo'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
 import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
 import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
@@ -194,6 +200,11 @@ const AdminMerchantsRoute = AdminMerchantsRouteImport.update({
   path: '/merchants',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminInventoryRoute = AdminInventoryRouteImport.update({
+  id: '/inventory',
+  path: '/inventory',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminForeignSyncRoute = AdminForeignSyncRouteImport.update({
   id: '/foreign-sync',
   path: '/foreign-sync',
@@ -283,6 +294,12 @@ const MerchantDashboardOrdersRoute = MerchantDashboardOrdersRouteImport.update({
   path: '/orders',
   getParentRoute: () => MerchantDashboardRoute,
 } as any)
+const MerchantDashboardInventoryRoute =
+  MerchantDashboardInventoryRouteImport.update({
+    id: '/inventory',
+    path: '/inventory',
+    getParentRoute: () => MerchantDashboardRoute,
+  } as any)
 const MerchantDashboardForeignSyncRoute =
   MerchantDashboardForeignSyncRouteImport.update({
     id: '/foreign-sync',
@@ -338,6 +355,12 @@ const AdminBlogIdRoute = AdminBlogIdRouteImport.update({
   path: '/blog/$id',
   getParentRoute: () => AdminRoute,
 } as any)
+const MerchantDashboardInventoryIndexRoute =
+  MerchantDashboardInventoryIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => MerchantDashboardInventoryRoute,
+  } as any)
 const StoreMerchantSlugProductProductSlugRoute =
   StoreMerchantSlugProductProductSlugRouteImport.update({
     id: '/product/$productSlug',
@@ -349,6 +372,24 @@ const StoreMerchantSlugOrderOrderIdRoute =
     id: '/order/$orderId',
     path: '/order/$orderId',
     getParentRoute: () => StoreMerchantSlugRoute,
+  } as any)
+const MerchantDashboardInventorySettingsRoute =
+  MerchantDashboardInventorySettingsRouteImport.update({
+    id: '/settings',
+    path: '/settings',
+    getParentRoute: () => MerchantDashboardInventoryRoute,
+  } as any)
+const MerchantDashboardInventoryMovementsRoute =
+  MerchantDashboardInventoryMovementsRouteImport.update({
+    id: '/movements',
+    path: '/movements',
+    getParentRoute: () => MerchantDashboardInventoryRoute,
+  } as any)
+const MerchantDashboardInventoryFromCargoRoute =
+  MerchantDashboardInventoryFromCargoRouteImport.update({
+    id: '/from-cargo',
+    path: '/from-cargo',
+    getParentRoute: () => MerchantDashboardInventoryRoute,
   } as any)
 const LovableEmailQueueProcessRoute =
   LovableEmailQueueProcessRouteImport.update({
@@ -429,6 +470,7 @@ export interface FileRoutesByFullPath {
   '/admin/delivery': typeof AdminDeliveryRoute
   '/admin/foreign-orders': typeof AdminForeignOrdersRoute
   '/admin/foreign-sync': typeof AdminForeignSyncRoute
+  '/admin/inventory': typeof AdminInventoryRoute
   '/admin/merchants': typeof AdminMerchantsRoute
   '/admin/message-test': typeof AdminMessageTestRoute
   '/admin/notifications': typeof AdminNotificationsRoute
@@ -455,6 +497,7 @@ export interface FileRoutesByFullPath {
   '/merchant/dashboard/delivery': typeof MerchantDashboardDeliveryRoute
   '/merchant/dashboard/foreign-queue': typeof MerchantDashboardForeignQueueRoute
   '/merchant/dashboard/foreign-sync': typeof MerchantDashboardForeignSyncRoute
+  '/merchant/dashboard/inventory': typeof MerchantDashboardInventoryRouteWithChildren
   '/merchant/dashboard/orders': typeof MerchantDashboardOrdersRoute
   '/merchant/dashboard/payments': typeof MerchantDashboardPaymentsRoute
   '/merchant/dashboard/products': typeof MerchantDashboardProductsRoute
@@ -473,8 +516,12 @@ export interface FileRoutesByFullPath {
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
+  '/merchant/dashboard/inventory/from-cargo': typeof MerchantDashboardInventoryFromCargoRoute
+  '/merchant/dashboard/inventory/movements': typeof MerchantDashboardInventoryMovementsRoute
+  '/merchant/dashboard/inventory/settings': typeof MerchantDashboardInventorySettingsRoute
   '/store/$merchantSlug/order/$orderId': typeof StoreMerchantSlugOrderOrderIdRoute
   '/store/$merchantSlug/product/$productSlug': typeof StoreMerchantSlugProductProductSlugRoute
+  '/merchant/dashboard/inventory/': typeof MerchantDashboardInventoryIndexRoute
   '/api/public/payments/omniway/webhook': typeof ApiPublicPaymentsOmniwayWebhookRoute
   '/api/public/payments/pocket/webhook': typeof ApiPublicPaymentsPocketWebhookRoute
   '/api/public/payments/storepay/webhook': typeof ApiPublicPaymentsStorepayWebhookRoute
@@ -494,6 +541,7 @@ export interface FileRoutesByTo {
   '/admin/delivery': typeof AdminDeliveryRoute
   '/admin/foreign-orders': typeof AdminForeignOrdersRoute
   '/admin/foreign-sync': typeof AdminForeignSyncRoute
+  '/admin/inventory': typeof AdminInventoryRoute
   '/admin/merchants': typeof AdminMerchantsRoute
   '/admin/message-test': typeof AdminMessageTestRoute
   '/admin/notifications': typeof AdminNotificationsRoute
@@ -537,8 +585,12 @@ export interface FileRoutesByTo {
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
+  '/merchant/dashboard/inventory/from-cargo': typeof MerchantDashboardInventoryFromCargoRoute
+  '/merchant/dashboard/inventory/movements': typeof MerchantDashboardInventoryMovementsRoute
+  '/merchant/dashboard/inventory/settings': typeof MerchantDashboardInventorySettingsRoute
   '/store/$merchantSlug/order/$orderId': typeof StoreMerchantSlugOrderOrderIdRoute
   '/store/$merchantSlug/product/$productSlug': typeof StoreMerchantSlugProductProductSlugRoute
+  '/merchant/dashboard/inventory': typeof MerchantDashboardInventoryIndexRoute
   '/api/public/payments/omniway/webhook': typeof ApiPublicPaymentsOmniwayWebhookRoute
   '/api/public/payments/pocket/webhook': typeof ApiPublicPaymentsPocketWebhookRoute
   '/api/public/payments/storepay/webhook': typeof ApiPublicPaymentsStorepayWebhookRoute
@@ -560,6 +612,7 @@ export interface FileRoutesById {
   '/admin/delivery': typeof AdminDeliveryRoute
   '/admin/foreign-orders': typeof AdminForeignOrdersRoute
   '/admin/foreign-sync': typeof AdminForeignSyncRoute
+  '/admin/inventory': typeof AdminInventoryRoute
   '/admin/merchants': typeof AdminMerchantsRoute
   '/admin/message-test': typeof AdminMessageTestRoute
   '/admin/notifications': typeof AdminNotificationsRoute
@@ -586,6 +639,7 @@ export interface FileRoutesById {
   '/merchant/dashboard/delivery': typeof MerchantDashboardDeliveryRoute
   '/merchant/dashboard/foreign-queue': typeof MerchantDashboardForeignQueueRoute
   '/merchant/dashboard/foreign-sync': typeof MerchantDashboardForeignSyncRoute
+  '/merchant/dashboard/inventory': typeof MerchantDashboardInventoryRouteWithChildren
   '/merchant/dashboard/orders': typeof MerchantDashboardOrdersRoute
   '/merchant/dashboard/payments': typeof MerchantDashboardPaymentsRoute
   '/merchant/dashboard/products': typeof MerchantDashboardProductsRoute
@@ -604,8 +658,12 @@ export interface FileRoutesById {
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
+  '/merchant/dashboard/inventory/from-cargo': typeof MerchantDashboardInventoryFromCargoRoute
+  '/merchant/dashboard/inventory/movements': typeof MerchantDashboardInventoryMovementsRoute
+  '/merchant/dashboard/inventory/settings': typeof MerchantDashboardInventorySettingsRoute
   '/store/$merchantSlug/order/$orderId': typeof StoreMerchantSlugOrderOrderIdRoute
   '/store/$merchantSlug/product/$productSlug': typeof StoreMerchantSlugProductProductSlugRoute
+  '/merchant/dashboard/inventory/': typeof MerchantDashboardInventoryIndexRoute
   '/api/public/payments/omniway/webhook': typeof ApiPublicPaymentsOmniwayWebhookRoute
   '/api/public/payments/pocket/webhook': typeof ApiPublicPaymentsPocketWebhookRoute
   '/api/public/payments/storepay/webhook': typeof ApiPublicPaymentsStorepayWebhookRoute
@@ -628,6 +686,7 @@ export interface FileRouteTypes {
     | '/admin/delivery'
     | '/admin/foreign-orders'
     | '/admin/foreign-sync'
+    | '/admin/inventory'
     | '/admin/merchants'
     | '/admin/message-test'
     | '/admin/notifications'
@@ -654,6 +713,7 @@ export interface FileRouteTypes {
     | '/merchant/dashboard/delivery'
     | '/merchant/dashboard/foreign-queue'
     | '/merchant/dashboard/foreign-sync'
+    | '/merchant/dashboard/inventory'
     | '/merchant/dashboard/orders'
     | '/merchant/dashboard/payments'
     | '/merchant/dashboard/products'
@@ -672,8 +732,12 @@ export interface FileRouteTypes {
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
     | '/lovable/email/queue/process'
+    | '/merchant/dashboard/inventory/from-cargo'
+    | '/merchant/dashboard/inventory/movements'
+    | '/merchant/dashboard/inventory/settings'
     | '/store/$merchantSlug/order/$orderId'
     | '/store/$merchantSlug/product/$productSlug'
+    | '/merchant/dashboard/inventory/'
     | '/api/public/payments/omniway/webhook'
     | '/api/public/payments/pocket/webhook'
     | '/api/public/payments/storepay/webhook'
@@ -693,6 +757,7 @@ export interface FileRouteTypes {
     | '/admin/delivery'
     | '/admin/foreign-orders'
     | '/admin/foreign-sync'
+    | '/admin/inventory'
     | '/admin/merchants'
     | '/admin/message-test'
     | '/admin/notifications'
@@ -736,8 +801,12 @@ export interface FileRouteTypes {
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
     | '/lovable/email/queue/process'
+    | '/merchant/dashboard/inventory/from-cargo'
+    | '/merchant/dashboard/inventory/movements'
+    | '/merchant/dashboard/inventory/settings'
     | '/store/$merchantSlug/order/$orderId'
     | '/store/$merchantSlug/product/$productSlug'
+    | '/merchant/dashboard/inventory'
     | '/api/public/payments/omniway/webhook'
     | '/api/public/payments/pocket/webhook'
     | '/api/public/payments/storepay/webhook'
@@ -758,6 +827,7 @@ export interface FileRouteTypes {
     | '/admin/delivery'
     | '/admin/foreign-orders'
     | '/admin/foreign-sync'
+    | '/admin/inventory'
     | '/admin/merchants'
     | '/admin/message-test'
     | '/admin/notifications'
@@ -784,6 +854,7 @@ export interface FileRouteTypes {
     | '/merchant/dashboard/delivery'
     | '/merchant/dashboard/foreign-queue'
     | '/merchant/dashboard/foreign-sync'
+    | '/merchant/dashboard/inventory'
     | '/merchant/dashboard/orders'
     | '/merchant/dashboard/payments'
     | '/merchant/dashboard/products'
@@ -802,8 +873,12 @@ export interface FileRouteTypes {
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
     | '/lovable/email/queue/process'
+    | '/merchant/dashboard/inventory/from-cargo'
+    | '/merchant/dashboard/inventory/movements'
+    | '/merchant/dashboard/inventory/settings'
     | '/store/$merchantSlug/order/$orderId'
     | '/store/$merchantSlug/product/$productSlug'
+    | '/merchant/dashboard/inventory/'
     | '/api/public/payments/omniway/webhook'
     | '/api/public/payments/pocket/webhook'
     | '/api/public/payments/storepay/webhook'
@@ -1010,6 +1085,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminMerchantsRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/inventory': {
+      id: '/admin/inventory'
+      path: '/inventory'
+      fullPath: '/admin/inventory'
+      preLoaderRoute: typeof AdminInventoryRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/foreign-sync': {
       id: '/admin/foreign-sync'
       path: '/foreign-sync'
@@ -1129,6 +1211,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MerchantDashboardOrdersRouteImport
       parentRoute: typeof MerchantDashboardRoute
     }
+    '/merchant/dashboard/inventory': {
+      id: '/merchant/dashboard/inventory'
+      path: '/inventory'
+      fullPath: '/merchant/dashboard/inventory'
+      preLoaderRoute: typeof MerchantDashboardInventoryRouteImport
+      parentRoute: typeof MerchantDashboardRoute
+    }
     '/merchant/dashboard/foreign-sync': {
       id: '/merchant/dashboard/foreign-sync'
       path: '/foreign-sync'
@@ -1199,6 +1288,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminBlogIdRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/merchant/dashboard/inventory/': {
+      id: '/merchant/dashboard/inventory/'
+      path: '/'
+      fullPath: '/merchant/dashboard/inventory/'
+      preLoaderRoute: typeof MerchantDashboardInventoryIndexRouteImport
+      parentRoute: typeof MerchantDashboardInventoryRoute
+    }
     '/store/$merchantSlug/product/$productSlug': {
       id: '/store/$merchantSlug/product/$productSlug'
       path: '/product/$productSlug'
@@ -1212,6 +1308,27 @@ declare module '@tanstack/react-router' {
       fullPath: '/store/$merchantSlug/order/$orderId'
       preLoaderRoute: typeof StoreMerchantSlugOrderOrderIdRouteImport
       parentRoute: typeof StoreMerchantSlugRoute
+    }
+    '/merchant/dashboard/inventory/settings': {
+      id: '/merchant/dashboard/inventory/settings'
+      path: '/settings'
+      fullPath: '/merchant/dashboard/inventory/settings'
+      preLoaderRoute: typeof MerchantDashboardInventorySettingsRouteImport
+      parentRoute: typeof MerchantDashboardInventoryRoute
+    }
+    '/merchant/dashboard/inventory/movements': {
+      id: '/merchant/dashboard/inventory/movements'
+      path: '/movements'
+      fullPath: '/merchant/dashboard/inventory/movements'
+      preLoaderRoute: typeof MerchantDashboardInventoryMovementsRouteImport
+      parentRoute: typeof MerchantDashboardInventoryRoute
+    }
+    '/merchant/dashboard/inventory/from-cargo': {
+      id: '/merchant/dashboard/inventory/from-cargo'
+      path: '/from-cargo'
+      fullPath: '/merchant/dashboard/inventory/from-cargo'
+      preLoaderRoute: typeof MerchantDashboardInventoryFromCargoRouteImport
+      parentRoute: typeof MerchantDashboardInventoryRoute
     }
     '/lovable/email/queue/process': {
       id: '/lovable/email/queue/process'
@@ -1311,6 +1428,7 @@ interface AdminRouteChildren {
   AdminDeliveryRoute: typeof AdminDeliveryRoute
   AdminForeignOrdersRoute: typeof AdminForeignOrdersRoute
   AdminForeignSyncRoute: typeof AdminForeignSyncRoute
+  AdminInventoryRoute: typeof AdminInventoryRoute
   AdminMerchantsRoute: typeof AdminMerchantsRoute
   AdminMessageTestRoute: typeof AdminMessageTestRoute
   AdminNotificationsRoute: typeof AdminNotificationsRoute
@@ -1332,6 +1450,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminDeliveryRoute: AdminDeliveryRoute,
   AdminForeignOrdersRoute: AdminForeignOrdersRoute,
   AdminForeignSyncRoute: AdminForeignSyncRoute,
+  AdminInventoryRoute: AdminInventoryRoute,
   AdminMerchantsRoute: AdminMerchantsRoute,
   AdminMessageTestRoute: AdminMessageTestRoute,
   AdminNotificationsRoute: AdminNotificationsRoute,
@@ -1348,6 +1467,29 @@ const AdminRouteChildren: AdminRouteChildren = {
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
+interface MerchantDashboardInventoryRouteChildren {
+  MerchantDashboardInventoryFromCargoRoute: typeof MerchantDashboardInventoryFromCargoRoute
+  MerchantDashboardInventoryMovementsRoute: typeof MerchantDashboardInventoryMovementsRoute
+  MerchantDashboardInventorySettingsRoute: typeof MerchantDashboardInventorySettingsRoute
+  MerchantDashboardInventoryIndexRoute: typeof MerchantDashboardInventoryIndexRoute
+}
+
+const MerchantDashboardInventoryRouteChildren: MerchantDashboardInventoryRouteChildren =
+  {
+    MerchantDashboardInventoryFromCargoRoute:
+      MerchantDashboardInventoryFromCargoRoute,
+    MerchantDashboardInventoryMovementsRoute:
+      MerchantDashboardInventoryMovementsRoute,
+    MerchantDashboardInventorySettingsRoute:
+      MerchantDashboardInventorySettingsRoute,
+    MerchantDashboardInventoryIndexRoute: MerchantDashboardInventoryIndexRoute,
+  }
+
+const MerchantDashboardInventoryRouteWithChildren =
+  MerchantDashboardInventoryRoute._addFileChildren(
+    MerchantDashboardInventoryRouteChildren,
+  )
+
 interface MerchantDashboardRouteChildren {
   MerchantDashboardBackupOldDeliveryRoute: typeof MerchantDashboardBackupOldDeliveryRoute
   MerchantDashboardCargoRoute: typeof MerchantDashboardCargoRoute
@@ -1355,6 +1497,7 @@ interface MerchantDashboardRouteChildren {
   MerchantDashboardDeliveryRoute: typeof MerchantDashboardDeliveryRoute
   MerchantDashboardForeignQueueRoute: typeof MerchantDashboardForeignQueueRoute
   MerchantDashboardForeignSyncRoute: typeof MerchantDashboardForeignSyncRoute
+  MerchantDashboardInventoryRoute: typeof MerchantDashboardInventoryRouteWithChildren
   MerchantDashboardOrdersRoute: typeof MerchantDashboardOrdersRoute
   MerchantDashboardPaymentsRoute: typeof MerchantDashboardPaymentsRoute
   MerchantDashboardProductsRoute: typeof MerchantDashboardProductsRoute
@@ -1372,6 +1515,7 @@ const MerchantDashboardRouteChildren: MerchantDashboardRouteChildren = {
   MerchantDashboardDeliveryRoute: MerchantDashboardDeliveryRoute,
   MerchantDashboardForeignQueueRoute: MerchantDashboardForeignQueueRoute,
   MerchantDashboardForeignSyncRoute: MerchantDashboardForeignSyncRoute,
+  MerchantDashboardInventoryRoute: MerchantDashboardInventoryRouteWithChildren,
   MerchantDashboardOrdersRoute: MerchantDashboardOrdersRoute,
   MerchantDashboardPaymentsRoute: MerchantDashboardPaymentsRoute,
   MerchantDashboardProductsRoute: MerchantDashboardProductsRoute,
