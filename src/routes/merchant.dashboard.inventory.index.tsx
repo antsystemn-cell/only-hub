@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useAuth } from "@/hooks/use-auth";
 import { Card } from "@/components/ui/card";
@@ -9,8 +9,11 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Loader2, Search, PackageOpen } from "lucide-react";
+import { Loader2, Search, PackageOpen, Link2, RefreshCw } from "lucide-react";
+import { toast } from "sonner";
 import { listInventoryItems } from "@/lib/inventory/inventory.functions";
+import { manualSyncInventoryLink } from "@/lib/inventory/links.functions";
+import { InventoryLinkDialog } from "@/components/inventory/InventoryLinkDialog";
 
 export const Route = createFileRoute("/merchant/dashboard/inventory/")({
   component: InventoryListPage,
@@ -18,14 +21,26 @@ export const Route = createFileRoute("/merchant/dashboard/inventory/")({
 
 function InventoryListPage() {
   const { primaryMerchantId } = useAuth();
+  const qc = useQueryClient();
   const [q, setQ] = useState("");
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState<string>("active");
   const [lowStock, setLowStock] = useState(false);
   const [page, setPage] = useState(1);
+  const [linkTarget, setLinkTarget] = useState<any | null>(null);
   const pageSize = 20;
 
   const listFn = useServerFn(listInventoryItems);
+  const syncFn = useServerFn(manualSyncInventoryLink);
+  const syncMut = useMutation({
+    mutationFn: (inventoryItemId: string) =>
+      syncFn({ data: { merchantId: primaryMerchantId!, inventoryItemId } }),
+    onSuccess: (r: any) => {
+      toast.success(`Stock шинэчиллээ (${r?.synced ?? 0})`);
+      qc.invalidateQueries({ queryKey: ["inventory-list"] });
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Алдаа"),
+  });
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ["inventory-list", primaryMerchantId, search, status, lowStock, page],
     enabled: !!primaryMerchantId,
@@ -120,6 +135,7 @@ function InventoryListPage() {
                     <TableHead>Эх үүсвэр</TableHead>
                     <TableHead>Байршил</TableHead>
                     <TableHead>Шинэчилсэн</TableHead>
+                    <TableHead className="text-right">Үйлдэл</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -146,6 +162,22 @@ function InventoryListPage() {
                       <TableCell className="text-xs text-muted-foreground">
                         {new Date(r.updated_at).toLocaleString("mn-MN")}
                       </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-1">
+                          <Button size="sm" variant="outline" onClick={() => setLinkTarget(r)}>
+                            <Link2 className="h-3.5 w-3.5 mr-1" /> Бараатай холбох
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => syncMut.mutate(r.id)}
+                            disabled={syncMut.isPending}
+                            title="Stock шинэчлэх"
+                          >
+                            <RefreshCw className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -155,9 +187,6 @@ function InventoryListPage() {
             <div className="flex flex-wrap items-center justify-between gap-2 pt-2">
               <div className="text-sm text-muted-foreground">
                 Нийт: {total.toLocaleString("mn-MN")}
-              </div>
-              <div className="flex items-center gap-2">
-                <Badge variant="outline">Бараатай холбох — дараагийн шатанд</Badge>
               </div>
               {totalPages > 1 && (
                 <div className="flex gap-2">
@@ -170,6 +199,12 @@ function InventoryListPage() {
           </>
         )}
       </Card>
+      <InventoryLinkDialog
+        open={!!linkTarget}
+        onOpenChange={(v) => { if (!v) setLinkTarget(null); }}
+        merchantId={primaryMerchantId}
+        inventoryItem={linkTarget}
+      />
     </div>
   );
 }

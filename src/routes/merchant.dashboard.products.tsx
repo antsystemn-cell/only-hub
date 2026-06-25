@@ -96,6 +96,18 @@ function ProductsPage() {
     },
   });
   const canForeign = !!merchantCaps?.can_create_foreign_order_products;
+  const { data: linkedProductIds = new Set<string>() } = useQuery({
+    queryKey: ["linked-product-ids", merchantId],
+    enabled: !!merchantId,
+    queryFn: async () => {
+      const { data } = await (supabase as any)
+        .from("inventory_product_links")
+        .select("product_id")
+        .eq("merchant_id", merchantId)
+        .eq("is_active", true);
+      return new Set<string>((data ?? []).map((r: any) => r.product_id));
+    },
+  });
   const { data: categories = [] } = useQuery({
     queryKey: ["categories", merchantId],
     queryFn: async () => {
@@ -543,7 +555,14 @@ function ProductsPage() {
               )}
               <div className="flex-1 min-w-0">
                 <div className="font-medium truncate">{p.name}</div>
-                <div className="text-xs text-muted-foreground">{p.category ?? "—"} • {p.product_code ?? ""}</div>
+                <div className="text-xs text-muted-foreground flex items-center gap-2">
+                  <span>{p.category ?? "—"} • {p.product_code ?? ""}</span>
+                  {(linkedProductIds as Set<string>).has(p.id) ? (
+                    <span className="rounded-md bg-emerald-500/10 px-1.5 py-0.5 text-[10px] text-emerald-700">Нөөцтэй холбогдсон</span>
+                  ) : (
+                    <span className="rounded-md bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">Нөөцтэй холбогдоогүй</span>
+                  )}
+                </div>
               </div>
               <div className="text-sm font-semibold">{fmtMnt(p.price)}</div>
               {p.discount > 0 && <span className="rounded-md bg-red-500/10 px-2 py-0.5 text-xs text-red-600">-{p.discount}%</span>}

@@ -795,6 +795,147 @@ export type Database = {
           },
         ]
       }
+      inventory_product_links: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          inventory_item_id: string
+          is_active: boolean
+          merchant_id: string
+          product_id: string
+          quantity_multiplier: number
+          store_id: string | null
+          sync_mode: string
+          updated_at: string
+          variant_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          inventory_item_id: string
+          is_active?: boolean
+          merchant_id: string
+          product_id: string
+          quantity_multiplier?: number
+          store_id?: string | null
+          sync_mode?: string
+          updated_at?: string
+          variant_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          inventory_item_id?: string
+          is_active?: boolean
+          merchant_id?: string
+          product_id?: string
+          quantity_multiplier?: number
+          store_id?: string | null
+          sync_mode?: string
+          updated_at?: string
+          variant_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_product_links_inventory_item_id_fkey"
+            columns: ["inventory_item_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_product_links_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_product_links_variant_id_fkey"
+            columns: ["variant_id"]
+            isOneToOne: false
+            referencedRelation: "product_variants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      inventory_sync_logs: {
+        Row: {
+          created_at: string
+          error_message: string | null
+          id: string
+          inventory_item_id: string | null
+          link_id: string | null
+          merchant_id: string
+          new_stock: number | null
+          old_stock: number | null
+          product_id: string | null
+          sync_status: string
+          trigger_source: string | null
+          variant_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          inventory_item_id?: string | null
+          link_id?: string | null
+          merchant_id: string
+          new_stock?: number | null
+          old_stock?: number | null
+          product_id?: string | null
+          sync_status?: string
+          trigger_source?: string | null
+          variant_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          inventory_item_id?: string | null
+          link_id?: string | null
+          merchant_id?: string
+          new_stock?: number | null
+          old_stock?: number | null
+          product_id?: string | null
+          sync_status?: string
+          trigger_source?: string | null
+          variant_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_sync_logs_inventory_item_id_fkey"
+            columns: ["inventory_item_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_sync_logs_link_id_fkey"
+            columns: ["link_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_product_links"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_sync_logs_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_sync_logs_variant_id_fkey"
+            columns: ["variant_id"]
+            isOneToOne: false
+            referencedRelation: "product_variants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       merchant_foreign_source_settings: {
         Row: {
           checkout_freshness_required_hours: number
@@ -2400,6 +2541,10 @@ export type Database = {
         }[]
       }
       restore_variant_stocks: { Args: { _items: Json }; Returns: undefined }
+      sync_inventory_link: {
+        Args: { _link_id: string; _trigger?: string }
+        Returns: Json
+      }
     }
     Enums: {
       app_role:
