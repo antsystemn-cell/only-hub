@@ -652,6 +652,149 @@ export type Database = {
           },
         ]
       }
+      inventory_items: {
+        Row: {
+          barcode: string | null
+          cost_price: number | null
+          created_at: string
+          created_by: string | null
+          currency: string
+          description: string | null
+          id: string
+          merchant_id: string
+          name: string
+          quantity_available: number | null
+          quantity_on_hand: number
+          quantity_reserved: number
+          sku: string | null
+          source_cargo_id: string | null
+          source_cargo_tracking_number: string | null
+          source_type: string | null
+          status: string
+          store_id: string | null
+          unit: string
+          updated_at: string
+          warehouse_location: string | null
+        }
+        Insert: {
+          barcode?: string | null
+          cost_price?: number | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          description?: string | null
+          id?: string
+          merchant_id: string
+          name: string
+          quantity_available?: number | null
+          quantity_on_hand?: number
+          quantity_reserved?: number
+          sku?: string | null
+          source_cargo_id?: string | null
+          source_cargo_tracking_number?: string | null
+          source_type?: string | null
+          status?: string
+          store_id?: string | null
+          unit?: string
+          updated_at?: string
+          warehouse_location?: string | null
+        }
+        Update: {
+          barcode?: string | null
+          cost_price?: number | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          description?: string | null
+          id?: string
+          merchant_id?: string
+          name?: string
+          quantity_available?: number | null
+          quantity_on_hand?: number
+          quantity_reserved?: number
+          sku?: string | null
+          source_cargo_id?: string | null
+          source_cargo_tracking_number?: string | null
+          source_type?: string | null
+          status?: string
+          store_id?: string | null
+          unit?: string
+          updated_at?: string
+          warehouse_location?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_items_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      inventory_movements: {
+        Row: {
+          after_quantity: number
+          before_quantity: number
+          created_at: string
+          created_by: string | null
+          id: string
+          inventory_item_id: string
+          merchant_id: string
+          movement_type: string
+          note: string | null
+          quantity: number
+          source_reference: string | null
+          source_type: string | null
+          store_id: string | null
+        }
+        Insert: {
+          after_quantity: number
+          before_quantity: number
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          inventory_item_id: string
+          merchant_id: string
+          movement_type: string
+          note?: string | null
+          quantity: number
+          source_reference?: string | null
+          source_type?: string | null
+          store_id?: string | null
+        }
+        Update: {
+          after_quantity?: number
+          before_quantity?: number
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          inventory_item_id?: string
+          merchant_id?: string
+          movement_type?: string
+          note?: string | null
+          quantity?: number
+          source_reference?: string | null
+          source_type?: string | null
+          store_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_movements_inventory_item_id_fkey"
+            columns: ["inventory_item_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_movements_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       merchant_foreign_source_settings: {
         Row: {
           checkout_freshness_required_hours: number
