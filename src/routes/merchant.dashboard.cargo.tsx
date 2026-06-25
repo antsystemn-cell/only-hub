@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useAuth } from "@/hooks/use-auth";
@@ -25,6 +25,7 @@ import {
   getMerchantCargoCounts,
   updateMerchantCargoCode,
   createMerchantCargo,
+  markMerchantCargoNotificationsRead,
 } from "@/lib/onlycargo/cargo.functions";
 
 export const Route = createFileRoute("/merchant/dashboard/cargo")({
@@ -72,6 +73,18 @@ function CargoView({ merchantId }: { merchantId: string }) {
   const pageSize = 20;
   const [openTrack, setOpenTrack] = useState<string | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
+
+  // Mark cargo notifications as read on page open → clears the sidebar badge.
+  const markReadFn = useServerFn(markMerchantCargoNotificationsRead);
+  useEffect(() => {
+    markReadFn({ data: { merchantId } })
+      .then((res) => {
+        if (res?.marked && res.marked > 0) {
+          qc.invalidateQueries({ queryKey: ["dashboard-cargo-unread", merchantId] });
+        }
+      })
+      .catch(() => {});
+  }, [merchantId, markReadFn, qc]);
 
   const { data: merchant } = useQuery({
     queryKey: ["merchant-onlycargo", merchantId],

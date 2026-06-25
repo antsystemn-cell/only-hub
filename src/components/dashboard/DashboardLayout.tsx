@@ -13,7 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { getMerchantCargoCounts } from "@/lib/onlycargo/cargo.functions";
+import { getMerchantCargoUnreadCount } from "@/lib/onlycargo/cargo.functions";
 
 type Tab = { to: string; label: string; icon: typeof BarChart3; end?: boolean };
 const TABS: Tab[] = [
@@ -50,19 +50,16 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
     | undefined;
   const activeLogoUrl = activeMerchant?.logo_url ?? null;
 
-  const cargoCountsFn = useServerFn(getMerchantCargoCounts);
-  const { data: cargoCounts } = useQuery({
-    queryKey: ["dashboard-cargo-counts", primaryMerchantId],
+  const cargoUnreadFn = useServerFn(getMerchantCargoUnreadCount);
+  const { data: cargoUnread } = useQuery({
+    queryKey: ["dashboard-cargo-unread", primaryMerchantId],
     enabled: !!primaryMerchantId,
-    queryFn: () => cargoCountsFn({ data: { merchantId: primaryMerchantId! } }),
+    queryFn: () => cargoUnreadFn({ data: { merchantId: primaryMerchantId! } }),
     refetchInterval: 60_000,
     staleTime: 30_000,
     retry: false,
   });
-  const cargoBadge =
-    (cargoCounts?.created ?? 0) +
-    (cargoCounts?.arrived ?? 0) +
-    (cargoCounts?.ready_for_pickup ?? 0);
+  const cargoBadge = cargoUnread?.unread ?? 0;
 
   const SidebarContent = () => (
     <>
