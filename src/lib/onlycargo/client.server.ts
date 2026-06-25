@@ -33,7 +33,7 @@ export interface OnlyCargoShipment {
   lat?: number | null;
   lng?: number | null;
   images?: string[] | null;
-  location_history?: Array<Record<string, unknown>> | null;
+  location_history?: any[] | null;
   created_at?: string | null;
   updated_at?: string | null;
   arrived_at?: string | null;
@@ -141,9 +141,7 @@ export function normalizeShipment(raw: any): OnlyCargoShipment {
     lng: pick<number>(raw, "lng", "longitude"),
     images: (pick<string[]>(raw, "images", "image_urls", "imageUrls") as string[] | undefined) ?? null,
     location_history:
-      (pick<Array<Record<string, unknown>>>(raw, "location_history", "locationHistory") as
-        | Array<Record<string, unknown>>
-        | undefined) ?? null,
+      (pick<any[]>(raw, "location_history", "locationHistory") as any[] | undefined) ?? null,
     created_at: pick<string>(raw, "created_at", "createdAt") ?? null,
     updated_at: pick<string>(raw, "updated_at", "updatedAt") ?? null,
     arrived_at: pick<string>(raw, "arrived_at", "arrivedAt") ?? null,
