@@ -174,7 +174,7 @@ export const updateInventoryLink = createServerFn({ method: "POST" })
 
     const { error } = await context.supabase
       .from("inventory_product_links")
-      .update(patch)
+      .update(patch as any)
       .eq("id", data.linkId)
       .eq("merchant_id", data.merchantId);
     if (error) throw new Response(error.message, { status: 500 });
