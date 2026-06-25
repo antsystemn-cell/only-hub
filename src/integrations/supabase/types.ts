@@ -802,6 +802,8 @@ export type Database = {
           logo_url: string | null
           name: string
           onlycargo_customer_code: string | null
+          onlycargo_last_synced_at: string | null
+          onlycargo_sync_error: string | null
           owner_id: string | null
           policy_return: string | null
           policy_shipping: string | null
@@ -837,6 +839,8 @@ export type Database = {
           logo_url?: string | null
           name: string
           onlycargo_customer_code?: string | null
+          onlycargo_last_synced_at?: string | null
+          onlycargo_sync_error?: string | null
           owner_id?: string | null
           policy_return?: string | null
           policy_shipping?: string | null
@@ -872,6 +876,8 @@ export type Database = {
           logo_url?: string | null
           name?: string
           onlycargo_customer_code?: string | null
+          onlycargo_last_synced_at?: string | null
+          onlycargo_sync_error?: string | null
           owner_id?: string | null
           policy_return?: string | null
           policy_shipping?: string | null
@@ -2103,35 +2109,51 @@ export type Database = {
       webhook_events: {
         Row: {
           created_at: string
+          error_message: string | null
           event_key: string
           id: string
+          merchant_id: string | null
           order_id: string | null
           payload: Json | null
           processed_at: string
+          processing_status: string
           provider: string
           result: Json | null
         }
         Insert: {
           created_at?: string
+          error_message?: string | null
           event_key: string
           id?: string
+          merchant_id?: string | null
           order_id?: string | null
           payload?: Json | null
           processed_at?: string
+          processing_status?: string
           provider: string
           result?: Json | null
         }
         Update: {
           created_at?: string
+          error_message?: string | null
           event_key?: string
           id?: string
+          merchant_id?: string | null
           order_id?: string | null
           payload?: Json | null
           processed_at?: string
+          processing_status?: string
           provider?: string
           result?: Json | null
         }
         Relationships: [
+          {
+            foreignKeyName: "webhook_events_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "webhook_events_order_id_fkey"
             columns: ["order_id"]
