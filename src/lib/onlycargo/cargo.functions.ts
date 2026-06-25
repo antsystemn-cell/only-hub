@@ -173,3 +173,53 @@ export const createMerchantCargo = createServerFn({ method: "POST" })
       dimensions: dims,
     });
   });
+
+/**
+ * Real unread cargo notifications for a merchant.
+ * Source: notifications_log rows the webhook receiver inserts with
+ *   provider='onlycargo', event_type LIKE 'cargo.%', status='pending'.
+ * Marked as 'sent' once the merchant opens the cargo page.
+ */
+export const getMerchantCargoUnreadCount = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) => z.object({ merchantId: z.string().uuid() }).parse(i))
+  .handler(async ({ data, context }) => {
+    const { data: access } = await context.supabase.rpc("has_merchant_access", {
+      _user_id: context.userId,
+      _merchant_id: data.merchantId,
+    });
+    if (!access) throw new Response("Forbidden", { status: 403 });
+
+    const { count, error } = await context.supabase
+      .from("notifications_log")
+      .select("id", { count: "exact", head: true })
+      .eq("merchant_id", data.merchantId)
+      .eq("provider", "onlycargo")
+      .eq("status", "pending")
+      .like("event_type", "cargo.%");
+    if (error) throw new Response(error.message, { status: 500 });
+    return { unread: count ?? 0 };
+  });
+
+export const markMerchantCargoNotificationsRead = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) => z.object({ merchantId: z.string().uuid() }).parse(i))
+  .handler(async ({ data, context }) => {
+    const { data: access } = await context.supabase.rpc("has_merchant_access", {
+      _user_id: context.userId,
+      _merchant_id: data.merchantId,
+    });
+    if (!access) throw new Response("Forbidden", { status: 403 });
+
+    // Use admin client to bypass RLS for the UPDATE (read policy only allows SELECT).
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error, count } = await supabaseAdmin
+      .from("notifications_log")
+      .update({ status: "sent" }, { count: "exact" })
+      .eq("merchant_id", data.merchantId)
+      .eq("provider", "onlycargo")
+      .eq("status", "pending")
+      .like("event_type", "cargo.%");
+    if (error) throw new Response(error.message, { status: 500 });
+    return { ok: true, marked: count ?? 0 };
+  });
