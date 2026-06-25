@@ -2,37 +2,52 @@ import { createFileRoute } from "@tanstack/react-router";
 import { createHmac, timingSafeEqual } from "node:crypto";
 
 /**
- * OnlyCargo webhook receiver.
+ * OnlyCargo webhook receiver — Phase 1 production.
  *
- * Public URL (production):
+ * Public URL:
  *   https://only.mn/api/public/hooks/onlycargo
  *   https://only-hub.lovable.app/api/public/hooks/onlycargo
  *
- * Signature formats accepted (any of):
- *   1. X-OnlyCargo-Signature / X-Webhook-Signature:  "sha256=<hex>"
- *   2. Same header but plain "<hex>" (hex of HMAC-SHA256 of raw body)
- *   3. Stripe-style:  "t=<unix_ts>,v1=<hex>"   (signed payload = "<ts>.<rawBody>")
+ * Responsibilities:
+ *   1. Verify signature (3 formats, 3 header names)
+ *   2. Parse + normalize field names (snake/camel, nested under data)
+ *   3. Idempotent persistence (unique provider+event_key index)
+ *   4. Update merchant.onlycargo_last_synced_at on success
+ *   5. Emit in-app notification rows for relevant cargo events
+ *   6. Record processing_status / error_message for ops visibility
  *
- * Idempotency: `webhook_events.event_key` uniquely identifies an event using
- * (event_id || track:status:occurred_at). A repeated event is acknowledged
- * with 200 but skipped — preventing duplicate notifications.
- *
- * Side effects on successful processing:
- *   - webhook_events row stored (payload + result)
- *   - notifications_log entry created for actionable statuses
- *     (arrived / ready_for_pickup) so merchant badges update
+ * Response policy:
+ *   - 401 only for invalid signature
+ *   - 400 only for invalid JSON
+ *   - 200 for everything else (including processing failures) so the
+ *     sender doesn't retry-storm against a deterministic error
  */
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
   "Access-Control-Allow-Headers":
-    "Content-Type, Authorization, X-OnlyCargo-Signature, X-Webhook-Signature",
+    "Content-Type, Authorization, X-OnlyCargo-Signature, X-Webhook-Signature, OnlyCargo-Signature",
   "Access-Control-Max-Age": "86400",
 };
 
-const ACTIONABLE_STATUSES = new Set(["arrived", "ready_for_pickup", "completed"]);
-// Reject signatures older than 5 minutes when timestamp is present.
+// Events that should produce a merchant in-app notification.
+const NOTIFY_EVENTS = new Set([
+  "shipment.created",
+  "shipment.status_changed",
+  "shipment.arrived",
+  "shipment.ready_for_pickup",
+  "shipment.completed",
+]);
+
+// Statuses that, regardless of event name, should produce a notification.
+const NOTIFY_STATUSES = new Set([
+  "created",
+  "arrived",
+  "ready_for_pickup",
+  "completed",
+]);
+
 const TIMESTAMP_TOLERANCE_SEC = 60 * 5;
 
 function json(body: unknown, status = 200) {
@@ -57,18 +72,15 @@ function hmacHex(secret: string, payload: string): string {
   return createHmac("sha256", secret).update(payload).digest("hex");
 }
 
-/**
- * Multi-format signature verification.
- * Accepts: "sha256=<hex>", "<hex>", "t=<ts>,v1=<hex>".
- */
-function verifySignature(rawBody: string, header: string, secret: string): {
-  ok: boolean;
-  reason?: string;
-} {
+/** Accept "sha256=<hex>", "<hex>", or "t=<ts>,v1=<hex>". */
+function verifySignature(
+  rawBody: string,
+  header: string,
+  secret: string,
+): { ok: boolean; reason?: string } {
   if (!header) return { ok: false, reason: "missing" };
   const trimmed = header.trim();
 
-  // Format 3: Stripe-style "t=...,v1=..."
   if (trimmed.includes("t=") && trimmed.includes("v1=")) {
     const parts = trimmed.split(",").map((p) => p.trim());
     const ts = parts.find((p) => p.startsWith("t="))?.slice(2) ?? "";
@@ -76,38 +88,74 @@ function verifySignature(rawBody: string, header: string, secret: string): {
     if (!ts || !v1) return { ok: false, reason: "malformed" };
     const tsNum = Number(ts);
     if (!Number.isFinite(tsNum)) return { ok: false, reason: "bad_ts" };
-    const drift = Math.abs(Date.now() / 1000 - tsNum);
-    if (drift > TIMESTAMP_TOLERANCE_SEC) return { ok: false, reason: "stale" };
+    if (Math.abs(Date.now() / 1000 - tsNum) > TIMESTAMP_TOLERANCE_SEC) {
+      return { ok: false, reason: "stale" };
+    }
     const expected = hmacHex(secret, `${ts}.${rawBody}`);
     return { ok: safeHexEq(v1, expected) };
   }
 
-  // Format 1: "sha256=<hex>", or Format 2: plain "<hex>"
-  const hex = trimmed.startsWith("sha256=") ? trimmed.slice("sha256=".length).trim() : trimmed;
+  const hex = trimmed.startsWith("sha256=")
+    ? trimmed.slice("sha256=".length).trim()
+    : trimmed;
   const expected = hmacHex(secret, rawBody);
   return { ok: safeHexEq(hex, expected) };
 }
 
-function eventKeyFor(payload: Record<string, unknown>): string {
-  // Prefer caller-provided id, fall back to a content hash so repeats are detected.
-  const explicit = (payload.event_id ?? payload.eventId ?? payload.id) as string | undefined;
-  if (explicit && typeof explicit === "string") return `id:${explicit}`;
-  const track =
-    (payload.track_number as string | undefined) ??
-    (payload.trackNumber as string | undefined) ??
-    ((payload.data as Record<string, unknown> | undefined)?.track_number as string | undefined) ??
-    "unknown";
-  const status =
-    (payload.status as string | undefined) ??
-    ((payload.data as Record<string, unknown> | undefined)?.status as string | undefined) ??
-    "unknown";
-  const occurredAt =
-    (payload.occurred_at as string | undefined) ??
-    (payload.occurredAt as string | undefined) ??
-    (payload.timestamp as string | undefined) ??
-    "";
-  return `evt:${track}:${status}:${occurredAt}`;
+// ---- Field extraction helpers ----------------------------------------------
+
+function pick<T = string>(
+  obj: Record<string, unknown>,
+  keys: string[],
+): T | null {
+  for (const k of keys) {
+    const v = obj?.[k];
+    if (v !== undefined && v !== null && v !== "") return v as T;
+  }
+  return null;
 }
+
+interface NormalizedEvent {
+  event: string;
+  trackNumber: string | null;
+  status: string | null;
+  customerCode: string | null;
+  occurredAt: string | null;
+}
+
+function normalizeEvent(payload: Record<string, unknown>): NormalizedEvent {
+  const data = (payload.data ?? {}) as Record<string, unknown>;
+  return {
+    event: String(payload.event ?? payload.type ?? "unknown"),
+    trackNumber:
+      pick<string>(payload, ["track_number", "trackNumber", "tracking_number", "trackingNumber"]) ??
+      pick<string>(data, ["track_number", "trackNumber", "tracking_number", "trackingNumber"]),
+    status:
+      pick<string>(payload, ["status"]) ??
+      pick<string>(data, ["status"]),
+    customerCode:
+      pick<string>(payload, ["customer_code", "customerCode"]) ??
+      pick<string>(data, ["customer_code", "customerCode"]),
+    occurredAt:
+      pick<string>(payload, ["occurred_at", "occurredAt", "updated_at", "updatedAt", "timestamp"]) ??
+      pick<string>(data, ["occurred_at", "occurredAt", "updated_at", "updatedAt"]),
+  };
+}
+
+function buildEventKey(payload: Record<string, unknown>, n: NormalizedEvent): string {
+  const explicit = pick<string>(payload, ["event_id", "eventId", "id"]);
+  if (explicit) return `id:${explicit}`;
+  // Deterministic — no Date.now().
+  return `evt:onlycargo:${n.event}:${n.trackNumber ?? "?"}:${n.status ?? "?"}:${n.occurredAt ?? ""}`;
+}
+
+function shouldNotify(n: NormalizedEvent): boolean {
+  if (NOTIFY_EVENTS.has(n.event)) return true;
+  if (n.status && NOTIFY_STATUSES.has(n.status)) return true;
+  return false;
+}
+
+// ---- Route -----------------------------------------------------------------
 
 export const Route = createFileRoute("/api/public/hooks/onlycargo")({
   server: {
@@ -127,8 +175,9 @@ export const Route = createFileRoute("/api/public/hooks/onlycargo")({
         const rawBody = await request.text();
         const signature =
           request.headers.get("x-onlycargo-signature") ??
+          request.headers.get("onlycargo-signature") ??
           request.headers.get("x-webhook-signature") ??
-          request.headers.get("stripe-signature") ?? // some senders mimic Stripe headers
+          request.headers.get("stripe-signature") ??
           "";
 
         const verdict = verifySignature(rawBody, signature, secret);
@@ -144,42 +193,40 @@ export const Route = createFileRoute("/api/public/hooks/onlycargo")({
           return json({ error: "Invalid JSON" }, 400);
         }
 
-        const event = String(payload.event ?? payload.type ?? "unknown");
-        const data = (payload.data ?? {}) as Record<string, unknown>;
-        const trackNumber =
-          (payload.track_number as string | undefined) ??
-          (payload.trackNumber as string | undefined) ??
-          (data.track_number as string | undefined) ??
-          (data.trackNumber as string | undefined) ??
-          null;
-        const status =
-          (payload.status as string | undefined) ??
-          (data.status as string | undefined) ??
-          null;
-        const customerCode =
-          (payload.customer_code as string | undefined) ??
-          (payload.customerCode as string | undefined) ??
-          (data.customer_code as string | undefined) ??
-          (data.customerCode as string | undefined) ??
-          null;
-
-        const eventKey = eventKeyFor(payload);
+        const n = normalizeEvent(payload);
+        const eventKey = buildEventKey(payload, n);
 
         try {
           const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-          // --- Atomic idempotency: rely on the unique index (provider, event_key).
-          // Concurrent retries that race past a SELECT check both end up here; the
-          // second insert fails with a unique-violation (Postgres code 23505) which
-          // we treat as "already processed" and ACK without re-running side effects.
+          // Resolve merchant up-front so the webhook_events row carries the link.
+          let merchantId: string | null = null;
+          if (n.customerCode) {
+            const { data: merchant } = await supabaseAdmin
+              .from("merchants")
+              .select("id")
+              .eq("onlycargo_customer_code", n.customerCode)
+              .maybeSingle();
+            merchantId = merchant?.id ?? null;
+          }
+
+          // --- Atomic idempotency via unique (provider, event_key) index.
           const insertedEvent = await supabaseAdmin
             .from("webhook_events")
             .insert({
               provider: "onlycargo",
               event_key: eventKey,
+              merchant_id: merchantId,
               payload: payload as never,
-              result: { event, trackNumber, status, customerCode } as never,
-            })
+              result: {
+                event: n.event,
+                trackNumber: n.trackNumber,
+                status: n.status,
+                customerCode: n.customerCode,
+                occurredAt: n.occurredAt,
+              } as never,
+              processing_status: "ok",
+            } as never)
             .select("id")
             .maybeSingle();
 
@@ -191,52 +238,98 @@ export const Route = createFileRoute("/api/public/hooks/onlycargo")({
             throw insertedEvent.error;
           }
 
-          // --- Real sync: notify the owning merchant on actionable events ---
-          if (customerCode && trackNumber && status && ACTIONABLE_STATUSES.has(status)) {
-            const { data: merchant } = await supabaseAdmin
-              .from("merchants")
-              .select("id")
-              .eq("onlycargo_customer_code", customerCode)
-              .maybeSingle();
+          const warnings: string[] = [];
 
-            if (merchant?.id) {
-              await supabaseAdmin.from("notifications_log").insert({
-                merchant_id: merchant.id,
-                event_type: `cargo.${status}`,
-                channel: "in_app",
-                status: "pending",
-                provider: "onlycargo",
-                message: `Карго ${trackNumber} — ${status}`,
-                payload: { trackNumber, status, customerCode, event } as never,
-                attempt: 0,
+          // --- Notify merchant (best effort).
+          if (n.trackNumber && shouldNotify(n)) {
+            if (merchantId) {
+              const { error: notifErr } = await supabaseAdmin
+                .from("notifications_log")
+                .insert({
+                  merchant_id: merchantId,
+                  event_type: `cargo.${n.status ?? n.event.replace(/^shipment\./, "")}`,
+                  channel: "in_app",
+                  status: "pending",
+                  provider: "onlycargo",
+                  message: `Карго ${n.trackNumber} — ${n.status ?? n.event}`,
+                  payload: {
+                    trackNumber: n.trackNumber,
+                    status: n.status,
+                    customerCode: n.customerCode,
+                    event: n.event,
+                    occurredAt: n.occurredAt,
+                  } as never,
+                  attempt: 0,
+                });
+              if (notifErr) {
+                console.warn("[onlycargo-webhook] notification insert failed", notifErr);
+                warnings.push(`notification_failed:${notifErr.message}`);
+              }
+            } else if (n.customerCode) {
+              warnings.push(`merchant_unresolved:${n.customerCode}`);
+              console.warn("[onlycargo-webhook] customer_code not linked", {
+                customerCode: n.customerCode,
               });
-            } else {
-              console.warn("[onlycargo-webhook] customer_code not linked", { customerCode });
             }
           }
 
+          // --- Merchant sync bookkeeping (best effort).
+          if (merchantId) {
+            await supabaseAdmin
+              .from("merchants")
+              .update({
+                onlycargo_last_synced_at: new Date().toISOString(),
+                onlycargo_sync_error: null,
+              })
+              .eq("id", merchantId);
+          }
+
+          // Upgrade processing_status if there were non-fatal warnings.
+          if (warnings.length > 0 && insertedEvent.data?.id) {
+            await supabaseAdmin
+              .from("webhook_events")
+              .update({
+                processing_status: "processed_with_warning",
+                error_message: warnings.join("; "),
+              } as never)
+              .eq("id", insertedEvent.data.id);
+          }
+
           console.log("[onlycargo-webhook] processed", {
-            event,
-            trackNumber,
-            status,
-            customerCode,
+            event: n.event,
+            trackNumber: n.trackNumber,
+            status: n.status,
+            customerCode: n.customerCode,
+            merchantId,
+            warnings,
             eventId: insertedEvent.data?.id ?? null,
           });
         } catch (err) {
-          // Persist the failure for ops visibility but ack 200 so the sender
-          // doesn't retry-storm against a deterministic application error.
-          console.error("[onlycargo-webhook] persist failed", err);
+          // Persist the failure (best effort) but ack 200 — invalid-sig/JSON
+          // are the only non-200 cases, per spec.
+          const msg = String((err as Error)?.message ?? err);
+          console.error("[onlycargo-webhook] processing failed", err);
           try {
             const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
             await supabaseAdmin.from("webhook_events").insert({
               provider: "onlycargo",
-              event_key: `error:${eventKey}:${Date.now()}`,
+              // Distinct key so the failure row doesn't collide with a future retry.
+              event_key: `error:${eventKey}:${n.occurredAt ?? "noocc"}`,
               payload: payload as never,
-              result: { error: String((err as Error)?.message ?? err) } as never,
-            });
+              result: { event: n.event } as never,
+              processing_status: "failed",
+              error_message: msg,
+            } as never);
+            if (n.customerCode) {
+              await supabaseAdmin
+                .from("merchants")
+                .update({ onlycargo_sync_error: msg })
+                .eq("onlycargo_customer_code", n.customerCode);
+            }
           } catch {
-            // swallow — already logged
+            // already logged
           }
+          return json({ ok: true, processed: false, error: msg });
         }
 
         return json({ ok: true });
