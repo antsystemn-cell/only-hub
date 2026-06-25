@@ -2341,6 +2341,22 @@ export type Database = {
     }
     Functions: {
       consume_coupon: { Args: { _coupon_id: string }; Returns: boolean }
+      create_inventory_from_cargo: {
+        Args: {
+          _cargo_id: string
+          _cost_price: number
+          _created_by: string
+          _merchant_id: string
+          _name: string
+          _note: string
+          _quantity: number
+          _sku: string
+          _tracking_number: string
+          _unit: string
+          _warehouse_location: string
+        }
+        Returns: string
+      }
       decrement_variant_stocks: { Args: { _items: Json }; Returns: Json }
       delete_email: {
         Args: { message_id: number; queue_name: string }
