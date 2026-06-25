@@ -182,12 +182,30 @@ export const createOrder = createServerFn({ method: "POST" })
 
     const total = Math.max(0, subtotal - discount) + deliveryFee;
 
-    // 4b. Reserve stock atomically BEFORE creating the order, so concurrent
+    // 4b. Resolve inventory links so we know which items must go through the
+    //     atomic reservation flow vs. the legacy variant_stock decrement path.
+    const { resolveLinksForCart, reserveForOrder, releaseForOrder } = await import(
+      "@/lib/inventory/reservation.server"
+    );
+    const linkInputs = (normalized as any[])
+      .map((i: any, idx: number) =>
+        i ? { productId: i.productId, variantKey: variantKey(i.color, i.size) || null, quantity: i.quantity, orderItemIndex: idx } : null,
+      )
+      .filter(Boolean) as { productId: string; variantKey: string | null; quantity: number; orderItemIndex: number }[];
+    const resolvedLinks = await resolveLinksForCart(merchant.id, linkInputs);
+    const reservedProductIds = new Set(resolvedLinks.map((r) => `${r.productId}`));
+
+    // 4c. Reserve stock atomically BEFORE creating the order, so concurrent
     //     checkouts cannot oversell the same tracked variant.
+    //     Items handled by inventory_reservations are EXCLUDED here to avoid
+    //     double-decrement (the inventory→product sync trigger already drops
+    //     variant_stock when quantity_reserved increases).
     const stockItems = normalized
       .map((i) => {
-        const k = variantKey(i!.color, i!.size);
-        return k ? { product_id: i!.productId, variant_key: k, qty: i!.quantity } : null;
+        if (!i) return null;
+        if (reservedProductIds.has(i.productId)) return null;
+        const k = variantKey(i.color, i.size);
+        return k ? { product_id: i.productId, variant_key: k, qty: i.quantity } : null;
       })
       .filter(Boolean) as { product_id: string; variant_key: string; qty: number }[];
     let stockReserved = false;
@@ -210,7 +228,7 @@ export const createOrder = createServerFn({ method: "POST" })
       stockReserved = true;
     }
 
-    // 4c. Atomically consume the coupon (prevents double-use under load).
+    // 4d. Atomically consume the coupon (prevents double-use under load).
     if (couponId) {
       const { data: consumed, error: consumeErr } = await supabaseAdmin.rpc("consume_coupon", {
         _coupon_id: couponId,
@@ -271,6 +289,27 @@ export const createOrder = createServerFn({ method: "POST" })
       }
       return { ok: false as const, error: orderErr?.message ?? "Захиалга үүсгэхэд алдаа" };
     }
+
+    // 5b. Reserve inventory for linked items (after we have an order id).
+    if (resolvedLinks.length) {
+      const resRes = await reserveForOrder({
+        orderId: order.id,
+        merchantId: merchant.id,
+        resolved: resolvedLinks,
+      });
+      if (!resRes.ok) {
+        // Rollback: release any partial reservation, restore variant stocks,
+        // delete the order so the user sees the proper insufficient message.
+        await releaseForOrder(order.id, "cancelled");
+        if (stockReserved) {
+          await supabaseAdmin.rpc("restore_variant_stocks", { _items: stockItems as any });
+        }
+        await supabaseAdmin.from("orders").delete().eq("id", order.id);
+        return { ok: false as const, error: resRes.error };
+      }
+    }
+
+
 
 
     // 6. QPay invoice (if applicable)

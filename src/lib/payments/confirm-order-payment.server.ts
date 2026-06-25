@@ -99,12 +99,21 @@ export async function confirmOrderPayment(opts: ConfirmOptions): Promise<Confirm
     };
   }
 
+  // 2b. Confirm inventory reservations (idempotent: reserved → sold).
+  try {
+    const { confirmForOrder } = await import("@/lib/inventory/reservation.server");
+    await confirmForOrder(orderId);
+  } catch (e) {
+    console.error("[confirmOrderPayment] inventory confirm failed", orderId, e);
+  }
+
   // 3. Sync payment_requests (post-delivery collection / SMS invoice).
   await supabaseAdmin
     .from("payment_requests")
     .update({ status: "paid", paid_at: nowIso })
     .eq("order_id", orderId)
     .neq("status", "paid");
+
 
   // 4. Foreign-order items → enqueue source purchase rows (one per item).
   try {

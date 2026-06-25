@@ -862,6 +862,106 @@ export type Database = {
           },
         ]
       }
+      inventory_reservations: {
+        Row: {
+          confirmed_at: string | null
+          created_at: string
+          expires_at: string | null
+          id: string
+          inventory_item_id: string
+          link_id: string | null
+          merchant_id: string
+          order_id: string
+          order_item_index: number | null
+          product_id: string | null
+          quantity: number
+          release_reason: string | null
+          released_at: string | null
+          status: string
+          updated_at: string
+          variant_id: string | null
+        }
+        Insert: {
+          confirmed_at?: string | null
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          inventory_item_id: string
+          link_id?: string | null
+          merchant_id: string
+          order_id: string
+          order_item_index?: number | null
+          product_id?: string | null
+          quantity: number
+          release_reason?: string | null
+          released_at?: string | null
+          status?: string
+          updated_at?: string
+          variant_id?: string | null
+        }
+        Update: {
+          confirmed_at?: string | null
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          inventory_item_id?: string
+          link_id?: string | null
+          merchant_id?: string
+          order_id?: string
+          order_item_index?: number | null
+          product_id?: string | null
+          quantity?: number
+          release_reason?: string | null
+          released_at?: string | null
+          status?: string
+          updated_at?: string
+          variant_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_reservations_inventory_item_id_fkey"
+            columns: ["inventory_item_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_reservations_link_id_fkey"
+            columns: ["link_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_product_links"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_reservations_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_reservations_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_reservations_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_reservations_variant_id_fkey"
+            columns: ["variant_id"]
+            isOneToOne: false
+            referencedRelation: "product_variants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       inventory_sync_logs: {
         Row: {
           created_at: string
@@ -2481,6 +2581,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      confirm_inventory_reservations: {
+        Args: { _order_id: string }
+        Returns: Json
+      }
       consume_coupon: { Args: { _coupon_id: string }; Returns: boolean }
       create_inventory_from_cargo: {
         Args: {
@@ -2507,6 +2611,7 @@ export type Database = {
         Args: { payload: Json; queue_name: string }
         Returns: number
       }
+      expire_inventory_reservations: { Args: never; Returns: Json }
       has_merchant_access: {
         Args: { _merchant_id: string; _user_id: string }
         Returns: boolean
@@ -2539,6 +2644,19 @@ export type Database = {
           msg_id: number
           read_ct: number
         }[]
+      }
+      release_inventory_reservations: {
+        Args: { _order_id: string; _reason?: string }
+        Returns: Json
+      }
+      reserve_inventory_for_order: {
+        Args: {
+          _expires_minutes?: number
+          _items: Json
+          _merchant_id: string
+          _order_id: string
+        }
+        Returns: Json
       }
       restore_variant_stocks: { Args: { _items: Json }; Returns: undefined }
       sync_inventory_link: {
