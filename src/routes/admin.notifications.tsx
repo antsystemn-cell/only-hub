@@ -198,6 +198,70 @@ function AdminNotificationsPage() {
           </TableBody>
         </Table>
       </Card>
+
+      <Card className="p-4 space-y-3">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-lg font-semibold">OnlyCargo webhook лог</h2>
+            <p className="text-xs text-muted-foreground">
+              Сүүлийн 50 webhook эвент — debug зориулалттай
+            </p>
+          </div>
+          <Button size="sm" variant="outline" onClick={() => qCargoHooks.refetch()}>
+            <RefreshCw className="w-4 h-4 mr-2" /> Сэргээх
+          </Button>
+        </div>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Огноо</TableHead>
+              <TableHead>Эвент</TableHead>
+              <TableHead>Track</TableHead>
+              <TableHead>Customer</TableHead>
+              <TableHead>Төлөв</TableHead>
+              <TableHead>Анхааруулга</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {((qCargoHooks.data as any)?.items ?? []).map((e: any) => {
+              const r = e.result ?? {};
+              return (
+                <TableRow key={e.id}>
+                  <TableCell className="text-xs">
+                    {new Date(e.processed_at).toLocaleString("mn-MN")}
+                  </TableCell>
+                  <TableCell className="text-xs">{r.event ?? "—"}</TableCell>
+                  <TableCell className="text-xs font-mono">{r.trackNumber ?? "—"}</TableCell>
+                  <TableCell className="text-xs font-mono">{r.customerCode ?? "—"}</TableCell>
+                  <TableCell>
+                    <Badge
+                      className={
+                        e.processing_status === "ok"
+                          ? "bg-green-100 text-green-700"
+                          : e.processing_status === "processed_with_warning"
+                            ? "bg-amber-100 text-amber-700"
+                            : "bg-red-100 text-red-700"
+                      }
+                    >
+                      {e.processing_status}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-xs max-w-[280px] truncate text-amber-700">
+                    {e.error_message ?? ""}
+                  </TableCell>
+                </TableRow>
+              );
+            })}
+            {!((qCargoHooks.data as any)?.items ?? []).length && (
+              <TableRow>
+                <TableCell colSpan={6} className="text-center py-6 text-muted-foreground">
+                  Webhook эвент алга
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </Card>
     </div>
   );
 }
