@@ -1036,6 +1036,73 @@ export type Database = {
           },
         ]
       }
+      legacy_stock_reservations: {
+        Row: {
+          confirmed_at: string | null
+          created_at: string
+          id: string
+          merchant_id: string
+          order_id: string
+          product_id: string
+          quantity: number
+          release_reason: string | null
+          released_at: string | null
+          status: string
+          updated_at: string
+          variant_key: string
+        }
+        Insert: {
+          confirmed_at?: string | null
+          created_at?: string
+          id?: string
+          merchant_id: string
+          order_id: string
+          product_id: string
+          quantity: number
+          release_reason?: string | null
+          released_at?: string | null
+          status?: string
+          updated_at?: string
+          variant_key: string
+        }
+        Update: {
+          confirmed_at?: string | null
+          created_at?: string
+          id?: string
+          merchant_id?: string
+          order_id?: string
+          product_id?: string
+          quantity?: number
+          release_reason?: string | null
+          released_at?: string | null
+          status?: string
+          updated_at?: string
+          variant_key?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "legacy_stock_reservations_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "legacy_stock_reservations_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "legacy_stock_reservations_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       merchant_foreign_source_settings: {
         Row: {
           checkout_freshness_required_hours: number
@@ -1343,6 +1410,7 @@ export type Database = {
       orders: {
         Row: {
           branch: string | null
+          coupon_consumed_at: string | null
           coupon_discount: number
           coupon_id: string | null
           created_at: string
@@ -1385,6 +1453,7 @@ export type Database = {
         }
         Insert: {
           branch?: string | null
+          coupon_consumed_at?: string | null
           coupon_discount?: number
           coupon_id?: string | null
           created_at?: string
@@ -1427,6 +1496,7 @@ export type Database = {
         }
         Update: {
           branch?: string | null
+          coupon_consumed_at?: string | null
           coupon_discount?: number
           coupon_id?: string | null
           created_at?: string
@@ -2585,7 +2655,12 @@ export type Database = {
         Args: { _order_id: string }
         Returns: Json
       }
+      confirm_legacy_stock_reservations: {
+        Args: { _order_id: string }
+        Returns: Json
+      }
       consume_coupon: { Args: { _coupon_id: string }; Returns: boolean }
+      consume_coupon_for_order: { Args: { _order_id: string }; Returns: Json }
       create_inventory_from_cargo: {
         Args: {
           _cargo_id: string
@@ -2612,6 +2687,7 @@ export type Database = {
         Returns: number
       }
       expire_inventory_reservations: { Args: never; Returns: Json }
+      expire_unpaid_orders: { Args: { _minutes?: number }; Returns: Json }
       has_merchant_access: {
         Args: { _merchant_id: string; _user_id: string }
         Returns: boolean
@@ -2649,6 +2725,10 @@ export type Database = {
         Args: { _order_id: string; _reason?: string }
         Returns: Json
       }
+      release_legacy_stock_reservations: {
+        Args: { _order_id: string; _reason?: string }
+        Returns: Json
+      }
       reserve_inventory_for_order: {
         Args: {
           _expires_minutes?: number
@@ -2656,6 +2736,10 @@ export type Database = {
           _merchant_id: string
           _order_id: string
         }
+        Returns: Json
+      }
+      reserve_legacy_stock_for_order: {
+        Args: { _items: Json; _merchant_id: string; _order_id: string }
         Returns: Json
       }
       restore_variant_stocks: { Args: { _items: Json }; Returns: undefined }

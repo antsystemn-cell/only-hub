@@ -208,38 +208,29 @@ export const createOrder = createServerFn({ method: "POST" })
         return k ? { product_id: i.productId, variant_key: k, qty: i.quantity } : null;
       })
       .filter(Boolean) as { product_id: string; variant_key: string; qty: number }[];
-    let stockReserved = false;
+    // Availability check only — actual reservation is logged AFTER order insert
+    // via reserve_legacy_stock_for_order so each hold is tied to a real order id.
     if (stockItems.length) {
-      const { data: stockRes, error: stockErr } = await supabaseAdmin.rpc(
+      const { data: probe, error: probeErr } = await supabaseAdmin.rpc(
         "decrement_variant_stocks",
         { _items: stockItems as any },
       );
-      if (stockErr) return { ok: false as const, error: stockErr.message };
-      const r = stockRes as any;
-      if (r && r.ok === false) {
-        const lines = (r.insufficient ?? [])
-          .map(
-            (it: any) =>
-              `Барааны "${it.variant_key}" — үлдэгдэл ${it.remaining}, та ${it.requested}-г сонгосон`,
-          )
+      if (probeErr) return { ok: false as const, error: probeErr.message };
+      const pr = probe as any;
+      if (pr && pr.ok === false) {
+        const lines = (pr.insufficient ?? [])
+          .map((it: any) => `Барааны "${it.variant_key}" — үлдэгдэл ${it.remaining}, та ${it.requested}-г сонгосон`)
           .join("\n");
         return { ok: false as const, error: lines || "Барааны үлдэгдэл хүрэлцэхгүй" };
       }
-      stockReserved = true;
+      await supabaseAdmin.rpc("restore_variant_stocks", { _items: stockItems as any });
     }
 
-    // 4d. Atomically consume the coupon (prevents double-use under load).
-    if (couponId) {
-      const { data: consumed, error: consumeErr } = await supabaseAdmin.rpc("consume_coupon", {
-        _coupon_id: couponId,
-      });
-      if (consumeErr || !consumed) {
-        if (stockReserved) {
-          await supabaseAdmin.rpc("restore_variant_stocks", { _items: stockItems as any });
-        }
-        return { ok: false as const, error: "Купоны хязгаар дууссан" };
-      }
-    }
+    // Coupon: validated above (coupon_id snapshotted on order). Actual
+    // used_count consumption happens inside confirmOrderPayment() so abandoned
+    // unpaid orders don't burn uses.
+
+
 
     // 5. Insert order
     const hasForeign = normalized.some((i: any) => i?.foreign);
@@ -269,25 +260,23 @@ export const createOrder = createServerFn({ method: "POST" })
       .select("*")
       .single();
     if (orderErr || !order) {
-      // Compensating rollback for the reservations we just made.
-      if (stockReserved) {
-        await supabaseAdmin.rpc("restore_variant_stocks", { _items: stockItems as any });
-      }
-      if (couponId) {
-        // Best-effort: decrement the counter we just bumped via consume_coupon.
-        const { data: c } = await supabaseAdmin
-          .from("coupons")
-          .select("used_count")
-          .eq("id", couponId)
-          .single();
-        if (c && c.used_count > 0) {
-          await supabaseAdmin
-            .from("coupons")
-            .update({ used_count: c.used_count - 1 })
-            .eq("id", couponId);
-        }
-      }
       return { ok: false as const, error: orderErr?.message ?? "Захиалга үүсгэхэд алдаа" };
+    }
+
+    // 5a. Legacy variant_stock reservation logged against the new order id.
+    if (stockItems.length) {
+      const { data: legRes, error: legErr } = await supabaseAdmin.rpc(
+        "reserve_legacy_stock_for_order",
+        { _order_id: order.id, _merchant_id: merchant.id, _items: stockItems as any },
+      );
+      const lr = legRes as any;
+      if (legErr || (lr && lr.ok === false)) {
+        await supabaseAdmin.from("orders").delete().eq("id", order.id);
+        const lines = (lr?.insufficient ?? [])
+          .map((it: any) => `Барааны "${it.variant_key}" — үлдэгдэл ${it.remaining}, та ${it.requested}-г сонгосон`)
+          .join("\n");
+        return { ok: false as const, error: lines || legErr?.message || "Барааны үлдэгдэл хүрэлцэхгүй" };
+      }
     }
 
     // 5b. Reserve inventory for linked items (after we have an order id).
@@ -298,16 +287,15 @@ export const createOrder = createServerFn({ method: "POST" })
         resolved: resolvedLinks,
       });
       if (!resRes.ok) {
-        // Rollback: release any partial reservation, restore variant stocks,
-        // delete the order so the user sees the proper insufficient message.
         await releaseForOrder(order.id, "cancelled");
-        if (stockReserved) {
-          await supabaseAdmin.rpc("restore_variant_stocks", { _items: stockItems as any });
-        }
+        await supabaseAdmin.rpc("release_legacy_stock_reservations", {
+          _order_id: order.id, _reason: "cancelled",
+        });
         await supabaseAdmin.from("orders").delete().eq("id", order.id);
         return { ok: false as const, error: resRes.error };
       }
     }
+
 
 
 

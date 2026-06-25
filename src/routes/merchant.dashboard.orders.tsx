@@ -802,6 +802,13 @@ function ManualOrderDialog({ open, onOpenChange, merchantId, onCreated }: { open
                 <Checkbox checked={sendToDelivery} onCheckedChange={(v) => setSendToDelivery(!!v)} />
                 <span><b>Хүргэлтэнд илгээх</b> — захиалга үүсэнгүүт хүргэлтийн систем рүү шууд илгээнэ.</span>
               </label>
+              {sendToDelivery && paymentStatus === "unpaid" && (
+                <div className="md:col-span-2 rounded-lg border border-amber-300 bg-amber-50 p-2 text-xs text-amber-900 dark:border-amber-700 dark:bg-amber-950/40 dark:text-amber-200">
+                  ⚠️ Төлөгдөөгүй захиалгыг хүргэлтэнд илгээж байна (COD / газар дээр төлөх).
+                  Хүргэгдсэний дараа төлбөр нэхэмжлэх урсгал ажиллана.
+                </div>
+              )}
+
             </div>
           </section>
 

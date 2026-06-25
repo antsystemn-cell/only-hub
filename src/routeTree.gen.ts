@@ -72,6 +72,7 @@ import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/e
 import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
 import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
 import { Route as ApiPublicQpayWebhookRouteImport } from './routes/api.public.qpay.webhook'
+import { Route as ApiPublicHooksOrdersExpireRouteImport } from './routes/api.public.hooks.orders-expire'
 import { Route as ApiPublicHooksOnlycargoRouteImport } from './routes/api.public.hooks.onlycargo'
 import { Route as ApiPublicHooksInventoryReservationsExpireRouteImport } from './routes/api.public.hooks.inventory-reservations-expire'
 import { Route as ApiPublicHooksForeignSourceSyncRouteImport } from './routes/api.public.hooks.foreign-source-sync'
@@ -413,6 +414,12 @@ const ApiPublicQpayWebhookRoute = ApiPublicQpayWebhookRouteImport.update({
   path: '/api/public/qpay/webhook',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicHooksOrdersExpireRoute =
+  ApiPublicHooksOrdersExpireRouteImport.update({
+    id: '/api/public/hooks/orders-expire',
+    path: '/api/public/hooks/orders-expire',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksOnlycargoRoute = ApiPublicHooksOnlycargoRouteImport.update({
   id: '/api/public/hooks/onlycargo',
   path: '/api/public/hooks/onlycargo',
@@ -520,6 +527,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/foreign-source-sync': typeof ApiPublicHooksForeignSourceSyncRoute
   '/api/public/hooks/inventory-reservations-expire': typeof ApiPublicHooksInventoryReservationsExpireRoute
   '/api/public/hooks/onlycargo': typeof ApiPublicHooksOnlycargoRoute
+  '/api/public/hooks/orders-expire': typeof ApiPublicHooksOrdersExpireRoute
   '/api/public/qpay/webhook': typeof ApiPublicQpayWebhookRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -590,6 +598,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/foreign-source-sync': typeof ApiPublicHooksForeignSourceSyncRoute
   '/api/public/hooks/inventory-reservations-expire': typeof ApiPublicHooksInventoryReservationsExpireRoute
   '/api/public/hooks/onlycargo': typeof ApiPublicHooksOnlycargoRoute
+  '/api/public/hooks/orders-expire': typeof ApiPublicHooksOrdersExpireRoute
   '/api/public/qpay/webhook': typeof ApiPublicQpayWebhookRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -664,6 +673,7 @@ export interface FileRoutesById {
   '/api/public/hooks/foreign-source-sync': typeof ApiPublicHooksForeignSourceSyncRoute
   '/api/public/hooks/inventory-reservations-expire': typeof ApiPublicHooksInventoryReservationsExpireRoute
   '/api/public/hooks/onlycargo': typeof ApiPublicHooksOnlycargoRoute
+  '/api/public/hooks/orders-expire': typeof ApiPublicHooksOrdersExpireRoute
   '/api/public/qpay/webhook': typeof ApiPublicQpayWebhookRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -739,6 +749,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/foreign-source-sync'
     | '/api/public/hooks/inventory-reservations-expire'
     | '/api/public/hooks/onlycargo'
+    | '/api/public/hooks/orders-expire'
     | '/api/public/qpay/webhook'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -809,6 +820,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/foreign-source-sync'
     | '/api/public/hooks/inventory-reservations-expire'
     | '/api/public/hooks/onlycargo'
+    | '/api/public/hooks/orders-expire'
     | '/api/public/qpay/webhook'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -882,6 +894,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/foreign-source-sync'
     | '/api/public/hooks/inventory-reservations-expire'
     | '/api/public/hooks/onlycargo'
+    | '/api/public/hooks/orders-expire'
     | '/api/public/qpay/webhook'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -920,6 +933,7 @@ export interface RootRouteChildren {
   ApiPublicHooksForeignSourceSyncRoute: typeof ApiPublicHooksForeignSourceSyncRoute
   ApiPublicHooksInventoryReservationsExpireRoute: typeof ApiPublicHooksInventoryReservationsExpireRoute
   ApiPublicHooksOnlycargoRoute: typeof ApiPublicHooksOnlycargoRoute
+  ApiPublicHooksOrdersExpireRoute: typeof ApiPublicHooksOrdersExpireRoute
   ApiPublicQpayWebhookRoute: typeof ApiPublicQpayWebhookRoute
   LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
   LovableEmailAuthWebhookRoute: typeof LovableEmailAuthWebhookRoute
@@ -1372,6 +1386,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicQpayWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/orders-expire': {
+      id: '/api/public/hooks/orders-expire'
+      path: '/api/public/hooks/orders-expire'
+      fullPath: '/api/public/hooks/orders-expire'
+      preLoaderRoute: typeof ApiPublicHooksOrdersExpireRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/onlycargo': {
       id: '/api/public/hooks/onlycargo'
       path: '/api/public/hooks/onlycargo'
@@ -1592,6 +1613,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksInventoryReservationsExpireRoute:
     ApiPublicHooksInventoryReservationsExpireRoute,
   ApiPublicHooksOnlycargoRoute: ApiPublicHooksOnlycargoRoute,
+  ApiPublicHooksOrdersExpireRoute: ApiPublicHooksOrdersExpireRoute,
   ApiPublicQpayWebhookRoute: ApiPublicQpayWebhookRoute,
   LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,
   LovableEmailAuthWebhookRoute: LovableEmailAuthWebhookRoute,
