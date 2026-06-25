@@ -168,20 +168,10 @@ export const Route = createFileRoute("/api/public/hooks/onlycargo")({
         try {
           const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-          // --- Idempotency check ---
-          const { data: existing } = await supabaseAdmin
-            .from("webhook_events")
-            .select("id")
-            .eq("provider", "onlycargo")
-            .eq("event_key", eventKey)
-            .maybeSingle();
-
-          if (existing) {
-            console.log("[onlycargo-webhook] duplicate", { eventKey });
-            return json({ ok: true, duplicate: true });
-          }
-
-          // --- Persist webhook event ---
+          // --- Atomic idempotency: rely on the unique index (provider, event_key).
+          // Concurrent retries that race past a SELECT check both end up here; the
+          // second insert fails with a unique-violation (Postgres code 23505) which
+          // we treat as "already processed" and ACK without re-running side effects.
           const insertedEvent = await supabaseAdmin
             .from("webhook_events")
             .insert({
@@ -192,6 +182,47 @@ export const Route = createFileRoute("/api/public/hooks/onlycargo")({
             })
             .select("id")
             .maybeSingle();
+
+          if (insertedEvent.error) {
+            if ((insertedEvent.error as any)?.code === "23505") {
+              console.log("[onlycargo-webhook] duplicate (race)", { eventKey });
+              return json({ ok: true, duplicate: true });
+            }
+            throw insertedEvent.error;
+          }
+
+          // --- Real sync: notify the owning merchant on actionable events ---
+          if (customerCode && trackNumber && status && ACTIONABLE_STATUSES.has(status)) {
+            const { data: merchant } = await supabaseAdmin
+              .from("merchants")
+              .select("id")
+              .eq("onlycargo_customer_code", customerCode)
+              .maybeSingle();
+
+            if (merchant?.id) {
+              await supabaseAdmin.from("notifications_log").insert({
+                merchant_id: merchant.id,
+                event_type: `cargo.${status}`,
+                channel: "in_app",
+                status: "pending",
+                provider: "onlycargo",
+                message: `Карго ${trackNumber} — ${status}`,
+                payload: { trackNumber, status, customerCode, event } as never,
+                attempt: 0,
+              });
+            } else {
+              console.warn("[onlycargo-webhook] customer_code not linked", { customerCode });
+            }
+          }
+
+          console.log("[onlycargo-webhook] processed", {
+            event,
+            trackNumber,
+            status,
+            customerCode,
+            eventId: insertedEvent.data?.id ?? null,
+          });
+        } catch (err) {
 
           // --- Real sync: notify the owning merchant on actionable events ---
           if (customerCode && trackNumber && status && ACTIONABLE_STATUSES.has(status)) {
