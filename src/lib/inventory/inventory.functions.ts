@@ -96,12 +96,12 @@ export const createInventoryFromCargo = createServerFn({ method: "POST" })
       cargoId: z.string().trim().max(120).optional(),
       name: z.string().trim().min(1).max(200),
       sku: z.string().trim().max(80).optional(),
-      quantity: z.number().refine((n) => Number.isFinite(n), "invalid").positive().max(1_000_000),
+      quantity: z.number().positive().max(1_000_000).refine((n) => Number.isFinite(n), "invalid"),
       unit: z.string().trim().min(1).max(20).default("pcs"),
       costPrice: z
         .number()
-        .refine((n) => Number.isFinite(n), "invalid")
         .nonnegative()
+        .refine((n) => Number.isFinite(n), "invalid")
         .optional(),
       warehouseLocation: z.string().trim().max(120).optional(),
       note: z.string().trim().max(500).optional(),
