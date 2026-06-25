@@ -96,6 +96,18 @@ function ProductsPage() {
     },
   });
   const canForeign = !!merchantCaps?.can_create_foreign_order_products;
+  const { data: linkedProductIds = new Set<string>() } = useQuery({
+    queryKey: ["linked-product-ids", merchantId],
+    enabled: !!merchantId,
+    queryFn: async () => {
+      const { data } = await (supabase as any)
+        .from("inventory_product_links")
+        .select("product_id")
+        .eq("merchant_id", merchantId)
+        .eq("is_active", true);
+      return new Set<string>((data ?? []).map((r: any) => r.product_id));
+    },
+  });
   const { data: categories = [] } = useQuery({
     queryKey: ["categories", merchantId],
     queryFn: async () => {
