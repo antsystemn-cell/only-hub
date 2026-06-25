@@ -662,6 +662,11 @@ function OrderRow({ order, checked, onCheck, onStatus, onPayment, productImages,
 }
 
 function ManualOrderDialog({ open, onOpenChange, merchantId, onCreated }: { open: boolean; onOpenChange: (v: boolean) => void; merchantId: string; onCreated: () => void }) {
+  const nowLocal = () => {
+    const d = new Date();
+    d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+    return d.toISOString().slice(0, 16);
+  };
   const [phone, setPhone] = useState("");
   const [name, setName] = useState("");
   const [address, setAddress] = useState("");
@@ -673,11 +678,17 @@ function ManualOrderDialog({ open, onOpenChange, merchantId, onCreated }: { open
   const [status, setStatus] = useState("confirmed");
   const [note, setNote] = useState("");
   const [saving, setSaving] = useState(false);
-  const [saleDate, setSaleDate] = useState("");
+  const [saleDate, setSaleDate] = useState(nowLocal());
   const [branch, setBranch] = useState("");
   const [source, setSource] = useState("store");
+  const [sendToDelivery, setSendToDelivery] = useState(true);
   const [productSearch, setProductSearch] = useState("");
   const createManualOrderFn = useServerFn(createManualOrder);
+
+  // Refresh sale date each time dialog opens, unless admin already edited it.
+  React.useEffect(() => {
+    if (open) setSaleDate((prev) => prev || nowLocal());
+  }, [open]);
 
   const { data: allProducts = [] } = useQuery({
     queryKey: ["modal-products", merchantId],
@@ -714,6 +725,7 @@ function ManualOrderDialog({ open, onOpenChange, merchantId, onCreated }: { open
           saleDate: saleDate || null,
           branch: branch || null,
           source,
+          sendToDelivery,
         },
       });
       if (!res.ok) {
@@ -721,10 +733,14 @@ function ManualOrderDialog({ open, onOpenChange, merchantId, onCreated }: { open
         return toast.error(res.error ?? "Алдаа гарлаа");
       }
       toast.success("Захиалга үүслээ");
+      if (res.deliveryCreated) toast.success(`Хүргэлт үүслээ${res.deliveryRef ? `: ${res.deliveryRef}` : ""}`);
+      else if (res.deliveryAlready) toast.info("Энэ захиалга аль хэдийн хүргэлтэнд илгээгдсэн байна.");
+      else if (res.deliveryError) toast.warning(`Хүргэлт: ${res.deliveryError}`);
+      if (res.reservationWarning) toast.warning(`Нөөц: ${res.reservationWarning}`);
       onCreated();
       onOpenChange(false);
-      setItems([]); setPhone(""); setName(""); setAddress(""); setNote(""); setSaleDate(""); setBranch(""); setSource("store");
-      setPaymentStatus("unpaid"); setStatus("confirmed");
+      setItems([]); setPhone(""); setName(""); setAddress(""); setNote(""); setSaleDate(nowLocal()); setBranch(""); setSource("store");
+      setPaymentStatus("unpaid"); setStatus("confirmed"); setSendToDelivery(true);
     } catch (e: any) {
       toast.error(e?.message ?? "Алдаа гарлаа");
     } finally {
