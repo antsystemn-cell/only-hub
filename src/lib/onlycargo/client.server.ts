@@ -119,35 +119,54 @@ function pick<T = unknown>(obj: Record<string, any>, ...keys: string[]): T | und
 }
 
 export function normalizeShipment(raw: any): OnlyCargoShipment {
-  if (!raw || typeof raw !== "object") return raw;
-  const out: OnlyCargoShipment = {
-    ...raw,
-    track_number: pick<string>(raw, "track_number", "trackNumber", "tracking_number", "trackingNumber") ?? raw.track_number ?? "",
-    status: pick<string>(raw, "status") ?? "unknown",
-    customer_code: pick<string>(raw, "customer_code", "customerCode") ?? null,
-    merchant_id: pick<string>(raw, "merchant_id", "merchantId") ?? null,
-    phone: pick<string>(raw, "phone", "phoneNumber") ?? null,
-    weight: pick<number>(raw, "weight"),
-    volume: pick<number>(raw, "volume", "volumeM3", "volume_m3"),
-    length: pick<number>(raw, "length"),
-    width: pick<number>(raw, "width"),
-    height: pick<number>(raw, "height"),
-    price: pick<number>(raw, "price", "fee", "amount"),
-    fee: pick<number>(raw, "fee", "price", "amount"),
-    description: pick<string>(raw, "description", "desc") ?? null,
-    notes: pick<string>(raw, "notes", "note") ?? null,
-    location: pick<string>(raw, "location", "current_location", "currentLocation") ?? null,
-    lat: pick<number>(raw, "lat", "latitude"),
-    lng: pick<number>(raw, "lng", "longitude"),
-    images: (pick<string[]>(raw, "images", "image_urls", "imageUrls") as string[] | undefined) ?? null,
-    location_history:
-      (pick<any[]>(raw, "location_history", "locationHistory") as any[] | undefined) ?? null,
-    created_at: pick<string>(raw, "created_at", "createdAt") ?? null,
-    updated_at: pick<string>(raw, "updated_at", "updatedAt") ?? null,
-    arrived_at: pick<string>(raw, "arrived_at", "arrivedAt") ?? null,
-    picked_up_at: pick<string>(raw, "picked_up_at", "pickedUpAt") ?? null,
-  };
-  return out;
+  // Defensive: OnlyCargo may wrap payloads as { data: {...} } or return the
+  // shipment object directly. Always unwrap before reading fields.
+  const src =
+    raw && typeof raw === "object" && raw.data && typeof raw.data === "object" && !Array.isArray(raw.data)
+      ? raw.data
+      : raw;
+  if (!src || typeof src !== "object") {
+    console.warn("[onlycargo] normalizeShipment: non-object payload", { type: typeof src });
+    return { track_number: "", status: "unknown" } as OnlyCargoShipment;
+  }
+  try {
+    const out: OnlyCargoShipment = {
+      ...src,
+      track_number:
+        pick<string>(src, "track_number", "trackNumber", "tracking_number", "trackingNumber") ??
+        src.track_number ?? "",
+      status: pick<string>(src, "status") ?? "unknown",
+      customer_code: pick<string>(src, "customer_code", "customerCode") ?? null,
+      merchant_id: pick<string>(src, "merchant_id", "merchantId") ?? null,
+      phone: pick<string>(src, "phone", "phoneNumber") ?? null,
+      weight: pick<number>(src, "weight"),
+      volume: pick<number>(src, "volume", "volumeM3", "volume_m3"),
+      length: pick<number>(src, "length"),
+      width: pick<number>(src, "width"),
+      height: pick<number>(src, "height"),
+      price: pick<number>(src, "price", "fee", "amount"),
+      fee: pick<number>(src, "fee", "price", "amount"),
+      description: pick<string>(src, "description", "desc") ?? null,
+      notes: pick<string>(src, "notes", "note") ?? null,
+      location: pick<string>(src, "location", "current_location", "currentLocation") ?? null,
+      lat: pick<number>(src, "lat", "latitude"),
+      lng: pick<number>(src, "lng", "longitude"),
+      images: (pick<string[]>(src, "images", "image_urls", "imageUrls") as string[] | undefined) ?? null,
+      location_history:
+        (pick<any[]>(src, "location_history", "locationHistory") as any[] | undefined) ?? null,
+      created_at: pick<string>(src, "created_at", "createdAt") ?? null,
+      updated_at: pick<string>(src, "updated_at", "updatedAt") ?? null,
+      arrived_at: pick<string>(src, "arrived_at", "arrivedAt") ?? null,
+      picked_up_at: pick<string>(src, "picked_up_at", "pickedUpAt") ?? null,
+    };
+    return out;
+  } catch (e) {
+    console.warn("[onlycargo] normalizeShipment failed", e);
+    return {
+      track_number: String(src.track_number ?? src.trackNumber ?? ""),
+      status: "unknown",
+    } as OnlyCargoShipment;
+  }
 }
 
 function normalizeList<T = OnlyCargoShipment>(

@@ -93,19 +93,59 @@ export const getMerchantCargoDetail = createServerFn({ method: "POST" })
       data.merchantId,
       context.userId,
     );
+    const { data: isAdmin } = await context.supabase.rpc("is_platform_admin", {
+      _user_id: context.userId,
+    });
+
     const { onlyCargo } = await import("./client.server");
     const detail = await onlyCargo.getShipment(data.trackNumber);
-    // Scope check: shipment must belong to merchant
+
+    // Defensive scope check — merchants may only view shipments positively
+    // matched to their own customer_code. Missing/empty codes never bypass
+    // authorization; only platform admins see unresolved shipments.
     const shipmentCode =
-      (detail?.customer_code as string | undefined) ??
-      ((detail as Record<string, unknown>)?.customerCode as string | undefined);
-    if (shipmentCode && shipmentCode !== customerCode) {
-      throw new Response("Forbidden", { status: 403 });
+      (detail?.customer_code as string | null | undefined) ??
+      ((detail as Record<string, unknown> | null | undefined)?.customerCode as string | undefined) ??
+      null;
+    const shipmentMerchantId =
+      (detail?.merchant_id as string | null | undefined) ??
+      ((detail as Record<string, unknown> | null | undefined)?.merchantId as string | undefined) ??
+      null;
+
+    if (!isAdmin) {
+      if (!shipmentCode && !shipmentMerchantId) {
+        console.warn("[cargo] unresolved shipment access blocked", {
+          trackNumber: data.trackNumber,
+          merchantId: data.merchantId,
+        });
+        throw new Response(
+          "Энэ ачааны мэдээлэл бүрэн бус байна. Захиргаатай холбоо барина уу.",
+          { status: 403 },
+        );
+      }
+      const codeMatches = shipmentCode && shipmentCode === customerCode;
+      const merchantMatches = shipmentMerchantId && shipmentMerchantId === data.merchantId;
+      if (!codeMatches && !merchantMatches) {
+        console.warn("[cargo] cross-merchant access blocked", {
+          trackNumber: data.trackNumber,
+          merchantId: data.merchantId,
+          shipmentCode,
+          shipmentMerchantId,
+        });
+        throw new Response("Forbidden", { status: 403 });
+      }
     }
+
     const [history, location] = await Promise.allSettled([
       onlyCargo.getHistory(data.trackNumber),
       onlyCargo.getLocation(data.trackNumber),
     ]);
+    if (history.status === "rejected") {
+      console.warn("[cargo] history fetch failed", { trackNumber: data.trackNumber, err: String(history.reason) });
+    }
+    if (location.status === "rejected") {
+      console.warn("[cargo] location fetch failed", { trackNumber: data.trackNumber, err: String(location.reason) });
+    }
     return {
       detail,
       history: history.status === "fulfilled" ? history.value : null,
