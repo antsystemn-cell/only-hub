@@ -622,6 +622,7 @@ const ManualOrderInput = z.object({
   saleDate: z.string().optional().nullable(),
   branch: z.string().max(200).optional().nullable(),
   source: z.string().max(50).default("store"),
+  sendToDelivery: z.boolean().default(true),
 });
 
 export const createManualOrder = createServerFn({ method: "POST" })
@@ -657,7 +658,9 @@ export const createManualOrder = createServerFn({ method: "POST" })
         is_guest: true,
         source: data.source,
         note: data.note || null,
-        sale_date: data.saleDate ? new Date(data.saleDate).toISOString() : null,
+        sale_date: data.saleDate
+          ? new Date(data.saleDate).toISOString()
+          : new Date().toISOString(),
         branch: data.branch || null,
       })
       .select("id")
@@ -666,28 +669,88 @@ export const createManualOrder = createServerFn({ method: "POST" })
       return { ok: false as const, error: error?.message ?? "Үүсгэхэд алдаа" };
     }
 
+    // Inventory reservation for linked products (best-effort: warn on failure
+    // but do not block manual entry — admin recovers via inventory page).
+    let reservationWarning: string | null = null;
+    try {
+      const { resolveLinksForCart, reserveForOrder } = await import(
+        "@/lib/inventory/reservation.server"
+      );
+      const linkInputs = data.items
+        .map((it, idx) =>
+          it.product_id
+            ? { productId: it.product_id, variantKey: null, quantity: it.quantity, orderItemIndex: idx }
+            : null,
+        )
+        .filter(Boolean) as any[];
+      if (linkInputs.length) {
+        const resolved = await resolveLinksForCart(data.merchantId, linkInputs);
+        if (resolved.length) {
+          const r = await reserveForOrder({
+            orderId: inserted.id,
+            merchantId: data.merchantId,
+            resolved,
+          });
+          if (!r.ok) reservationWarning = r.error;
+        }
+      }
+    } catch (e: any) {
+      reservationWarning = e?.message ?? String(e);
+    }
+
     // Apply target status (allowed once row exists because update policy is permissive)
     if (insertStatus !== data.status && data.paymentStatus !== "confirmed") {
       await supabaseAdmin.from("orders").update({ status: data.status }).eq("id", inserted.id);
     }
 
     // If marked as paid, route through the centralized confirmation service
-    // (idempotent, fires commission trigger + auto delivery request).
+    // (idempotent, fires commission trigger + inventory confirm).
+    // Delivery creation is controlled explicitly below via sendToDelivery.
     if (data.paymentStatus === "confirmed") {
       const res = await confirmOrderPayment({
         orderId: inserted.id,
         source: "merchant_manual",
+        skipDelivery: true,
       });
       if (!res.ok) {
         return { ok: false as const, error: res.error, orderId: inserted.id };
       }
-      // If caller also requested a non-pending status (e.g. completed), apply it now.
       if (data.status && data.status !== "pending") {
         await supabaseAdmin.from("orders").update({ status: data.status }).eq("id", inserted.id);
       }
     }
 
-    return { ok: true as const, orderId: inserted.id };
+    // Optional manual delivery dispatch (independent of payment status).
+    // createDeliveryRequest is idempotent — duplicates surface as alreadyExists.
+    let deliveryCreated = false;
+    let deliveryAlready = false;
+    let deliveryError: string | null = null;
+    let deliveryRef: string | null = null;
+    if (data.sendToDelivery) {
+      try {
+        const { createDeliveryRequest } = await import("@/lib/delivery/delivery.service");
+        const res: any = await createDeliveryRequest({ orderId: inserted.id, userId });
+        if (res?.ok) {
+          deliveryAlready = !!res.alreadyExists;
+          deliveryCreated = !deliveryAlready;
+          deliveryRef = res.deliveryRequest?.external_ref ?? res.deliveryRequest?.id ?? null;
+        } else {
+          deliveryError = res?.error ?? "Хүргэлт үүсгэхэд алдаа";
+        }
+      } catch (e: any) {
+        deliveryError = e?.message ?? String(e);
+      }
+    }
+
+    return {
+      ok: true as const,
+      orderId: inserted.id,
+      deliveryCreated,
+      deliveryAlready,
+      deliveryRef,
+      deliveryError,
+      reservationWarning,
+    };
   });
 
 // Merchant admin updates an order's recipient/address. If the order was
