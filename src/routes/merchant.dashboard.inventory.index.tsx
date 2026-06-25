@@ -135,6 +135,7 @@ function InventoryListPage() {
                     <TableHead>Эх үүсвэр</TableHead>
                     <TableHead>Байршил</TableHead>
                     <TableHead>Шинэчилсэн</TableHead>
+                    <TableHead className="text-right">Үйлдэл</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -160,6 +161,22 @@ function InventoryListPage() {
                       <TableCell className="text-sm">{r.warehouse_location ?? "-"}</TableCell>
                       <TableCell className="text-xs text-muted-foreground">
                         {new Date(r.updated_at).toLocaleString("mn-MN")}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-1">
+                          <Button size="sm" variant="outline" onClick={() => setLinkTarget(r)}>
+                            <Link2 className="h-3.5 w-3.5 mr-1" /> Бараатай холбох
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => syncMut.mutate(r.id)}
+                            disabled={syncMut.isPending}
+                            title="Stock шинэчлэх"
+                          >
+                            <RefreshCw className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
