@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useAuth } from "@/hooks/use-auth";
 import { Card } from "@/components/ui/card";
@@ -9,8 +9,11 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Loader2, Search, PackageOpen } from "lucide-react";
+import { Loader2, Search, PackageOpen, Link2, RefreshCw } from "lucide-react";
+import { toast } from "sonner";
 import { listInventoryItems } from "@/lib/inventory/inventory.functions";
+import { manualSyncInventoryLink } from "@/lib/inventory/links.functions";
+import { InventoryLinkDialog } from "@/components/inventory/InventoryLinkDialog";
 
 export const Route = createFileRoute("/merchant/dashboard/inventory/")({
   component: InventoryListPage,
