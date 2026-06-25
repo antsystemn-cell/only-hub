@@ -190,7 +190,7 @@ export const createInventoryFromCargo = createServerFn({ method: "POST" })
       : data.note ?? null;
 
     const { data: itemId, error: rpcErr } = await context.supabase.rpc(
-      "create_inventory_from_cargo",
+      "create_inventory_from_cargo" as any,
       {
         _merchant_id: data.merchantId,
         _name: data.name,
@@ -203,7 +203,7 @@ export const createInventoryFromCargo = createServerFn({ method: "POST" })
         _cargo_id: data.cargoId ?? null,
         _note: note,
         _created_by: context.userId,
-      },
+      } as any,
     );
     if (rpcErr) {
       const msg = rpcErr.message ?? "create failed";
