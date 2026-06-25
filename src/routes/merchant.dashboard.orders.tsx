@@ -798,6 +798,10 @@ function ManualOrderDialog({ open, onOpenChange, merchantId, onCreated }: { open
               <div className="md:col-span-2"><Label>Хүргэлтийн хаяг</Label><Textarea rows={2} value={address} onChange={(e) => setAddress(e.target.value)} /></div>
               <label className="flex items-center gap-2 text-sm"><Checkbox checked={includeDelivery} onCheckedChange={(v) => setIncludeDelivery(!!v)} /> Хүргэлт оруулах</label>
               <div><Label>Хүргэлтийн төлбөр</Label><Input type="number" value={deliveryFee} onChange={(e) => setDeliveryFee(Number(e.target.value))} /></div>
+              <label className="md:col-span-2 flex items-center gap-2 rounded-lg border border-border bg-muted/30 p-2 text-sm">
+                <Checkbox checked={sendToDelivery} onCheckedChange={(v) => setSendToDelivery(!!v)} />
+                <span><b>Хүргэлтэнд илгээх</b> — захиалга үүсэнгүүт хүргэлтийн систем рүү шууд илгээнэ.</span>
+              </label>
             </div>
           </section>
 
