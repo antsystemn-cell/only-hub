@@ -194,6 +194,15 @@ export const Route = createFileRoute("/api/public/hooks/onlycargo")({
         }
 
         const n = normalizeEvent(payload);
+
+        // Required: at minimum we need a trackNumber OR a recognisable event.
+        if (!n.trackNumber && (n.event === "unknown" || !n.event)) {
+          return json(
+            { error: "Invalid payload: track_number or event required" },
+            400,
+          );
+        }
+
         const eventKey = buildEventKey(payload, n);
 
         try {
