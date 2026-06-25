@@ -686,7 +686,7 @@ function ManualOrderDialog({ open, onOpenChange, merchantId, onCreated }: { open
   const createManualOrderFn = useServerFn(createManualOrder);
 
   // Refresh sale date each time dialog opens, unless admin already edited it.
-  React.useEffect(() => {
+  useEffect(() => {
     if (open) setSaleDate((prev) => prev || nowLocal());
   }, [open]);
 
