@@ -107,6 +107,27 @@ export async function confirmOrderPayment(opts: ConfirmOptions): Promise<Confirm
     console.error("[confirmOrderPayment] inventory confirm failed", orderId, e);
   }
 
+  // 2c. Confirm legacy variant_stock reservations (idempotent: reserved → confirmed).
+  try {
+    await supabaseAdmin.rpc("confirm_legacy_stock_reservations", { _order_id: orderId });
+  } catch (e) {
+    console.error("[confirmOrderPayment] legacy stock confirm failed", orderId, e);
+  }
+
+  // 2d. Consume coupon exactly once (idempotent on orders.coupon_consumed_at).
+  try {
+    const { data: cRes, error: cErr } = await supabaseAdmin.rpc("consume_coupon_for_order", {
+      _order_id: orderId,
+    });
+    if (cErr) console.error("[confirmOrderPayment] coupon consume failed", orderId, cErr);
+    else if ((cRes as any)?.reason === "coupon_exhausted") {
+      console.warn("[confirmOrderPayment] coupon exhausted at payment time", orderId);
+    }
+  } catch (e) {
+    console.error("[confirmOrderPayment] coupon consume threw", orderId, e);
+  }
+
+
   // 3. Sync payment_requests (post-delivery collection / SMS invoice).
   await supabaseAdmin
     .from("payment_requests")
