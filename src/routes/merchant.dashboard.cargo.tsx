@@ -16,7 +16,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Loader2, RefreshCw, Search, Package, Plus } from "lucide-react";
+import { Loader2, RefreshCw, Search, Package, Plus, MapPin, Image as ImageIcon, Scale, Ruler, FileText, CheckCircle2, Circle } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import {
   listMerchantCargo,
@@ -330,6 +330,17 @@ function SetupCustomerCode({ merchantId }: { merchantId: string }) {
   );
 }
 
+const TIMELINE_STEPS = [
+  { key: "created", label: "Үүсгэсэн" },
+  { key: "received", label: "Эрээнд" },
+  { key: "processing", label: "Боловсруулж" },
+  { key: "in_transit", label: "Замд" },
+  { key: "arrived", label: "Ирсэн" },
+  { key: "ready_for_pickup", label: "Бэлэн" },
+  { key: "completed", label: "Хүлээлгэсэн" },
+  { key: "archived", label: "Архив" },
+] as const;
+
 function CargoDetailDialog({
   merchantId,
   trackNumber,
@@ -346,49 +357,198 @@ function CargoDetailDialog({
     enabled: !!trackNumber,
   });
 
+  const detail: any = (data as any)?.detail ?? {};
+  const historyRaw = (data as any)?.history;
+  const locationData: any = (data as any)?.location ?? {};
+
   const history = useMemo(() => {
-    if (!data?.history) return [];
-    if (Array.isArray(data.history)) return data.history as any[];
-    if (Array.isArray((data.history as any).history)) return (data.history as any).history;
+    if (!historyRaw) return [] as any[];
+    if (Array.isArray(historyRaw)) return historyRaw;
+    if (Array.isArray(historyRaw.history)) return historyRaw.history;
+    if (Array.isArray(historyRaw.data)) return historyRaw.data;
     return [];
-  }, [data]);
+  }, [historyRaw]);
+
+  // Sort newest-first for the timeline list
+  const historySorted = useMemo(() => {
+    return [...history].sort((a, b) => {
+      const ta = new Date(a.at ?? a.created_at ?? a.timestamp ?? 0).getTime();
+      const tb = new Date(b.at ?? b.created_at ?? b.timestamp ?? 0).getTime();
+      return tb - ta;
+    });
+  }, [history]);
+
+  const currentStatus = String(detail.status ?? "");
+  const reachedStatuses = useMemo(() => {
+    const set = new Set<string>(history.map((h: any) => String(h.status ?? "")));
+    if (currentStatus) set.add(currentStatus);
+    return set;
+  }, [history, currentStatus]);
+
+  const images: string[] = Array.isArray(detail.images) ? detail.images : [];
+  const currentLocation = detail.location ?? locationData.location ?? null;
+  const fee = detail.fee ?? detail.price ?? null;
 
   return (
     <Dialog open={!!trackNumber} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="font-mono">{trackNumber}</DialogTitle>
-          <DialogDescription>Ачааны дэлгэрэнгүй</DialogDescription>
+          <DialogTitle className="font-mono text-base">{trackNumber}</DialogTitle>
+          <DialogDescription>Ачааны дэлгэрэнгүй мэдээлэл</DialogDescription>
         </DialogHeader>
         {isLoading ? (
-          <div className="flex justify-center py-8">
+          <div className="flex justify-center py-12">
             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
           </div>
         ) : isError ? (
           <p className="text-sm text-destructive">{String((error as any)?.message ?? "Алдаа")}</p>
         ) : data ? (
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-3 text-sm">
-              <Info label="Статус" value={<StatusBadge status={String(data.detail.status ?? "")} />} />
-              <Info label="Утас" value={(data.detail as any).phone ?? "-"} />
-              <Info label="Жин" value={(data.detail as any).weight ?? "-"} />
-              <Info label="Үнэ" value={(data.detail as any).price ?? "-"} />
-              <Info label="Үүсгэсэн" value={fmtDate((data.detail as any).created_at)} />
-              <Info label="Ирсэн" value={fmtDate((data.detail as any).arrived_at)} />
-            </div>
-            {history.length > 0 && (
-              <div>
-                <h3 className="font-semibold text-sm mb-2">Түүх</h3>
-                <ul className="space-y-1.5 text-sm">
-                  {history.map((h: any, i: number) => (
-                    <li key={i} className="flex items-center gap-3">
-                      <StatusBadge status={String(h.status ?? "")} />
-                      <span className="text-muted-foreground">{fmtDate(h.at ?? h.created_at)}</span>
-                      {h.note && <span>— {h.note}</span>}
+          <div className="space-y-5">
+            {/* Status + key facts */}
+            <Card className="p-4 space-y-3">
+              <div className="flex items-center justify-between gap-3 flex-wrap">
+                <StatusBadge status={currentStatus} />
+                {detail.customer_code && (
+                  <span className="text-xs text-muted-foreground font-mono">
+                    Code: {detail.customer_code}
+                  </span>
+                )}
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
+                <Info label="Утас" value={detail.phone ?? "-"} />
+                <Info
+                  label="Жин"
+                  value={
+                    <span className="inline-flex items-center gap-1">
+                      <Scale className="h-3.5 w-3.5 text-muted-foreground" />
+                      {detail.weight != null ? `${Number(detail.weight).toFixed(2)} кг` : "-"}
+                    </span>
+                  }
+                />
+                <Info
+                  label="Эзлэхүүн"
+                  value={detail.volume != null ? `${Number(detail.volume).toFixed(3)} м³` : "-"}
+                />
+                <Info
+                  label="Хэмжээ (см)"
+                  value={
+                    detail.length || detail.width || detail.height ? (
+                      <span className="inline-flex items-center gap-1">
+                        <Ruler className="h-3.5 w-3.5 text-muted-foreground" />
+                        {detail.length ?? "?"}×{detail.width ?? "?"}×{detail.height ?? "?"}
+                      </span>
+                    ) : "-"
+                  }
+                />
+                <Info
+                  label="Үнэ"
+                  value={fee != null ? `${Number(fee).toLocaleString("mn-MN")}₮` : "-"}
+                />
+                <Info
+                  label="Байршил"
+                  value={
+                    currentLocation ? (
+                      <span className="inline-flex items-center gap-1">
+                        <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
+                        {currentLocation}
+                      </span>
+                    ) : "-"
+                  }
+                />
+                <Info label="Үүсгэсэн" value={fmtDate(detail.created_at)} />
+                <Info label="Шинэчилсэн" value={fmtDate(detail.updated_at)} />
+                <Info label="Ирсэн" value={fmtDate(detail.arrived_at)} />
+              </div>
+              {detail.description && (
+                <div className="border-t pt-3">
+                  <div className="text-xs text-muted-foreground mb-1 flex items-center gap-1">
+                    <FileText className="h-3 w-3" /> Тайлбар
+                  </div>
+                  <p className="text-sm">{detail.description}</p>
+                </div>
+              )}
+              {detail.notes && (
+                <div className="border-t pt-3">
+                  <div className="text-xs text-muted-foreground mb-1">Тэмдэглэл</div>
+                  <p className="text-sm">{detail.notes}</p>
+                </div>
+              )}
+            </Card>
+
+            {/* Step indicator */}
+            <Card className="p-4">
+              <h3 className="font-semibold text-sm mb-3">Явц</h3>
+              <ol className="grid grid-cols-4 md:grid-cols-8 gap-2">
+                {TIMELINE_STEPS.map((step) => {
+                  const reached = reachedStatuses.has(step.key);
+                  const isCurrent = step.key === currentStatus;
+                  return (
+                    <li
+                      key={step.key}
+                      className={cn(
+                        "flex flex-col items-center gap-1 text-center text-[10px]",
+                        isCurrent ? "text-primary font-semibold" : reached ? "text-foreground" : "text-muted-foreground/60",
+                      )}
+                    >
+                      {reached ? (
+                        <CheckCircle2 className="h-4 w-4 text-primary" />
+                      ) : (
+                        <Circle className="h-4 w-4" />
+                      )}
+                      <span className="leading-tight">{step.label}</span>
+                    </li>
+                  );
+                })}
+              </ol>
+            </Card>
+
+            {/* History timeline */}
+            {historySorted.length > 0 && (
+              <Card className="p-4">
+                <h3 className="font-semibold text-sm mb-3">Түүх</h3>
+                <ul className="space-y-3">
+                  {historySorted.map((h: any, i: number) => (
+                    <li key={i} className="flex gap-3 text-sm border-l-2 border-border pl-3 relative">
+                      <span className="absolute -left-[5px] top-1.5 h-2 w-2 rounded-full bg-primary" />
+                      <div className="flex-1 space-y-0.5">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <StatusBadge status={String(h.status ?? "")} />
+                          <span className="text-xs text-muted-foreground">
+                            {fmtDate(h.at ?? h.created_at ?? h.timestamp)}
+                          </span>
+                        </div>
+                        {h.location && (
+                          <p className="text-xs text-muted-foreground inline-flex items-center gap-1">
+                            <MapPin className="h-3 w-3" /> {h.location}
+                          </p>
+                        )}
+                        {h.note && <p className="text-xs">{h.note}</p>}
+                      </div>
                     </li>
                   ))}
                 </ul>
-              </div>
+              </Card>
+            )}
+
+            {/* Images */}
+            {images.length > 0 && (
+              <Card className="p-4">
+                <h3 className="font-semibold text-sm mb-3 flex items-center gap-1">
+                  <ImageIcon className="h-4 w-4" /> Зураг ({images.length})
+                </h3>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                  {images.map((url, i) => (
+                    <a key={i} href={url} target="_blank" rel="noreferrer" className="block">
+                      <img
+                        src={url}
+                        alt={`cargo-${i}`}
+                        className="aspect-square w-full rounded-md object-cover border"
+                        loading="lazy"
+                      />
+                    </a>
+                  ))}
+                </div>
+              </Card>
             )}
           </div>
         ) : null}
