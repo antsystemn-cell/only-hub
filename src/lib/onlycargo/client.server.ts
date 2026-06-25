@@ -336,9 +336,26 @@ export const onlyCargo = {
     weight?: number;
     dimensions?: { length?: number; width?: number; height?: number };
   }) {
+    // OnlyCargo API hot path expects snake_case fields. Send both shapes so
+    // newer (camelCase) and legacy (snake_case) backends both accept the call,
+    // and the created row is always tagged with customer_code → it shows up
+    // in the merchant's list filter immediately.
+    const body = {
+      track_number: payload.trackNumber,
+      trackNumber: payload.trackNumber,
+      phone: payload.phone,
+      customer_code: payload.customerCode,
+      customerCode: payload.customerCode,
+      description: payload.description,
+      weight: payload.weight,
+      length: payload.dimensions?.length,
+      width: payload.dimensions?.width,
+      height: payload.dimensions?.height,
+      dimensions: payload.dimensions,
+    };
     const raw = await call<any>("/shipments", {
       method: "POST",
-      body: JSON.stringify(payload),
+      body: JSON.stringify(body),
     });
     return normalizeShipment(raw);
   },
