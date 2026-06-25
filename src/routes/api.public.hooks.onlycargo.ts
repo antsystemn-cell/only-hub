@@ -194,6 +194,15 @@ export const Route = createFileRoute("/api/public/hooks/onlycargo")({
         }
 
         const n = normalizeEvent(payload);
+
+        // Required: at minimum we need a trackNumber OR a recognisable event.
+        if (!n.trackNumber && (n.event === "unknown" || !n.event)) {
+          return json(
+            { error: "Invalid payload: track_number or event required" },
+            400,
+          );
+        }
+
         const eventKey = buildEventKey(payload, n);
 
         try {
@@ -270,6 +279,43 @@ export const Route = createFileRoute("/api/public/hooks/onlycargo")({
               console.warn("[onlycargo-webhook] customer_code not linked", {
                 customerCode: n.customerCode,
               });
+            }
+          }
+
+          // --- Defensive local cache update (best effort, no-op if no table).
+          // Only Hub currently runs a live-API-pull strategy and has NO local
+          // cargo cache. If a future migration adds a `cargo_shipments` table
+          // with the expected columns, this block will start populating it.
+          // Missing table / column errors are swallowed so the webhook stays
+          // 200-OK.
+          if (n.trackNumber) {
+            try {
+              const cachePayload = {
+                track_number: n.trackNumber,
+                customer_code: n.customerCode,
+                merchant_id: merchantId,
+                status: n.status,
+                last_event: n.event,
+                last_synced_at: new Date().toISOString(),
+                raw_payload: payload as never,
+              } as Record<string, unknown>;
+              const { error: cacheErr } = await (supabaseAdmin as any)
+                .from("cargo_shipments")
+                .upsert(cachePayload, {
+                  onConflict: "track_number,customer_code",
+                });
+              if (cacheErr) {
+                const code = (cacheErr as any)?.code;
+                // 42P01 = undefined_table, PGRST205 = schema cache miss.
+                // Either means the cache table simply doesn't exist; skip silently.
+                if (code !== "42P01" && code !== "PGRST205") {
+                  warnings.push(`cache_update_failed:${cacheErr.message}`);
+                  console.warn("[onlycargo-webhook] cache upsert failed", cacheErr);
+                }
+              }
+            } catch (e) {
+              // Never let cache problems break the webhook.
+              console.warn("[onlycargo-webhook] cache upsert exception", e);
             }
           }
 
