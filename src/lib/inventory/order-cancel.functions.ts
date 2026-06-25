@@ -36,6 +36,11 @@ export const cancelOrderAndRelease = createServerFn({ method: "POST" })
     const { releaseForOrder } = await import("@/lib/inventory/reservation.server");
 
     const res = await releaseForOrder(data.orderId, data.reason);
+    // Also release legacy variant_stock reservations (idempotent).
+    await supabaseAdmin.rpc("release_legacy_stock_reservations", {
+      _order_id: data.orderId,
+      _reason: data.reason,
+    });
 
     await supabaseAdmin
       .from("orders")
@@ -47,6 +52,7 @@ export const cancelOrderAndRelease = createServerFn({ method: "POST" })
       .eq("id", data.orderId);
 
     return { ok: true, released: res.released };
+
   });
 
 /**
