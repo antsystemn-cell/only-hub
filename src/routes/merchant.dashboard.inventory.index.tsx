@@ -188,9 +188,6 @@ function InventoryListPage() {
               <div className="text-sm text-muted-foreground">
                 Нийт: {total.toLocaleString("mn-MN")}
               </div>
-              <div className="flex items-center gap-2">
-                <Badge variant="outline">Бараатай холбох — дараагийн шатанд</Badge>
-              </div>
               {totalPages > 1 && (
                 <div className="flex gap-2">
                   <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>Өмнөх</Button>
@@ -202,6 +199,12 @@ function InventoryListPage() {
           </>
         )}
       </Card>
+      <InventoryLinkDialog
+        open={!!linkTarget}
+        onOpenChange={(v) => { if (!v) setLinkTarget(null); }}
+        merchantId={primaryMerchantId}
+        inventoryItem={linkTarget}
+      />
     </div>
   );
 }
