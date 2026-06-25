@@ -21,6 +21,7 @@ import {
   retryFailedCollectionsFn,
   getNotificationStatsFn,
 } from "@/lib/notifications/notifications.functions";
+import { listOnlycargoWebhookEventsFn } from "@/lib/onlycargo/admin.functions";
 
 export const Route = createFileRoute("/admin/notifications")({
   head: () => ({ meta: [{ title: "Мэдэгдлийн лог — Admin" }] }),
