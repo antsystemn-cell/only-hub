@@ -223,39 +223,6 @@ export const Route = createFileRoute("/api/public/hooks/onlycargo")({
             eventId: insertedEvent.data?.id ?? null,
           });
         } catch (err) {
-
-          // --- Real sync: notify the owning merchant on actionable events ---
-          if (customerCode && trackNumber && status && ACTIONABLE_STATUSES.has(status)) {
-            const { data: merchant } = await supabaseAdmin
-              .from("merchants")
-              .select("id")
-              .eq("onlycargo_customer_code", customerCode)
-              .maybeSingle();
-
-            if (merchant?.id) {
-              await supabaseAdmin.from("notifications_log").insert({
-                merchant_id: merchant.id,
-                event_type: `cargo.${status}`,
-                channel: "in_app",
-                status: "pending",
-                provider: "onlycargo",
-                message: `Карго ${trackNumber} — ${status}`,
-                payload: { trackNumber, status, customerCode, event } as never,
-                attempt: 0,
-              });
-            } else {
-              console.warn("[onlycargo-webhook] customer_code not linked", { customerCode });
-            }
-          }
-
-          console.log("[onlycargo-webhook] processed", {
-            event,
-            trackNumber,
-            status,
-            customerCode,
-            eventId: insertedEvent.data?.id ?? null,
-          });
-        } catch (err) {
           // Persist the failure for ops visibility but ack 200 so the sender
           // doesn't retry-storm against a deterministic application error.
           console.error("[onlycargo-webhook] persist failed", err);
