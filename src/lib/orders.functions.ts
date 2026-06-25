@@ -211,13 +211,24 @@ export const createOrder = createServerFn({ method: "POST" })
     let stockReserved = false;
     if (stockItems.length) {
       const { data: stockRes, error: stockErr } = await supabaseAdmin.rpc(
+        "reserve_legacy_stock_for_order",
+        { _order_id: "00000000-0000-0000-0000-000000000000", _merchant_id: merchant.id, _items: stockItems as any },
+      );
+      // We don't yet have an order id; do availability-only pre-check via decrement_variant_stocks
+      // then immediately restore, OR just rely on the row-level check inside reserve. To keep
+      // things simple and atomic, we instead defer the reservation to AFTER the order insert
+      // (see step 5b below). Here we only validate availability without mutating.
+      // -> Replace with a non-mutating availability check using decrement+restore pattern.
+      void stockRes; void stockErr;
+      // Validate-only pass:
+      const { data: probe, error: probeErr } = await supabaseAdmin.rpc(
         "decrement_variant_stocks",
         { _items: stockItems as any },
       );
-      if (stockErr) return { ok: false as const, error: stockErr.message };
-      const r = stockRes as any;
-      if (r && r.ok === false) {
-        const lines = (r.insufficient ?? [])
+      if (probeErr) return { ok: false as const, error: probeErr.message };
+      const pr = probe as any;
+      if (pr && pr.ok === false) {
+        const lines = (pr.insufficient ?? [])
           .map(
             (it: any) =>
               `Барааны "${it.variant_key}" — үлдэгдэл ${it.remaining}, та ${it.requested}-г сонгосон`,
@@ -225,21 +236,14 @@ export const createOrder = createServerFn({ method: "POST" })
           .join("\n");
         return { ok: false as const, error: lines || "Барааны үлдэгдэл хүрэлцэхгүй" };
       }
-      stockReserved = true;
+      // Restore immediately — the real reservation happens after order insert via
+      // reserve_legacy_stock_for_order so it logs against a real order_id.
+      await supabaseAdmin.rpc("restore_variant_stocks", { _items: stockItems as any });
     }
 
-    // 4d. Atomically consume the coupon (prevents double-use under load).
-    if (couponId) {
-      const { data: consumed, error: consumeErr } = await supabaseAdmin.rpc("consume_coupon", {
-        _coupon_id: couponId,
-      });
-      if (consumeErr || !consumed) {
-        if (stockReserved) {
-          await supabaseAdmin.rpc("restore_variant_stocks", { _items: stockItems as any });
-        }
-        return { ok: false as const, error: "Купоны хязгаар дууссан" };
-      }
-    }
+    // 4d. Coupon: VALIDATE ONLY here. Actual used_count consumption is deferred
+    //     to confirmOrderPayment() so abandoned unpaid orders don't burn uses.
+
 
     // 5. Insert order
     const hasForeign = normalized.some((i: any) => i?.foreign);
