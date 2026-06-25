@@ -273,25 +273,23 @@ export const createOrder = createServerFn({ method: "POST" })
       .select("*")
       .single();
     if (orderErr || !order) {
-      // Compensating rollback for the reservations we just made.
-      if (stockReserved) {
-        await supabaseAdmin.rpc("restore_variant_stocks", { _items: stockItems as any });
-      }
-      if (couponId) {
-        // Best-effort: decrement the counter we just bumped via consume_coupon.
-        const { data: c } = await supabaseAdmin
-          .from("coupons")
-          .select("used_count")
-          .eq("id", couponId)
-          .single();
-        if (c && c.used_count > 0) {
-          await supabaseAdmin
-            .from("coupons")
-            .update({ used_count: c.used_count - 1 })
-            .eq("id", couponId);
-        }
-      }
       return { ok: false as const, error: orderErr?.message ?? "Захиалга үүсгэхэд алдаа" };
+    }
+
+    // 5a. Legacy variant_stock reservation logged against the new order id.
+    if (stockItems.length) {
+      const { data: legRes, error: legErr } = await supabaseAdmin.rpc(
+        "reserve_legacy_stock_for_order",
+        { _order_id: order.id, _merchant_id: merchant.id, _items: stockItems as any },
+      );
+      const lr = legRes as any;
+      if (legErr || (lr && lr.ok === false)) {
+        await supabaseAdmin.from("orders").delete().eq("id", order.id);
+        const lines = (lr?.insufficient ?? [])
+          .map((it: any) => `Барааны "${it.variant_key}" — үлдэгдэл ${it.remaining}, та ${it.requested}-г сонгосон`)
+          .join("\n");
+        return { ok: false as const, error: lines || legErr?.message || "Барааны үлдэгдэл хүрэлцэхгүй" };
+      }
     }
 
     // 5b. Reserve inventory for linked items (after we have an order id).
@@ -302,16 +300,15 @@ export const createOrder = createServerFn({ method: "POST" })
         resolved: resolvedLinks,
       });
       if (!resRes.ok) {
-        // Rollback: release any partial reservation, restore variant stocks,
-        // delete the order so the user sees the proper insufficient message.
         await releaseForOrder(order.id, "cancelled");
-        if (stockReserved) {
-          await supabaseAdmin.rpc("restore_variant_stocks", { _items: stockItems as any });
-        }
+        await supabaseAdmin.rpc("release_legacy_stock_reservations", {
+          _order_id: order.id, _reason: "cancelled",
+        });
         await supabaseAdmin.from("orders").delete().eq("id", order.id);
         return { ok: false as const, error: resRes.error };
       }
     }
+
 
 
 
