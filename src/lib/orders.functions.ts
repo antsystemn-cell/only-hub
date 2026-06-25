@@ -208,19 +208,9 @@ export const createOrder = createServerFn({ method: "POST" })
         return k ? { product_id: i.productId, variant_key: k, qty: i.quantity } : null;
       })
       .filter(Boolean) as { product_id: string; variant_key: string; qty: number }[];
-    let stockReserved = false;
+    // Availability check only — actual reservation is logged AFTER order insert
+    // via reserve_legacy_stock_for_order so each hold is tied to a real order id.
     if (stockItems.length) {
-      const { data: stockRes, error: stockErr } = await supabaseAdmin.rpc(
-        "reserve_legacy_stock_for_order",
-        { _order_id: "00000000-0000-0000-0000-000000000000", _merchant_id: merchant.id, _items: stockItems as any },
-      );
-      // We don't yet have an order id; do availability-only pre-check via decrement_variant_stocks
-      // then immediately restore, OR just rely on the row-level check inside reserve. To keep
-      // things simple and atomic, we instead defer the reservation to AFTER the order insert
-      // (see step 5b below). Here we only validate availability without mutating.
-      // -> Replace with a non-mutating availability check using decrement+restore pattern.
-      void stockRes; void stockErr;
-      // Validate-only pass:
       const { data: probe, error: probeErr } = await supabaseAdmin.rpc(
         "decrement_variant_stocks",
         { _items: stockItems as any },
@@ -229,20 +219,17 @@ export const createOrder = createServerFn({ method: "POST" })
       const pr = probe as any;
       if (pr && pr.ok === false) {
         const lines = (pr.insufficient ?? [])
-          .map(
-            (it: any) =>
-              `Барааны "${it.variant_key}" — үлдэгдэл ${it.remaining}, та ${it.requested}-г сонгосон`,
-          )
+          .map((it: any) => `Барааны "${it.variant_key}" — үлдэгдэл ${it.remaining}, та ${it.requested}-г сонгосон`)
           .join("\n");
         return { ok: false as const, error: lines || "Барааны үлдэгдэл хүрэлцэхгүй" };
       }
-      // Restore immediately — the real reservation happens after order insert via
-      // reserve_legacy_stock_for_order so it logs against a real order_id.
       await supabaseAdmin.rpc("restore_variant_stocks", { _items: stockItems as any });
     }
 
-    // 4d. Coupon: VALIDATE ONLY here. Actual used_count consumption is deferred
-    //     to confirmOrderPayment() so abandoned unpaid orders don't burn uses.
+    // Coupon: validated above (coupon_id snapshotted on order). Actual
+    // used_count consumption happens inside confirmOrderPayment() so abandoned
+    // unpaid orders don't burn uses.
+
 
 
     // 5. Insert order
