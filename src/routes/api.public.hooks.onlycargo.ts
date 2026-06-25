@@ -115,11 +115,18 @@ function pick<T = string>(
   return null;
 }
 
+function normalizePhone(value: string | null): string | null {
+  const digits = String(value ?? "").replace(/\D/g, "");
+  if (!digits) return null;
+  return digits.startsWith("976") && digits.length === 11 ? digits.slice(3) : digits;
+}
+
 interface NormalizedEvent {
   event: string;
   trackNumber: string | null;
   status: string | null;
   customerCode: string | null;
+  phone: string | null;
   occurredAt: string | null;
 }
 
@@ -136,6 +143,10 @@ function normalizeEvent(payload: Record<string, unknown>): NormalizedEvent {
     customerCode:
       pick<string>(payload, ["customer_code", "customerCode"]) ??
       pick<string>(data, ["customer_code", "customerCode"]),
+    phone: normalizePhone(
+      pick<string>(payload, ["phone", "phone_number", "phoneNumber", "customer_phone", "customerPhone"]) ??
+      pick<string>(data, ["phone", "phone_number", "phoneNumber", "customer_phone", "customerPhone"]),
+    ),
     occurredAt:
       pick<string>(payload, ["occurred_at", "occurredAt", "updated_at", "updatedAt", "timestamp"]) ??
       pick<string>(data, ["occurred_at", "occurredAt", "updated_at", "updatedAt"]),
@@ -218,6 +229,14 @@ export const Route = createFileRoute("/api/public/hooks/onlycargo")({
               .maybeSingle();
             merchantId = merchant?.id ?? null;
           }
+          if (!merchantId && n.phone) {
+            const { data: merchant } = await supabaseAdmin
+              .from("merchants")
+              .select("id")
+              .eq("onlycargo_phone", n.phone)
+              .maybeSingle();
+            merchantId = merchant?.id ?? null;
+          }
 
           // --- Atomic idempotency via unique (provider, event_key) index.
           const insertedEvent = await supabaseAdmin
@@ -232,6 +251,7 @@ export const Route = createFileRoute("/api/public/hooks/onlycargo")({
                 trackNumber: n.trackNumber,
                 status: n.status,
                 customerCode: n.customerCode,
+                phone: n.phone,
                 occurredAt: n.occurredAt,
               } as never,
               processing_status: "ok",
@@ -265,6 +285,7 @@ export const Route = createFileRoute("/api/public/hooks/onlycargo")({
                     trackNumber: n.trackNumber,
                     status: n.status,
                     customerCode: n.customerCode,
+                    phone: n.phone,
                     event: n.event,
                     occurredAt: n.occurredAt,
                   } as never,
@@ -279,6 +300,9 @@ export const Route = createFileRoute("/api/public/hooks/onlycargo")({
               console.warn("[onlycargo-webhook] customer_code not linked", {
                 customerCode: n.customerCode,
               });
+            } else if (n.phone) {
+              warnings.push(`merchant_unresolved_phone:${n.phone}`);
+              console.warn("[onlycargo-webhook] phone not linked", { phone: n.phone });
             }
           }
 
@@ -346,6 +370,7 @@ export const Route = createFileRoute("/api/public/hooks/onlycargo")({
             trackNumber: n.trackNumber,
             status: n.status,
             customerCode: n.customerCode,
+            phone: n.phone,
             merchantId,
             warnings,
             eventId: insertedEvent.data?.id ?? null,
@@ -371,6 +396,11 @@ export const Route = createFileRoute("/api/public/hooks/onlycargo")({
                 .from("merchants")
                 .update({ onlycargo_sync_error: msg })
                 .eq("onlycargo_customer_code", n.customerCode);
+            } else if (n.phone) {
+              await supabaseAdmin
+                .from("merchants")
+                .update({ onlycargo_sync_error: msg })
+                .eq("onlycargo_phone", n.phone);
             }
           } catch {
             // already logged
