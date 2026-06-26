@@ -95,16 +95,16 @@ export const listMerchantCargo = createServerFn({ method: "POST" })
       to: data.to,
       phone: cargoLink.phone,
     });
-    // Strict ownership filter: keep only rows whose phone can be positively
-    // matched to the verified phone (digit-by-digit, mask-aware). Upstream
-    // API filter is not trusted on its own — without this guard the list
-    // would expose every shipment in the system.
+    // Loose ownership filter (spec): trust the upstream phone filter; only
+    // reject a row when it positively has a different full unmasked phone.
     const verified = cargoLink.phone;
     let rejected = 0;
     const filtered = result.data.filter((row: any) => {
-      if (phoneOwnedByMerchant(row?.phone, verified)) return true;
-      rejected++;
-      return false;
+      if (isClearlyDifferentPhone(row?.phone, verified)) {
+        rejected++;
+        return false;
+      }
+      return true;
     });
     console.info("[cargo] listMerchantCargo", {
       merchantId: data.merchantId,
@@ -115,6 +115,7 @@ export const listMerchantCargo = createServerFn({ method: "POST" })
     });
     return { ...result, data: filtered };
   });
+
 
 
 
