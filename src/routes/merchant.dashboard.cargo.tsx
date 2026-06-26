@@ -23,9 +23,15 @@ import {
   listMerchantCargo,
   getMerchantCargoDetail,
   getMerchantCargoCounts,
-  updateMerchantCargoPhone,
   markMerchantCargoNotificationsRead,
 } from "@/lib/onlycargo/cargo.functions";
+import {
+  requestCargoPhoneOtp,
+  verifyCargoPhoneOtp,
+  getCargoPhoneStatus,
+} from "@/lib/onlycargo/otp.functions";
+import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
+import { ShieldCheck, ShieldAlert } from "lucide-react";
 
 export const Route = createFileRoute("/merchant/dashboard/cargo")({
   component: CargoPage,
