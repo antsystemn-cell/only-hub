@@ -656,7 +656,11 @@ export type Database = {
         Row: {
           created_at: string
           created_by: string | null
+          damaged_quantity: number
           id: string
+          inventory_item_id: string | null
+          last_received_at: string | null
+          last_received_by: string | null
           merchant_id: string
           notes: string | null
           planned_product_name: string
@@ -664,6 +668,7 @@ export type Database = {
           planned_unit_cost: number | null
           product_id: string | null
           received_quantity: number
+          received_unit_cost: number | null
           status: Database["public"]["Enums"]["incoming_cargo_item_status"]
           track_number: string
           updated_at: string
@@ -672,7 +677,11 @@ export type Database = {
         Insert: {
           created_at?: string
           created_by?: string | null
+          damaged_quantity?: number
           id?: string
+          inventory_item_id?: string | null
+          last_received_at?: string | null
+          last_received_by?: string | null
           merchant_id: string
           notes?: string | null
           planned_product_name: string
@@ -680,6 +689,7 @@ export type Database = {
           planned_unit_cost?: number | null
           product_id?: string | null
           received_quantity?: number
+          received_unit_cost?: number | null
           status?: Database["public"]["Enums"]["incoming_cargo_item_status"]
           track_number: string
           updated_at?: string
@@ -688,7 +698,11 @@ export type Database = {
         Update: {
           created_at?: string
           created_by?: string | null
+          damaged_quantity?: number
           id?: string
+          inventory_item_id?: string | null
+          last_received_at?: string | null
+          last_received_by?: string | null
           merchant_id?: string
           notes?: string | null
           planned_product_name?: string
@@ -696,12 +710,20 @@ export type Database = {
           planned_unit_cost?: number | null
           product_id?: string | null
           received_quantity?: number
+          received_unit_cost?: number | null
           status?: Database["public"]["Enums"]["incoming_cargo_item_status"]
           track_number?: string
           updated_at?: string
           variant_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "incoming_cargo_items_inventory_item_id_fkey"
+            columns: ["inventory_item_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_items"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "incoming_cargo_items_merchant_id_fkey"
             columns: ["merchant_id"]
@@ -721,6 +743,85 @@ export type Database = {
             columns: ["variant_id"]
             isOneToOne: false
             referencedRelation: "product_variants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      incoming_cargo_receipts: {
+        Row: {
+          created_at: string
+          damaged_quantity: number
+          id: string
+          incoming_item_id: string
+          inventory_item_id: string | null
+          merchant_id: string
+          movement_id: string | null
+          notes: string | null
+          planned_quantity: number
+          product_id: string | null
+          received_by: string | null
+          received_quantity: number
+          remaining_quantity: number
+          track_number: string
+          unit_cost: number | null
+          variant_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          damaged_quantity?: number
+          id?: string
+          incoming_item_id: string
+          inventory_item_id?: string | null
+          merchant_id: string
+          movement_id?: string | null
+          notes?: string | null
+          planned_quantity?: number
+          product_id?: string | null
+          received_by?: string | null
+          received_quantity?: number
+          remaining_quantity?: number
+          track_number: string
+          unit_cost?: number | null
+          variant_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          damaged_quantity?: number
+          id?: string
+          incoming_item_id?: string
+          inventory_item_id?: string | null
+          merchant_id?: string
+          movement_id?: string | null
+          notes?: string | null
+          planned_quantity?: number
+          product_id?: string | null
+          received_by?: string | null
+          received_quantity?: number
+          remaining_quantity?: number
+          track_number?: string
+          unit_cost?: number | null
+          variant_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "incoming_cargo_receipts_incoming_item_id_fkey"
+            columns: ["incoming_item_id"]
+            isOneToOne: false
+            referencedRelation: "incoming_cargo_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "incoming_cargo_receipts_inventory_item_id_fkey"
+            columns: ["inventory_item_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "incoming_cargo_receipts_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
             referencedColumns: ["id"]
           },
         ]
@@ -2847,6 +2948,15 @@ export type Database = {
           read_ct: number
         }[]
       }
+      receive_incoming_cargo_items: {
+        Args: {
+          _items: Json
+          _merchant_id: string
+          _received_by: string
+          _track_number: string
+        }
+        Returns: Json
+      }
       release_inventory_reservations: {
         Args: { _order_id: string; _reason?: string }
         Returns: Json
@@ -2907,6 +3017,7 @@ export type Database = {
         | "ready_to_receive"
         | "received"
         | "cancelled"
+        | "partially_received"
       price_sync_mode:
         | "AUTO_UPDATE_CUSTOMER_PRICE"
         | "REVIEW_BEFORE_UPDATE"
@@ -3081,6 +3192,7 @@ export const Constants = {
         "ready_to_receive",
         "received",
         "cancelled",
+        "partially_received",
       ],
       price_sync_mode: [
         "AUTO_UPDATE_CUSTOMER_PRICE",
