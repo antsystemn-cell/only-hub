@@ -130,6 +130,26 @@ function normalizePhone(value: string | null | undefined) {
   return digits.startsWith("976") && digits.length === 11 ? digits.slice(3) : digits;
 }
 
+function normalizeDisplayPhone(value: string | null | undefined) {
+  const raw = String(value ?? "").trim();
+  if (/[*x•·#?]/i.test(raw)) return raw;
+  return normalizePhone(raw);
+}
+
+function pickNumber(obj: Record<string, any>, ...keys: string[]): number | null {
+  const value = pick<unknown>(obj, ...keys);
+  if (value === null || value === undefined || value === "") return null;
+  const n = typeof value === "number" ? value : Number(String(value).replace(/[^\d.\-]/g, ""));
+  return Number.isFinite(n) ? n : null;
+}
+
+function pickDimension(src: Record<string, any>, key: "length" | "width" | "height"): number | null {
+  const direct = pickNumber(src, key, `${key}_cm`, `${key}Cm`);
+  if (direct !== null) return direct;
+  const dims = pick<Record<string, any>>(src, "dimensions", "dimension", "size");
+  return dims && typeof dims === "object" ? pickNumber(dims, key, `${key}_cm`, `${key}Cm`) : null;
+}
+
 // Safe money parser shared by client + server. Accepts number or numeric
 // string (may include ₮, commas, spaces). Returns null when invalid so the
 // UI never renders NaN.
@@ -141,6 +161,13 @@ export function parseMoney(value: unknown): number | null {
     if (!cleaned) return null;
     const n = Number(cleaned);
     return Number.isFinite(n) ? n : null;
+  }
+  if (typeof value === "object") {
+    const obj = value as Record<string, unknown>;
+    for (const key of ["total", "amount", "fee", "price", "value", "totalFee", "total_fee"]) {
+      const parsed = parseMoney(obj[key]);
+      if (parsed !== null) return parsed;
+    }
   }
   return null;
 }
@@ -166,12 +193,12 @@ export function normalizeShipment(raw: any): OnlyCargoShipment {
       status: pick<string>(src, "status") ?? "unknown",
       customer_code: pick<string>(src, "customer_code", "customerCode") ?? null,
       merchant_id: pick<string>(src, "merchant_id", "merchantId") ?? null,
-      phone: normalizePhone(pick<string>(src, "phone", "phone_number", "phoneNumber", "customer_phone", "customerPhone")) || null,
-      weight: pick<number>(src, "weight"),
-      volume: pick<number>(src, "volume", "volumeM3", "volume_m3"),
-      length: pick<number>(src, "length"),
-      width: pick<number>(src, "width"),
-      height: pick<number>(src, "height"),
+      phone: normalizeDisplayPhone(pick<string>(src, "phone", "phone_number", "phoneNumber", "customer_phone", "customerPhone")) || null,
+      weight: pickNumber(src, "weight", "weightKg", "weight_kg"),
+      volume: pickNumber(src, "volume", "volumeM3", "volume_m3", "cubicMeters", "cubic_meters"),
+      length: pickDimension(src, "length"),
+      width: pickDimension(src, "width"),
+      height: pickDimension(src, "height"),
       price: parseMoney(pick<unknown>(src, "price", "fee", "amount", "cargo_fee", "cargoFee", "total_fee", "totalFee")),
       fee: parseMoney(pick<unknown>(src, "fee", "price", "amount", "cargo_fee", "cargoFee", "total_fee", "totalFee")),
 
@@ -269,11 +296,14 @@ export const onlyCargo = {
       order: params.order,
       status: params.status,
       q: params.q,
+      search: params.q,
       merchant_id: params.merchant_id,
       customer_code: params.customer_code,
-      phone: params.phone,
-      phone_number: params.phone,
-      customer_phone: params.phone,
+      // OnlyCargo's production API treats legacy snake_case phone params as a
+      // different/empty filter. Use the supported camelCase phone filters so
+      // the verified phone is applied server-side without hiding valid rows.
+      phoneNumber: params.phone,
+      customerPhone: params.phone,
       from: params.from,
       to: params.to,
     });
