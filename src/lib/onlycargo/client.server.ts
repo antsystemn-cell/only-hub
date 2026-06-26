@@ -279,10 +279,10 @@ export const onlyCargo = {
       search: params.q,
       merchant_id: params.merchant_id,
       customer_code: params.customer_code,
-      phone: params.phone,
-      phone_number: params.phone,
+      // OnlyCargo's production API treats legacy snake_case phone params as a
+      // different/empty filter. Use the supported camelCase phone filters so
+      // the verified phone is applied server-side without hiding valid rows.
       phoneNumber: params.phone,
-      customer_phone: params.phone,
       customerPhone: params.phone,
       from: params.from,
       to: params.to,
