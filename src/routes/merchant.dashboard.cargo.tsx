@@ -17,13 +17,14 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Loader2, RefreshCw, Search, Package, MapPin, Image as ImageIcon, Scale, Ruler, FileText, CheckCircle2, Circle } from "lucide-react";
+import { Loader2, RefreshCw, Search, Package, MapPin, Image as ImageIcon, Scale, Ruler, FileText, CheckCircle2, Circle, Plus } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import {
   listMerchantCargo,
   getMerchantCargoDetail,
   getMerchantCargoCounts,
   markMerchantCargoNotificationsRead,
+  createMerchantCargo,
 } from "@/lib/onlycargo/cargo.functions";
 import {
   requestCargoPhoneOtp,
@@ -167,6 +168,7 @@ function CargoView({ merchantId }: { merchantId: string }) {
           </p>
         </div>
         <div className="flex gap-2">
+          {hasCargoPhone && <CreateCargoDialog merchantId={merchantId} cargoPhone={cargoPhone} />}
           <Button
             variant="outline"
             onClick={() => {
@@ -762,5 +764,105 @@ function fmtDate(d: any) {
   } catch {
     return String(d);
   }
+}
+
+function CreateCargoDialog({ merchantId, cargoPhone }: { merchantId: string; cargoPhone: string }) {
+  const qc = useQueryClient();
+  const [open, setOpen] = useState(false);
+  const [trackNumber, setTrackNumber] = useState("");
+  const [description, setDescription] = useState("");
+  const [weight, setWeight] = useState("");
+  const [length, setLength] = useState("");
+  const [width, setWidth] = useState("");
+  const [height, setHeight] = useState("");
+
+  const createFn = useServerFn(createMerchantCargo);
+  const createMut = useMutation({
+    mutationFn: () =>
+      createFn({
+        data: {
+          merchantId,
+          trackNumber: trackNumber.trim(),
+          description: description.trim() || undefined,
+          weight: weight ? Number(weight) : undefined,
+          length: length ? Number(length) : undefined,
+          width: width ? Number(width) : undefined,
+          height: height ? Number(height) : undefined,
+        },
+      }),
+    onSuccess: () => {
+      toast.success("Ачаа бүртгэгдлээ");
+      qc.invalidateQueries({ queryKey: ["onlycargo-list", merchantId] });
+      qc.invalidateQueries({ queryKey: ["onlycargo-counts", merchantId] });
+      setOpen(false);
+      setTrackNumber(""); setDescription(""); setWeight(""); setLength(""); setWidth(""); setHeight("");
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Бүртгэхэд алдаа гарлаа"),
+  });
+
+  return (
+    <>
+      <Button onClick={() => setOpen(true)}>
+        <Plus className="mr-2 h-4 w-4" /> Ачаа бүртгэх
+      </Button>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Шинэ ачаа бүртгэх</DialogTitle>
+            <DialogDescription>
+              Track дугаараа оруулна уу. Утас: <span className="font-mono">{cargoPhone}</span>
+            </DialogDescription>
+          </DialogHeader>
+          <form
+            className="space-y-3"
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (!trackNumber.trim()) {
+                toast.error("Track дугаар оруулна уу");
+                return;
+              }
+              createMut.mutate();
+            }}
+          >
+            <div className="space-y-1.5">
+              <Label htmlFor="track">Track дугаар *</Label>
+              <Input id="track" value={trackNumber} onChange={(e) => setTrackNumber(e.target.value)} placeholder="Ж: SF1234567890" required />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="desc">Тайлбар</Label>
+              <Input id="desc" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Барааны тайлбар" />
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <div className="space-y-1.5">
+                <Label htmlFor="weight">Жин (кг)</Label>
+                <Input id="weight" type="number" step="0.01" min="0" value={weight} onChange={(e) => setWeight(e.target.value)} />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="length">Урт (см)</Label>
+                <Input id="length" type="number" step="0.1" min="0" value={length} onChange={(e) => setLength(e.target.value)} />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="width">Өргөн (см)</Label>
+                <Input id="width" type="number" step="0.1" min="0" value={width} onChange={(e) => setWidth(e.target.value)} />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="height">Өндөр (см)</Label>
+                <Input id="height" type="number" step="0.1" min="0" value={height} onChange={(e) => setHeight(e.target.value)} />
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={createMut.isPending}>
+                Болих
+              </Button>
+              <Button type="submit" disabled={createMut.isPending}>
+                {createMut.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Бүртгэх
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
 }
 
