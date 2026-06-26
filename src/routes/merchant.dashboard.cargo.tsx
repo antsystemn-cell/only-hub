@@ -616,7 +616,7 @@ function CargoDetailDialog({
                 />
                 <Info
                   label="Эзлэхүүн"
-                  value={detail.volume != null ? `${Number(detail.volume).toFixed(3)} м³` : "-"}
+                  value={(() => { const v = parseMoneyClient(detail.volume); return v == null ? "-" : `${v.toFixed(3)} м³`; })()}
                 />
                 <Info
                   label="Хэмжээ (см)"
