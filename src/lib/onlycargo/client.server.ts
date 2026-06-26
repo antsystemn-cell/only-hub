@@ -136,6 +136,20 @@ function normalizeDisplayPhone(value: string | null | undefined) {
   return normalizePhone(raw);
 }
 
+function pickNumber(obj: Record<string, any>, ...keys: string[]): number | null {
+  const value = pick<unknown>(obj, ...keys);
+  if (value === null || value === undefined || value === "") return null;
+  const n = typeof value === "number" ? value : Number(String(value).replace(/[^\d.\-]/g, ""));
+  return Number.isFinite(n) ? n : null;
+}
+
+function pickDimension(src: Record<string, any>, key: "length" | "width" | "height"): number | null {
+  const direct = pickNumber(src, key, `${key}_cm`, `${key}Cm`);
+  if (direct !== null) return direct;
+  const dims = pick<Record<string, any>>(src, "dimensions", "dimension", "size");
+  return dims && typeof dims === "object" ? pickNumber(dims, key, `${key}_cm`, `${key}Cm`) : null;
+}
+
 // Safe money parser shared by client + server. Accepts number or numeric
 // string (may include ₮, commas, spaces). Returns null when invalid so the
 // UI never renders NaN.
@@ -180,11 +194,11 @@ export function normalizeShipment(raw: any): OnlyCargoShipment {
       customer_code: pick<string>(src, "customer_code", "customerCode") ?? null,
       merchant_id: pick<string>(src, "merchant_id", "merchantId") ?? null,
       phone: normalizeDisplayPhone(pick<string>(src, "phone", "phone_number", "phoneNumber", "customer_phone", "customerPhone")) || null,
-      weight: pick<number>(src, "weight"),
-      volume: pick<number>(src, "volume", "volumeM3", "volume_m3"),
-      length: pick<number>(src, "length"),
-      width: pick<number>(src, "width"),
-      height: pick<number>(src, "height"),
+      weight: pickNumber(src, "weight", "weightKg", "weight_kg"),
+      volume: pickNumber(src, "volume", "volumeM3", "volume_m3", "cubicMeters", "cubic_meters"),
+      length: pickDimension(src, "length"),
+      width: pickDimension(src, "width"),
+      height: pickDimension(src, "height"),
       price: parseMoney(pick<unknown>(src, "price", "fee", "amount", "cargo_fee", "cargoFee", "total_fee", "totalFee")),
       fee: parseMoney(pick<unknown>(src, "fee", "price", "amount", "cargo_fee", "cargoFee", "total_fee", "totalFee")),
 
