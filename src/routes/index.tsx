@@ -628,7 +628,7 @@ function Index() {
                 <Heart className="h-5 w-5" />
               </Button>
             </Link>
-            <Link to="/stores" aria-label="Сагс">
+            <Link to="/cart" aria-label="Сагс">
               <Button variant="ghost" size="icon" className="rounded-full">
                 <ShoppingCart className="h-5 w-5" />
               </Button>
