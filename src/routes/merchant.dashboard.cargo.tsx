@@ -90,20 +90,16 @@ function CargoView({ merchantId }: { merchantId: string }) {
       .catch(() => {});
   }, [merchantId, markReadFn, qc]);
 
-  const { data: merchant } = useQuery({
-    queryKey: ["merchant-onlycargo", merchantId],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("merchants")
-        .select("id,name,onlycargo_customer_code,onlycargo_phone,onlycargo_sync_error,onlycargo_last_synced_at")
-        .eq("id", merchantId)
-        .maybeSingle();
-      return data;
-    },
+  const statusFn = useServerFn(getCargoPhoneStatus);
+  const phoneStatusQuery = useQuery({
+    queryKey: ["merchant-cargo-phone-status", merchantId],
+    queryFn: () => statusFn({ data: { merchantId } }),
+    staleTime: 30_000,
   });
-
-  const cargoPhone = ((merchant as any)?.onlycargo_phone as string | null | undefined)?.trim() ?? "";
-  const hasCargoPhone = !!cargoPhone;
+  const status = phoneStatusQuery.data;
+  const cargoPhone = status?.phone ?? "";
+  const isVerified = !!status?.verifiedAt;
+  const hasCargoPhone = !!cargoPhone && isVerified;
 
   const listFn = useServerFn(listMerchantCargo);
   const countsFn = useServerFn(getMerchantCargoCounts);
