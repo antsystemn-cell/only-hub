@@ -925,3 +925,78 @@ function CreateCargoDialog({ merchantId, cargoPhone }: { merchantId: string; car
   );
 }
 
+
+function ReceiveSection({
+  merchantId,
+  trackNumber,
+  cargoStatus,
+  cargoSummary,
+}: {
+  merchantId: string;
+  trackNumber: string;
+  cargoStatus?: string;
+  cargoSummary?: { weight?: any; description?: string | null };
+}) {
+  const [open, setOpen] = useState(false);
+  const listReceipts = useServerFn(listIncomingCargoReceipts);
+  const { data: receipts = [] } = useQuery({
+    queryKey: ["incoming-cargo-receipts", merchantId, trackNumber],
+    queryFn: () => listReceipts({ data: { merchantId, trackNumber } }),
+  });
+
+  return (
+    <Card className="p-4 space-y-3">
+      <div className="flex items-center justify-between gap-2 flex-wrap">
+        <h3 className="font-semibold text-sm flex items-center gap-2">
+          <PackageCheck className="h-4 w-4" /> Хүлээн авах
+        </h3>
+        <Button size="sm" onClick={() => setOpen(true)}>
+          <PackageCheck className="mr-1.5 h-4 w-4" /> Receive Wizard нээх
+        </Button>
+      </div>
+      <p className="text-xs text-muted-foreground">
+        Барааг нөөц рүү хүлээн авахын тулд алхам бүхий wizard ашиглана. Нөөц зөвхөн баталгаажуулсны
+        дараа өөрчлөгдөнө.
+      </p>
+
+      {(receipts as any[]).length > 0 && (
+        <div className="border-t pt-3 space-y-2">
+          <div className="text-xs text-muted-foreground">Хүлээн авсан түүх</div>
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Огноо</TableHead>
+                  <TableHead className="text-right">Авсан</TableHead>
+                  <TableHead className="text-right">Гэмтэлтэй</TableHead>
+                  <TableHead className="text-right">Үлдсэн</TableHead>
+                  <TableHead className="text-right">Нэгж зардал</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {(receipts as any[]).map((r) => (
+                  <TableRow key={r.id}>
+                    <TableCell className="text-xs">{fmtDate(r.created_at)}</TableCell>
+                    <TableCell className="text-right">{Number(r.received_quantity).toLocaleString("mn-MN")}</TableCell>
+                    <TableCell className="text-right">{Number(r.damaged_quantity).toLocaleString("mn-MN")}</TableCell>
+                    <TableCell className="text-right">{Number(r.remaining_quantity).toLocaleString("mn-MN")}</TableCell>
+                    <TableCell className="text-right">{r.unit_cost == null ? "-" : Number(r.unit_cost).toLocaleString("mn-MN") + "₮"}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </div>
+      )}
+
+      <ReceiveWizardDialog
+        open={open}
+        onOpenChange={setOpen}
+        merchantId={merchantId}
+        trackNumber={trackNumber}
+        cargoStatus={cargoStatus}
+        cargoSummary={cargoSummary}
+      />
+    </Card>
+  );
+}
