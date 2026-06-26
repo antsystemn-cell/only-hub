@@ -33,6 +33,8 @@ import {
 } from "@/lib/onlycargo/otp.functions";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { ShieldCheck, ShieldAlert } from "lucide-react";
+import { IncomingItemsSection } from "@/components/cargo/IncomingItemsSection";
+import { getIncomingCargoSummary } from "@/lib/onlycargo/incoming.functions";
 
 export const Route = createFileRoute("/merchant/dashboard/cargo")({
   component: CargoPage,
@@ -163,6 +165,17 @@ function CargoView({ merchantId }: { merchantId: string }) {
   const total = cargoQuery.data?.total ?? 0;
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
+  const summaryFn = useServerFn(getIncomingCargoSummary);
+  const trackKeys = useMemo(() => rows.map((r: any) => String(r.track_number)).filter(Boolean), [rows]);
+  const summaryQuery = useQuery({
+    queryKey: ["incoming-cargo-summary", merchantId, trackKeys],
+    queryFn: () => summaryFn({ data: { merchantId, trackNumbers: trackKeys } }),
+    enabled: hasCargoPhone && trackKeys.length > 0,
+    staleTime: 30_000,
+  });
+  const summaryByTrack: Record<string, { items: number; planned_qty: number; ready: number }> =
+    summaryQuery.data ?? {};
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-3 flex-wrap">
@@ -273,6 +286,7 @@ function CargoView({ merchantId }: { merchantId: string }) {
                           <TableRow>
                             <TableHead>Track №</TableHead>
                             <TableHead>Статус</TableHead>
+                            <TableHead>Бараа</TableHead>
                             <TableHead>Утас</TableHead>
                             <TableHead className="text-right">Жин (кг)</TableHead>
                             <TableHead className="text-right">Үнэ ₮</TableHead>
@@ -280,7 +294,9 @@ function CargoView({ merchantId }: { merchantId: string }) {
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {rows.map((r: any) => (
+                          {rows.map((r: any) => {
+                            const s = summaryByTrack[String(r.track_number)];
+                            return (
                             <TableRow
                               key={r.track_number}
                               className="cursor-pointer"
@@ -288,6 +304,22 @@ function CargoView({ merchantId }: { merchantId: string }) {
                             >
                               <TableCell className="font-mono text-sm">{r.track_number}</TableCell>
                               <TableCell><StatusBadge status={String(r.status ?? "")} /></TableCell>
+                              <TableCell>
+                                {s && s.items > 0 ? (
+                                  <div className="flex flex-wrap gap-1">
+                                    <Badge variant="secondary" className="text-[10px]">
+                                      {s.items} бараа · {s.planned_qty.toLocaleString("mn-MN")} ш
+                                    </Badge>
+                                    {s.ready > 0 && (
+                                      <Badge className="text-[10px] bg-amber-500 hover:bg-amber-500">
+                                        {s.ready} бэлэн
+                                      </Badge>
+                                    )}
+                                  </div>
+                                ) : (
+                                  <span className="text-xs text-muted-foreground">—</span>
+                                )}
+                              </TableCell>
                               <TableCell className="text-sm">{r.phone ?? "-"}</TableCell>
                               <TableCell className="text-right text-sm">
                                 {formatWeight(r.weight)}
@@ -300,7 +332,8 @@ function CargoView({ merchantId }: { merchantId: string }) {
                                 {r.created_at ? new Date(r.created_at).toLocaleString("mn-MN") : "-"}
                               </TableCell>
                             </TableRow>
-                          ))}
+                            );
+                          })}
                         </TableBody>
                       </Table>
                     </div>
@@ -727,6 +760,14 @@ function CargoDetailDialog({
                 </ul>
               </Card>
             )}
+
+            {/* Products in this shipment (incoming cargo items) */}
+            <IncomingItemsSection
+              merchantId={merchantId}
+              trackNumber={trackNumber!}
+              cargoStatus={currentStatus || undefined}
+            />
+
 
             {/* Images */}
             {images.length > 0 && (
