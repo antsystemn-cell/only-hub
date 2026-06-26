@@ -30,6 +30,7 @@ const STATUS_LABEL: Record<string, { label: string; cls: string }> = {
   planned: { label: "Төлөвлөсөн", cls: "bg-muted text-foreground" },
   waiting_arrival: { label: "Замд", cls: "bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-200" },
   ready_to_receive: { label: "Хүлээж авахад бэлэн", cls: "bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-200" },
+  partially_received: { label: "Хэсэгчлэн авсан", cls: "bg-orange-100 text-orange-900 dark:bg-orange-950 dark:text-orange-200" },
   received: { label: "Хүлээн авсан", cls: "bg-emerald-100 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-200" },
   cancelled: { label: "Цуцалсан", cls: "bg-destructive/10 text-destructive" },
 };
