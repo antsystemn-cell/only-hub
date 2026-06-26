@@ -78,7 +78,7 @@ function StatsPage() {
   });
 
   useRealtimeSync({
-    tables: ["orders", "delivery_requests", "inventory_items"],
+    tables: ["orders", "delivery_requests"],
     queryKeys: [["stats", merchantId]],
     merchantId,
     enabled: !!merchantId,
