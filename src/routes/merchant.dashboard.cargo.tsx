@@ -168,6 +168,7 @@ function CargoView({ merchantId }: { merchantId: string }) {
           </p>
         </div>
         <div className="flex gap-2">
+          {hasCargoPhone && <CreateCargoDialog merchantId={merchantId} cargoPhone={cargoPhone} />}
           <Button
             variant="outline"
             onClick={() => {
