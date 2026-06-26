@@ -110,14 +110,14 @@ export const listMerchantCargo = createServerFn({ method: "POST" })
       to: data.to,
       phone: cargoLink.phone,
     });
-    // Defensive: only drop rows whose phone is clearly a different full
-    // (unmasked) phone from the verified one. OnlyCargo may return masked
-    // values like "9911****" — those must NOT cause row removal because
-    // the upstream API already filtered server-side by verified phone.
+    // Strict ownership filter: keep only rows whose phone can be positively
+    // matched to the verified phone (digit-by-digit, mask-aware). Upstream
+    // API filter is not trusted on its own — without this guard the list
+    // would expose every shipment in the system.
     const verified = cargoLink.phone;
     let rejected = 0;
     const filtered = result.data.filter((row: any) => {
-      if (!isClearlyDifferentPhone(row?.phone, verified)) return true;
+      if (phoneOwnedByMerchant(row?.phone, verified)) return true;
       rejected++;
       return false;
     });
