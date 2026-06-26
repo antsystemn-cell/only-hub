@@ -33,6 +33,8 @@ import {
 } from "@/lib/onlycargo/otp.functions";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { ShieldCheck, ShieldAlert } from "lucide-react";
+import { IncomingItemsSection } from "@/components/cargo/IncomingItemsSection";
+import { getIncomingCargoSummary } from "@/lib/onlycargo/incoming.functions";
 
 export const Route = createFileRoute("/merchant/dashboard/cargo")({
   component: CargoPage,
