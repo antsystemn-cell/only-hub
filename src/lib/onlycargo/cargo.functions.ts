@@ -73,11 +73,17 @@ export const getMerchantCargoCounts = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) => z.object({ merchantId: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }) => {
-    const cargoLink = await resolveCargoLink(
-      context.supabase,
-      data.merchantId,
-      context.userId,
-    );
+    let cargoLink: { customerCode: string | null; phone: string };
+    try {
+      cargoLink = await resolveCargoLink(
+        context.supabase,
+        data.merchantId,
+        context.userId,
+      );
+    } catch {
+      // Phone not set/verified or no access — return empty counts gracefully.
+      return {} as Record<string, number>;
+    }
     const { onlyCargo } = await import("./client.server");
     const statuses = ["created", "in_transit", "arrived", "ready_for_pickup"];
     const results = await Promise.all(
