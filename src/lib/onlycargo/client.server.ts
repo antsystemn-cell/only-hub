@@ -130,6 +130,22 @@ function normalizePhone(value: string | null | undefined) {
   return digits.startsWith("976") && digits.length === 11 ? digits.slice(3) : digits;
 }
 
+// Safe money parser shared by client + server. Accepts number or numeric
+// string (may include ₮, commas, spaces). Returns null when invalid so the
+// UI never renders NaN.
+export function parseMoney(value: unknown): number | null {
+  if (value === null || value === undefined || value === "") return null;
+  if (typeof value === "number") return Number.isFinite(value) ? value : null;
+  if (typeof value === "string") {
+    const cleaned = value.replace(/[₮,\s]/g, "").replace(/[^\d.\-]/g, "");
+    if (!cleaned) return null;
+    const n = Number(cleaned);
+    return Number.isFinite(n) ? n : null;
+  }
+  return null;
+}
+
+
 export function normalizeShipment(raw: any): OnlyCargoShipment {
   // Defensive: OnlyCargo may wrap payloads as { data: {...} } or return the
   // shipment object directly. Always unwrap before reading fields.
@@ -156,8 +172,9 @@ export function normalizeShipment(raw: any): OnlyCargoShipment {
       length: pick<number>(src, "length"),
       width: pick<number>(src, "width"),
       height: pick<number>(src, "height"),
-      price: pick<number>(src, "price", "fee", "amount"),
-      fee: pick<number>(src, "fee", "price", "amount"),
+      price: parseMoney(pick<unknown>(src, "price", "fee", "amount", "cargo_fee", "cargoFee", "total_fee", "totalFee")),
+      fee: parseMoney(pick<unknown>(src, "fee", "price", "amount", "cargo_fee", "cargoFee", "total_fee", "totalFee")),
+
       description: pick<string>(src, "description", "desc") ?? null,
       notes: pick<string>(src, "notes", "note") ?? null,
       location: pick<string>(src, "location", "current_location", "currentLocation") ?? null,
@@ -338,10 +355,11 @@ export const onlyCargo = {
       { method: "GET" },
     );
     return {
-      fee: pick<number>(raw ?? {}, "fee", "amount", "price") ?? null,
+      fee: parseMoney(pick<unknown>(raw ?? {}, "fee", "amount", "price", "cargo_fee", "cargoFee", "total_fee", "totalFee")),
       currency: pick<string>(raw ?? {}, "currency") ?? "MNT",
     };
   },
+
 
   async createShipment(payload: {
     trackNumber: string;

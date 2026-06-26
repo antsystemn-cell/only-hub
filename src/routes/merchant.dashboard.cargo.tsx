@@ -37,6 +37,27 @@ export const Route = createFileRoute("/merchant/dashboard/cargo")({
   component: CargoPage,
 });
 
+function parseMoneyClient(value: unknown): number | null {
+  if (value === null || value === undefined || value === "") return null;
+  if (typeof value === "number") return Number.isFinite(value) ? value : null;
+  if (typeof value === "string") {
+    const cleaned = value.replace(/[₮,\s]/g, "").replace(/[^\d.\-]/g, "");
+    if (!cleaned) return null;
+    const n = Number(cleaned);
+    return Number.isFinite(n) ? n : null;
+  }
+  return null;
+}
+function formatMoney(value: unknown): string {
+  const n = parseMoneyClient(value);
+  return n == null ? "-" : n.toLocaleString("mn-MN");
+}
+function formatWeight(value: unknown): string {
+  const n = parseMoneyClient(value);
+  return n == null ? "-" : n.toFixed(2);
+}
+
+
 const TAB_STATUSES = [
   { value: "all", label: "Бүгд", apiStatus: undefined },
   { value: "created", label: "Шинэ ачаа", apiStatus: "created" },
@@ -260,11 +281,12 @@ function CargoView({ merchantId }: { merchantId: string }) {
                               <TableCell><StatusBadge status={String(r.status ?? "")} /></TableCell>
                               <TableCell className="text-sm">{r.phone ?? "-"}</TableCell>
                               <TableCell className="text-right text-sm">
-                                {r.weight != null ? Number(r.weight).toFixed(2) : "-"}
+                                {formatWeight(r.weight)}
                               </TableCell>
                               <TableCell className="text-right text-sm">
-                                {r.price != null ? Number(r.price).toLocaleString("mn-MN") : "-"}
+                                {formatMoney(r.price ?? r.fee)}
                               </TableCell>
+
                               <TableCell className="text-sm text-muted-foreground">
                                 {r.created_at ? new Date(r.created_at).toLocaleString("mn-MN") : "-"}
                               </TableCell>
@@ -588,13 +610,13 @@ function CargoDetailDialog({
                   value={
                     <span className="inline-flex items-center gap-1">
                       <Scale className="h-3.5 w-3.5 text-muted-foreground" />
-                      {detail.weight != null ? `${Number(detail.weight).toFixed(2)} кг` : "-"}
+                      {(() => { const w = parseMoneyClient(detail.weight); return w == null ? "-" : `${w.toFixed(2)} кг`; })()}
                     </span>
                   }
                 />
                 <Info
                   label="Эзлэхүүн"
-                  value={detail.volume != null ? `${Number(detail.volume).toFixed(3)} м³` : "-"}
+                  value={(() => { const v = parseMoneyClient(detail.volume); return v == null ? "-" : `${v.toFixed(3)} м³`; })()}
                 />
                 <Info
                   label="Хэмжээ (см)"
@@ -609,7 +631,7 @@ function CargoDetailDialog({
                 />
                 <Info
                   label="Үнэ"
-                  value={fee != null ? `${Number(fee).toLocaleString("mn-MN")}₮` : "-"}
+                  value={(() => { const m = formatMoney(fee); return m === "-" ? "-" : `${m}₮`; })()}
                 />
                 <Info
                   label="Байршил"
