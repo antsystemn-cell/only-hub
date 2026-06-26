@@ -172,8 +172,9 @@ export function normalizeShipment(raw: any): OnlyCargoShipment {
       length: pick<number>(src, "length"),
       width: pick<number>(src, "width"),
       height: pick<number>(src, "height"),
-      price: pick<number>(src, "price", "fee", "amount"),
-      fee: pick<number>(src, "fee", "price", "amount"),
+      price: parseMoney(pick<unknown>(src, "price", "fee", "amount", "cargo_fee", "cargoFee", "total_fee", "totalFee")),
+      fee: parseMoney(pick<unknown>(src, "fee", "price", "amount", "cargo_fee", "cargoFee", "total_fee", "totalFee")),
+
       description: pick<string>(src, "description", "desc") ?? null,
       notes: pick<string>(src, "notes", "note") ?? null,
       location: pick<string>(src, "location", "current_location", "currentLocation") ?? null,
