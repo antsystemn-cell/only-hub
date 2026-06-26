@@ -22,6 +22,28 @@ function generateHiddenCargoCode(merchantId: string) {
   return `oh_${uuid || merchantId.replace(/-/g, "")}_${Date.now().toString(36)}`;
 }
 
+/**
+ * Returns true only when rowPhone is clearly an unmasked phone that
+ * differs from verifiedPhone. Masked or short values (e.g. "9911****",
+ * "****2233", empty) return false → the row is kept and we trust the
+ * upstream API's server-side phone filter.
+ */
+function isClearlyDifferentPhone(
+  rowPhoneRaw: string | null | undefined,
+  verifiedPhone: string,
+): boolean {
+  const raw = String(rowPhoneRaw ?? "");
+  if (!raw) return false;
+  // If the source contains any masking character, treat as masked.
+  if (/[*x•·#?]/i.test(raw)) return false;
+  const digits = normalizeCargoPhone(raw);
+  if (digits.length < 8) return false; // too short → likely masked/unknown
+  const a = digits.slice(-8);
+  const b = verifiedPhone.slice(-8);
+  return a !== b;
+}
+
+
 async function resolveCargoLink(supabase: any, merchantId: string, userId: string) {
   // Verify access + read hidden customer_code and visible cargo phone.
   const { data: access } = await supabase.rpc("has_merchant_access", {
