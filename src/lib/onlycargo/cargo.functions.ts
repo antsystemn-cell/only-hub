@@ -32,17 +32,18 @@ async function resolveCargoLink(supabase: any, merchantId: string, userId: strin
 
   const { data: merchant, error } = await supabase
     .from("merchants")
-    .select("onlycargo_customer_code,onlycargo_phone")
+    .select("onlycargo_customer_code,onlycargo_phone,onlycargo_phone_verified_at")
     .eq("id", merchantId)
     .maybeSingle();
   if (error) throw new Response(error.message, { status: 500 });
   const code = (merchant?.onlycargo_customer_code as string | null | undefined)?.trim() ?? "";
   const phone = normalizeCargoPhone(merchant?.onlycargo_phone as string | null | undefined);
+  const verifiedAt = (merchant as any)?.onlycargo_phone_verified_at as string | null | undefined;
   if (!phone) {
-    throw new Response(
-      "Каргоны утасны дугаар тохируулаагүй байна.",
-      { status: 400 },
-    );
+    throw new Response("Каргоны утасны дугаар тохируулаагүй байна.", { status: 400 });
+  }
+  if (!verifiedAt) {
+    throw new Response("Каргоны утас баталгаажаагүй байна. OTP-ээр баталгаажуулна уу.", { status: 403 });
   }
   return { customerCode: code || null, phone };
 }
