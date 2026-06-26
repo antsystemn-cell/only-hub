@@ -145,6 +145,57 @@ export type Database = {
         }
         Relationships: []
       }
+      cargo_shipment_costs: {
+        Row: {
+          allocated_at: string | null
+          allocated_by: string | null
+          allocation_method: string | null
+          cargo_fee: number
+          created_at: string
+          customs_fee: number
+          local_delivery_fee: number
+          merchant_id: string
+          notes: string | null
+          other_expenses: number
+          product_purchase_total: number
+          total_landed_cost: number
+          track_number: string
+          updated_at: string
+        }
+        Insert: {
+          allocated_at?: string | null
+          allocated_by?: string | null
+          allocation_method?: string | null
+          cargo_fee?: number
+          created_at?: string
+          customs_fee?: number
+          local_delivery_fee?: number
+          merchant_id: string
+          notes?: string | null
+          other_expenses?: number
+          product_purchase_total?: number
+          total_landed_cost?: number
+          track_number: string
+          updated_at?: string
+        }
+        Update: {
+          allocated_at?: string | null
+          allocated_by?: string | null
+          allocation_method?: string | null
+          cargo_fee?: number
+          created_at?: string
+          customs_fee?: number
+          local_delivery_fee?: number
+          merchant_id?: string
+          notes?: string | null
+          other_expenses?: number
+          product_purchase_total?: number
+          total_landed_cost?: number
+          track_number?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       categories: {
         Row: {
           created_at: string
@@ -826,15 +877,105 @@ export type Database = {
           },
         ]
       }
+      inventory_batches: {
+        Row: {
+          allocated_at: string | null
+          allocation_method: string | null
+          cargo_cost: number
+          created_at: string
+          created_by: string | null
+          customs_cost: number
+          id: string
+          incoming_item_id: string | null
+          inventory_item_id: string
+          landed_cost: number
+          merchant_id: string
+          other_cost: number
+          product_id: string | null
+          purchase_price: number
+          quantity: number
+          receipt_id: string | null
+          received_at: string
+          track_number: string | null
+          updated_at: string
+          variant_id: string | null
+        }
+        Insert: {
+          allocated_at?: string | null
+          allocation_method?: string | null
+          cargo_cost?: number
+          created_at?: string
+          created_by?: string | null
+          customs_cost?: number
+          id?: string
+          incoming_item_id?: string | null
+          inventory_item_id: string
+          landed_cost?: number
+          merchant_id: string
+          other_cost?: number
+          product_id?: string | null
+          purchase_price?: number
+          quantity: number
+          receipt_id?: string | null
+          received_at?: string
+          track_number?: string | null
+          updated_at?: string
+          variant_id?: string | null
+        }
+        Update: {
+          allocated_at?: string | null
+          allocation_method?: string | null
+          cargo_cost?: number
+          created_at?: string
+          created_by?: string | null
+          customs_cost?: number
+          id?: string
+          incoming_item_id?: string | null
+          inventory_item_id?: string
+          landed_cost?: number
+          merchant_id?: string
+          other_cost?: number
+          product_id?: string | null
+          purchase_price?: number
+          quantity?: number
+          receipt_id?: string | null
+          received_at?: string
+          track_number?: string | null
+          updated_at?: string
+          variant_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_batches_inventory_item_id_fkey"
+            columns: ["inventory_item_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_batches_receipt_id_fkey"
+            columns: ["receipt_id"]
+            isOneToOne: false
+            referencedRelation: "incoming_cargo_receipts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       inventory_items: {
         Row: {
+          average_cargo_cost: number
+          average_cost: number
           barcode: string | null
           cost_price: number | null
           created_at: string
           created_by: string | null
           currency: string
           description: string | null
+          highest_cost: number | null
           id: string
+          landed_cost_avg: number
+          last_purchase_cost: number | null
+          lowest_cost: number | null
           merchant_id: string
           name: string
           quantity_available: number | null
@@ -846,18 +987,25 @@ export type Database = {
           source_type: string | null
           status: string
           store_id: string | null
+          total_cargo_cost: number
           unit: string
           updated_at: string
           warehouse_location: string | null
         }
         Insert: {
+          average_cargo_cost?: number
+          average_cost?: number
           barcode?: string | null
           cost_price?: number | null
           created_at?: string
           created_by?: string | null
           currency?: string
           description?: string | null
+          highest_cost?: number | null
           id?: string
+          landed_cost_avg?: number
+          last_purchase_cost?: number | null
+          lowest_cost?: number | null
           merchant_id: string
           name: string
           quantity_available?: number | null
@@ -869,18 +1017,25 @@ export type Database = {
           source_type?: string | null
           status?: string
           store_id?: string | null
+          total_cargo_cost?: number
           unit?: string
           updated_at?: string
           warehouse_location?: string | null
         }
         Update: {
+          average_cargo_cost?: number
+          average_cost?: number
           barcode?: string | null
           cost_price?: number | null
           created_at?: string
           created_by?: string | null
           currency?: string
           description?: string | null
+          highest_cost?: number | null
           id?: string
+          landed_cost_avg?: number
+          last_purchase_cost?: number | null
+          lowest_cost?: number | null
           merchant_id?: string
           name?: string
           quantity_available?: number | null
@@ -892,6 +1047,7 @@ export type Database = {
           source_type?: string | null
           status?: string
           store_id?: string | null
+          total_cargo_cost?: number
           unit?: string
           updated_at?: string
           warehouse_location?: string | null
@@ -2878,6 +3034,20 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      allocate_cargo_costs: {
+        Args: {
+          _allocated_by: string
+          _cargo_fee: number
+          _customs_fee: number
+          _local_delivery_fee: number
+          _manual: Json
+          _merchant_id: string
+          _method: string
+          _other_expenses: number
+          _track_number: string
+        }
+        Returns: Json
+      }
       confirm_inventory_reservations: {
         Args: { _order_id: string }
         Returns: Json
@@ -2957,6 +3127,10 @@ export type Database = {
         }
         Returns: Json
       }
+      recompute_inventory_item_costs: {
+        Args: { _inventory_item_id: string }
+        Returns: undefined
+      }
       release_inventory_reservations: {
         Args: { _order_id: string; _reason?: string }
         Returns: Json
@@ -2981,6 +3155,18 @@ export type Database = {
       restore_variant_stocks: { Args: { _items: Json }; Returns: undefined }
       sync_inventory_link: {
         Args: { _link_id: string; _trigger?: string }
+        Returns: Json
+      }
+      upsert_shipment_costs: {
+        Args: {
+          _cargo_fee: number
+          _customs_fee: number
+          _local_delivery_fee: number
+          _merchant_id: string
+          _notes: string
+          _other_expenses: number
+          _track_number: string
+        }
         Returns: Json
       }
     }
