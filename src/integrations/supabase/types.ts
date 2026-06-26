@@ -652,6 +652,79 @@ export type Database = {
           },
         ]
       }
+      incoming_cargo_items: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          merchant_id: string
+          notes: string | null
+          planned_product_name: string
+          planned_quantity: number
+          planned_unit_cost: number | null
+          product_id: string | null
+          received_quantity: number
+          status: Database["public"]["Enums"]["incoming_cargo_item_status"]
+          track_number: string
+          updated_at: string
+          variant_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          merchant_id: string
+          notes?: string | null
+          planned_product_name: string
+          planned_quantity: number
+          planned_unit_cost?: number | null
+          product_id?: string | null
+          received_quantity?: number
+          status?: Database["public"]["Enums"]["incoming_cargo_item_status"]
+          track_number: string
+          updated_at?: string
+          variant_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          merchant_id?: string
+          notes?: string | null
+          planned_product_name?: string
+          planned_quantity?: number
+          planned_unit_cost?: number | null
+          product_id?: string | null
+          received_quantity?: number
+          status?: Database["public"]["Enums"]["incoming_cargo_item_status"]
+          track_number?: string
+          updated_at?: string
+          variant_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "incoming_cargo_items_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "incoming_cargo_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "incoming_cargo_items_variant_id_fkey"
+            columns: ["variant_id"]
+            isOneToOne: false
+            referencedRelation: "product_variants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       inventory_items: {
         Row: {
           barcode: string | null
@@ -2828,6 +2901,12 @@ export type Database = {
         | "ALIBABA_1688"
         | "AMAZON"
         | "MANUAL_EXTERNAL"
+      incoming_cargo_item_status:
+        | "planned"
+        | "waiting_arrival"
+        | "ready_to_receive"
+        | "received"
+        | "cancelled"
       price_sync_mode:
         | "AUTO_UPDATE_CUSTOMER_PRICE"
         | "REVIEW_BEFORE_UPDATE"
@@ -2995,6 +3074,13 @@ export const Constants = {
         "ALIBABA_1688",
         "AMAZON",
         "MANUAL_EXTERNAL",
+      ],
+      incoming_cargo_item_status: [
+        "planned",
+        "waiting_arrival",
+        "ready_to_receive",
+        "received",
+        "cancelled",
       ],
       price_sync_mode: [
         "AUTO_UPDATE_CUSTOMER_PRICE",
