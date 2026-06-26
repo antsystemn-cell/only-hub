@@ -22,6 +22,28 @@ function generateHiddenCargoCode(merchantId: string) {
   return `oh_${uuid || merchantId.replace(/-/g, "")}_${Date.now().toString(36)}`;
 }
 
+/**
+ * Returns true only when rowPhone is clearly an unmasked phone that
+ * differs from verifiedPhone. Masked or short values (e.g. "9911****",
+ * "****2233", empty) return false → the row is kept and we trust the
+ * upstream API's server-side phone filter.
+ */
+function isClearlyDifferentPhone(
+  rowPhoneRaw: string | null | undefined,
+  verifiedPhone: string,
+): boolean {
+  const raw = String(rowPhoneRaw ?? "");
+  if (!raw) return false;
+  // If the source contains any masking character, treat as masked.
+  if (/[*x•·#?]/i.test(raw)) return false;
+  const digits = normalizeCargoPhone(raw);
+  if (digits.length < 8) return false; // too short → likely masked/unknown
+  const a = digits.slice(-8);
+  const b = verifiedPhone.slice(-8);
+  return a !== b;
+}
+
+
 async function resolveCargoLink(supabase: any, merchantId: string, userId: string) {
   // Verify access + read hidden customer_code and visible cargo phone.
   const { data: access } = await supabase.rpc("has_merchant_access", {
@@ -67,18 +89,27 @@ export const listMerchantCargo = createServerFn({ method: "POST" })
       to: data.to,
       phone: cargoLink.phone,
     });
-    // Defensive: never return rows whose phone is set AND differs from the
-    // verified phone. Rows with no phone field rely on upstream's phone
-    // filter (we already pass cargoLink.phone to the API), since the
-    // hidden customer_code may not be present on upstream rows.
+    // Defensive: only drop rows whose phone is clearly a different full
+    // (unmasked) phone from the verified one. OnlyCargo may return masked
+    // values like "9911****" — those must NOT cause row removal because
+    // the upstream API already filtered server-side by verified phone.
     const verified = cargoLink.phone;
+    let rejected = 0;
     const filtered = result.data.filter((row: any) => {
-      const rowPhone = normalizeCargoPhone(row?.phone);
-      if (!rowPhone) return true; // trust upstream phone filter
-      return rowPhone === verified;
+      if (!isClearlyDifferentPhone(row?.phone, verified)) return true;
+      rejected++;
+      return false;
+    });
+    console.info("[cargo] listMerchantCargo", {
+      merchantId: data.merchantId,
+      verifiedLast4: verified.slice(-4),
+      apiRows: result.data.length,
+      kept: filtered.length,
+      rejected,
     });
     return { ...result, data: filtered };
   });
+
 
 
 export const getMerchantCargoCounts = createServerFn({ method: "POST" })
@@ -159,7 +190,7 @@ export const getMerchantCargoDetail = createServerFn({ method: "POST" })
       }
       const codeMatches = shipmentCode && cargoLink.customerCode && shipmentCode === cargoLink.customerCode;
       const merchantMatches = shipmentMerchantId && shipmentMerchantId === data.merchantId;
-      const phoneMatches = shipmentPhone && normalizeCargoPhone(shipmentPhone) === cargoLink.phone;
+      const phoneMatches = shipmentPhone && !isClearlyDifferentPhone(shipmentPhone, cargoLink.phone);
       if (!codeMatches && !merchantMatches && !phoneMatches) {
         console.warn("[cargo] cross-merchant access blocked", {
           trackNumber: data.trackNumber,
