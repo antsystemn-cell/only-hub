@@ -730,6 +730,14 @@ function CargoDetailDialog({
               </Card>
             )}
 
+            {/* Products in this shipment (incoming cargo items) */}
+            <IncomingItemsSection
+              merchantId={merchantId}
+              trackNumber={trackNumber!}
+              cargoStatus={currentStatus || undefined}
+            />
+
+
             {/* Images */}
             {images.length > 0 && (
               <Card className="p-4">
