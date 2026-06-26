@@ -61,13 +61,18 @@ function formatWeight(value: unknown): string {
 
 const TAB_STATUSES = [
   { value: "all", label: "Бүгд", apiStatus: undefined },
-  { value: "created", label: "Шинэ ачаа", apiStatus: "created" },
-  { value: "in_transit", label: "Замд яваа", apiStatus: "in_transit" },
+  { value: "created", label: "Шинэ", apiStatus: "created" },
+  { value: "received", label: "Эрээнд", apiStatus: "received" },
+  { value: "processing", label: "Боловсруулж", apiStatus: "processing" },
+  { value: "in_transit", label: "Замд", apiStatus: "in_transit" },
   { value: "arrived", label: "Ирсэн", apiStatus: "arrived" },
-  { value: "ready_for_pickup", label: "Хүлээн авахад бэлэн", apiStatus: "ready_for_pickup" },
+  { value: "ready_for_pickup", label: "Бэлэн", apiStatus: "ready_for_pickup" },
+  { value: "completed", label: "Хүлээлгэсэн", apiStatus: "completed" },
+  { value: "cancelled", label: "Цуцалсан", apiStatus: "cancelled" },
+  { value: "archived", label: "Архив", apiStatus: "archived" },
 ] as const;
 
-const STATUS_LABELS: Record<string, { label: string; variant: "default" | "secondary" | "outline" }> = {
+const STATUS_LABELS: Record<string, { label: string; variant: "default" | "secondary" | "outline" | "destructive" }> = {
   created: { label: "Шинэ", variant: "secondary" },
   received: { label: "Эрээнд", variant: "secondary" },
   in_transit: { label: "Замд", variant: "default" },
@@ -75,8 +80,10 @@ const STATUS_LABELS: Record<string, { label: string; variant: "default" | "secon
   ready_for_pickup: { label: "Бэлэн", variant: "default" },
   arrived: { label: "Ирсэн", variant: "default" },
   completed: { label: "Хүлээлгэсэн", variant: "outline" },
+  cancelled: { label: "Цуцалсан", variant: "destructive" },
   archived: { label: "Архив", variant: "outline" },
 };
+
 
 function StatusBadge({ status }: { status: string }) {
   const cfg = STATUS_LABELS[status] ?? { label: status, variant: "outline" as const };

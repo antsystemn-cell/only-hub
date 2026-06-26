@@ -23,45 +23,30 @@ function generateHiddenCargoCode(merchantId: string) {
 }
 
 /**
- * Strict ownership check. Returns true ONLY when the row phone can be
- * positively matched to the verified phone.
+ * Loose ownership check per product spec:
+ *   "Do not apply strict masked phone comparison that hides valid rows.
+ *    If OnlyCargo already filters by phone, trust that result.
+ *    Only reject row if it clearly has a full different phone number."
  *
- * - Empty/missing → false (cannot prove ownership).
- * - Fully digits → compare last 8.
- * - Masked (contains * x • · # ?) → align last 8 positions and require every
- *   unmasked digit to equal verified[i].
+ * Returns true unless we can positively prove the row belongs to a
+ * different phone (fully unmasked digits that don't match the last 8
+ * digits of the verified phone). Empty, missing, or masked phones are
+ * trusted — the upstream API already filtered by phone.
  */
-function phoneOwnedByMerchant(
+function isClearlyDifferentPhone(
   rowPhoneRaw: string | null | undefined,
   verifiedPhone: string,
 ): boolean {
   const raw = String(rowPhoneRaw ?? "").trim();
-  if (!raw) return false;
+  if (!raw) return false; // empty → trust upstream
+  if (/[*x•·#?]/i.test(raw)) return false; // masked → trust upstream
+  const digits = normalizeCargoPhone(raw);
+  if (digits.length < 8) return false; // unparseable → trust upstream
   const verifiedLast8 = verifiedPhone.slice(-8);
   if (verifiedLast8.length < 8) return false;
-
-  const hasMask = /[*x•·#?]/i.test(raw);
-  if (!hasMask) {
-    const digits = normalizeCargoPhone(raw);
-    if (digits.length < 8) return false;
-    return digits.slice(-8) === verifiedLast8;
-  }
-
-  let cleaned = raw.replace(/[\s\-()]/g, "");
-  if (cleaned.startsWith("+976")) cleaned = cleaned.slice(4);
-  else if (cleaned.startsWith("976") && cleaned.length >= 11) cleaned = cleaned.slice(3);
-  if (cleaned.length < 8) return false;
-  const tail = cleaned.slice(-8);
-  for (let i = 0; i < 8; i++) {
-    const c = tail[i];
-    if (/\d/.test(c)) {
-      if (c !== verifiedLast8[i]) return false;
-    } else if (!/[*x•·#?]/i.test(c)) {
-      return false;
-    }
-  }
-  return true;
+  return digits.slice(-8) !== verifiedLast8;
 }
+
 
 
 
@@ -110,16 +95,16 @@ export const listMerchantCargo = createServerFn({ method: "POST" })
       to: data.to,
       phone: cargoLink.phone,
     });
-    // Strict ownership filter: keep only rows whose phone can be positively
-    // matched to the verified phone (digit-by-digit, mask-aware). Upstream
-    // API filter is not trusted on its own — without this guard the list
-    // would expose every shipment in the system.
+    // Loose ownership filter (spec): trust the upstream phone filter; only
+    // reject a row when it positively has a different full unmasked phone.
     const verified = cargoLink.phone;
     let rejected = 0;
     const filtered = result.data.filter((row: any) => {
-      if (phoneOwnedByMerchant(row?.phone, verified)) return true;
-      rejected++;
-      return false;
+      if (isClearlyDifferentPhone(row?.phone, verified)) {
+        rejected++;
+        return false;
+      }
+      return true;
     });
     console.info("[cargo] listMerchantCargo", {
       merchantId: data.merchantId,
@@ -130,6 +115,7 @@ export const listMerchantCargo = createServerFn({ method: "POST" })
     });
     return { ...result, data: filtered };
   });
+
 
 
 
@@ -149,7 +135,7 @@ export const getMerchantCargoCounts = createServerFn({ method: "POST" })
       return {} as Record<string, number>;
     }
     const { onlyCargo } = await import("./client.server");
-    const statuses = ["created", "in_transit", "arrived", "ready_for_pickup"];
+    const statuses = ["created", "received", "processing", "in_transit", "arrived", "ready_for_pickup", "completed", "cancelled", "archived"];
     const results = await Promise.all(
       statuses.map((s) =>
         onlyCargo
@@ -211,7 +197,7 @@ export const getMerchantCargoDetail = createServerFn({ method: "POST" })
       }
       const codeMatches = shipmentCode && cargoLink.customerCode && shipmentCode === cargoLink.customerCode;
       const merchantMatches = shipmentMerchantId && shipmentMerchantId === data.merchantId;
-      const phoneMatches = shipmentPhone && phoneOwnedByMerchant(shipmentPhone, cargoLink.phone);
+      const phoneMatches = shipmentPhone && !isClearlyDifferentPhone(shipmentPhone, cargoLink.phone);
       if (!codeMatches && !merchantMatches && !phoneMatches) {
         console.warn("[cargo] cross-merchant access blocked", {
           trackNumber: data.trackNumber,
