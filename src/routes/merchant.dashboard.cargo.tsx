@@ -165,6 +165,17 @@ function CargoView({ merchantId }: { merchantId: string }) {
   const total = cargoQuery.data?.total ?? 0;
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
+  const summaryFn = useServerFn(getIncomingCargoSummary);
+  const trackKeys = useMemo(() => rows.map((r: any) => String(r.track_number)).filter(Boolean), [rows]);
+  const summaryQuery = useQuery({
+    queryKey: ["incoming-cargo-summary", merchantId, trackKeys],
+    queryFn: () => summaryFn({ data: { merchantId, trackNumbers: trackKeys } }),
+    enabled: hasCargoPhone && trackKeys.length > 0,
+    staleTime: 30_000,
+  });
+  const summaryByTrack: Record<string, { items: number; planned_qty: number; ready: number }> =
+    summaryQuery.data ?? {};
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-3 flex-wrap">
