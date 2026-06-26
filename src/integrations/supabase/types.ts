@@ -1103,6 +1103,47 @@ export type Database = {
           },
         ]
       }
+      merchant_cargo_otps: {
+        Row: {
+          attempts: number
+          code_hash: string
+          consumed_at: string | null
+          created_at: string
+          expires_at: string
+          id: string
+          merchant_id: string
+          phone: string
+        }
+        Insert: {
+          attempts?: number
+          code_hash: string
+          consumed_at?: string | null
+          created_at?: string
+          expires_at: string
+          id?: string
+          merchant_id: string
+          phone: string
+        }
+        Update: {
+          attempts?: number
+          code_hash?: string
+          consumed_at?: string | null
+          created_at?: string
+          expires_at?: string
+          id?: string
+          merchant_id?: string
+          phone?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "merchant_cargo_otps_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       merchant_foreign_source_settings: {
         Row: {
           checkout_freshness_required_hours: number
@@ -1255,6 +1296,9 @@ export type Database = {
           onlycargo_customer_code: string | null
           onlycargo_last_synced_at: string | null
           onlycargo_phone: string | null
+          onlycargo_phone_pending: string | null
+          onlycargo_phone_pending_at: string | null
+          onlycargo_phone_verified_at: string | null
           onlycargo_sync_error: string | null
           owner_id: string | null
           policy_return: string | null
@@ -1293,6 +1337,9 @@ export type Database = {
           onlycargo_customer_code?: string | null
           onlycargo_last_synced_at?: string | null
           onlycargo_phone?: string | null
+          onlycargo_phone_pending?: string | null
+          onlycargo_phone_pending_at?: string | null
+          onlycargo_phone_verified_at?: string | null
           onlycargo_sync_error?: string | null
           owner_id?: string | null
           policy_return?: string | null
@@ -1331,6 +1378,9 @@ export type Database = {
           onlycargo_customer_code?: string | null
           onlycargo_last_synced_at?: string | null
           onlycargo_phone?: string | null
+          onlycargo_phone_pending?: string | null
+          onlycargo_phone_pending_at?: string | null
+          onlycargo_phone_verified_at?: string | null
           onlycargo_sync_error?: string | null
           owner_id?: string | null
           policy_return?: string | null

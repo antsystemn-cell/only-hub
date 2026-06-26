@@ -32,17 +32,18 @@ async function resolveCargoLink(supabase: any, merchantId: string, userId: strin
 
   const { data: merchant, error } = await supabase
     .from("merchants")
-    .select("onlycargo_customer_code,onlycargo_phone")
+    .select("onlycargo_customer_code,onlycargo_phone,onlycargo_phone_verified_at")
     .eq("id", merchantId)
     .maybeSingle();
   if (error) throw new Response(error.message, { status: 500 });
   const code = (merchant?.onlycargo_customer_code as string | null | undefined)?.trim() ?? "";
   const phone = normalizeCargoPhone(merchant?.onlycargo_phone as string | null | undefined);
+  const verifiedAt = (merchant as any)?.onlycargo_phone_verified_at as string | null | undefined;
   if (!phone) {
-    throw new Response(
-      "Каргоны утасны дугаар тохируулаагүй байна.",
-      { status: 400 },
-    );
+    throw new Response("Каргоны утасны дугаар тохируулаагүй байна.", { status: 400 });
+  }
+  if (!verifiedAt) {
+    throw new Response("Каргоны утас баталгаажаагүй байна. OTP-ээр баталгаажуулна уу.", { status: 403 });
   }
   return { customerCode: code || null, phone };
 }
@@ -205,14 +206,22 @@ export const updateMerchantCargoPhone = createServerFn({ method: "POST" })
     }).parse(i),
   )
   .handler(async ({ data, context }) => {
-    const { data: isOwner } = await context.supabase.rpc("is_merchant_owner", {
-      _user_id: context.userId,
-      _merchant_id: data.merchantId,
-    });
+    // Phone changes must go through OTP verification. Only platform admins
+    // can directly set / reset the cargo phone (admin reset path).
     const { data: isAdmin } = await context.supabase.rpc("is_platform_admin", {
       _user_id: context.userId,
     });
-    if (!isOwner && !isAdmin) throw new Response("Forbidden", { status: 403 });
+    if (!isAdmin) {
+      throw new Response(
+        "Утсыг шууд тохируулах боломжгүй. OTP-ээр баталгаажуулна уу.",
+        { status: 403 },
+      );
+    }
+
+    const normalizedPhone = normalizeCargoPhone(data.phone);
+    if (normalizedPhone.length < 6) {
+      throw new Response("Каргоны утасны дугаар буруу байна.", { status: 400 });
+    }
 
     const { data: merchant, error: readErr } = await context.supabase
       .from("merchants")
@@ -221,11 +230,6 @@ export const updateMerchantCargoPhone = createServerFn({ method: "POST" })
       .maybeSingle();
     if (readErr) throw new Response(readErr.message, { status: 500 });
 
-    const normalizedPhone = normalizeCargoPhone(data.phone);
-    if (normalizedPhone.length < 6) {
-      throw new Response("Каргоны утасны дугаар буруу байна.", { status: 400 });
-    }
-
     const existingCode = (merchant?.onlycargo_customer_code as string | null | undefined)?.trim();
     const nextCode = existingCode || generateHiddenCargoCode(data.merchantId);
 
@@ -233,6 +237,9 @@ export const updateMerchantCargoPhone = createServerFn({ method: "POST" })
       .from("merchants")
       .update({
         onlycargo_phone: normalizedPhone,
+        onlycargo_phone_verified_at: new Date().toISOString(),
+        onlycargo_phone_pending: null,
+        onlycargo_phone_pending_at: null,
         onlycargo_customer_code: nextCode,
         onlycargo_sync_error: null,
       })
