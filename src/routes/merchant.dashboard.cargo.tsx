@@ -159,27 +159,29 @@ function CargoView({ merchantId }: { merchantId: string }) {
       </div>
 
       {!hasCargoPhone ? (
-        <SetupCargoPhone merchantId={merchantId} />
+        <CargoPhoneVerification merchantId={merchantId} status={status} />
       ) : (
         <>
           <Card className="p-4 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
             <div>
-              <div className="text-sm font-medium">Карго холболт</div>
+              <div className="text-sm font-medium flex items-center gap-2">
+                <ShieldCheck className="h-4 w-4 text-emerald-600" /> Карго холболт идэвхтэй
+              </div>
               <p className="text-sm text-muted-foreground">
                 Карго систем дээр ачаа энэ утсаар бүртгэгдэхэд танай дэлгүүртэй автоматаар холбогдоно.
               </p>
               <p className="text-xs text-muted-foreground mt-1">
-                Ачааг OnlyCargo үндсэн админ дээр бүртгэнэ; Only Hub жагсаалт нь тухайн утсаар шууд татагдана.
+                Баталгаажсан: {status?.verifiedAt ? new Date(status.verifiedAt).toLocaleString("mn-MN") : "-"}
               </p>
-              {(merchant as any)?.onlycargo_sync_error && (
+              {status?.syncError && (
                 <p className="text-xs text-destructive mt-1">
-                  Сүүлийн синк алдаа: {(merchant as any).onlycargo_sync_error}
+                  Сүүлийн синк алдаа: {status.syncError}
                 </p>
               )}
             </div>
             <div className="flex items-center gap-2">
               <Badge variant="secondary" className="font-mono">{cargoPhone}</Badge>
-              <SetupCargoPhone merchantId={merchantId} currentPhone={cargoPhone} compact />
+              <CargoPhoneVerification merchantId={merchantId} status={status} compact />
             </div>
           </Card>
           <Tabs value={tab} onValueChange={(v) => { setTab(v as any); setPage(1); }}>
