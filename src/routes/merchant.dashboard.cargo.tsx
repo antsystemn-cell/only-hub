@@ -779,6 +779,11 @@ function CargoDetailDialog({
               cargoSummary={{ weight: detail.weight, description: detail.description }}
             />
 
+            <ShipmentCostSummary
+              merchantId={merchantId}
+              trackNumber={trackNumber!}
+            />
+
 
 
             {/* Images */}
