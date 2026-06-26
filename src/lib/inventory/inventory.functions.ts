@@ -41,7 +41,7 @@ export const listInventoryItems = createServerFn({ method: "POST" })
     let qb = context.supabase
       .from("inventory_items")
       .select(
-        "id,name,sku,barcode,quantity_on_hand,quantity_reserved,quantity_available,unit,cost_price,currency,source_type,source_cargo_tracking_number,warehouse_location,status,updated_at",
+        "id,name,sku,barcode,quantity_on_hand,quantity_reserved,quantity_available,unit,cost_price,currency,source_type,source_cargo_tracking_number,warehouse_location,status,updated_at,average_cost,last_purchase_cost,highest_cost,lowest_cost,total_cargo_cost,average_cargo_cost,landed_cost_avg",
         { count: "exact" },
       )
       .eq("merchant_id", data.merchantId)

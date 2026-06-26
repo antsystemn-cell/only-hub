@@ -125,32 +125,44 @@ function InventoryListPage() {
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
-                  <TableRow>
+                <TableRow>
                     <TableHead>Нэр</TableHead>
                     <TableHead>SKU</TableHead>
-                    <TableHead className="text-right">Нийт</TableHead>
-                    <TableHead className="text-right">Түгжсэн</TableHead>
                     <TableHead className="text-right">Боломжит</TableHead>
-                    <TableHead>Нэгж</TableHead>
+                    <TableHead className="text-right">Сүүлийн худалдан авалт</TableHead>
+                    <TableHead className="text-right">Дундаж landed</TableHead>
+                    <TableHead className="text-right">Дундаж карго</TableHead>
+                    <TableHead className="text-right">Хам.өндөр/нам</TableHead>
                     <TableHead>Эх үүсвэр</TableHead>
-                    <TableHead>Байршил</TableHead>
-                    <TableHead>Шинэчилсэн</TableHead>
                     <TableHead className="text-right">Үйлдэл</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {items.map((r: any) => (
                     <TableRow key={r.id}>
-                      <TableCell className="font-medium">{r.name}</TableCell>
-                      <TableCell className="font-mono text-xs">{r.sku ?? "-"}</TableCell>
-                      <TableCell className="text-right">{Number(r.quantity_on_hand).toLocaleString("mn-MN")}</TableCell>
-                      <TableCell className="text-right text-muted-foreground">
-                        {Number(r.quantity_reserved).toLocaleString("mn-MN")}
+                      <TableCell className="font-medium">
+                        <div>{r.name}</div>
+                        <div className="text-[11px] text-muted-foreground">{r.unit} · {r.warehouse_location ?? "-"}</div>
                       </TableCell>
+                      <TableCell className="font-mono text-xs">{r.sku ?? "-"}</TableCell>
                       <TableCell className="text-right font-semibold">
                         {Number(r.quantity_available).toLocaleString("mn-MN")}
+                        <div className="text-[10px] text-muted-foreground">/ {Number(r.quantity_on_hand).toLocaleString("mn-MN")}</div>
                       </TableCell>
-                      <TableCell className="text-sm">{r.unit}</TableCell>
+                      <TableCell className="text-right text-sm">
+                        {r.last_purchase_cost == null ? "-" : Number(r.last_purchase_cost).toLocaleString("mn-MN") + "₮"}
+                      </TableCell>
+                      <TableCell className="text-right text-sm font-semibold text-primary">
+                        {Number(r.landed_cost_avg || 0) === 0 ? "-" : Number(r.landed_cost_avg).toLocaleString("mn-MN") + "₮"}
+                      </TableCell>
+                      <TableCell className="text-right text-sm">
+                        {Number(r.average_cargo_cost || 0) === 0 ? "-" : Number(r.average_cargo_cost).toLocaleString("mn-MN") + "₮"}
+                      </TableCell>
+                      <TableCell className="text-right text-xs text-muted-foreground">
+                        {r.highest_cost == null ? "-" : Number(r.highest_cost).toLocaleString("mn-MN")}
+                        {" / "}
+                        {r.lowest_cost == null ? "-" : Number(r.lowest_cost).toLocaleString("mn-MN")}
+                      </TableCell>
                       <TableCell className="text-xs text-muted-foreground">
                         {r.source_cargo_tracking_number ? (
                           <span className="font-mono">{r.source_cargo_tracking_number}</span>
@@ -158,14 +170,10 @@ function InventoryListPage() {
                           r.source_type ?? "-"
                         )}
                       </TableCell>
-                      <TableCell className="text-sm">{r.warehouse_location ?? "-"}</TableCell>
-                      <TableCell className="text-xs text-muted-foreground">
-                        {new Date(r.updated_at).toLocaleString("mn-MN")}
-                      </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-1">
                           <Button size="sm" variant="outline" onClick={() => setLinkTarget(r)}>
-                            <Link2 className="h-3.5 w-3.5 mr-1" /> Бараатай холбох
+                            <Link2 className="h-3.5 w-3.5 mr-1" /> Холбох
                           </Button>
                           <Button
                             size="sm"

@@ -34,6 +34,7 @@ import {
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { ShieldCheck, ShieldAlert } from "lucide-react";
 import { IncomingItemsSection } from "@/components/cargo/IncomingItemsSection";
+import { ShipmentCostSummary } from "@/components/cargo/ShipmentCostSummary";
 import { ReceiveWizardDialog } from "@/components/cargo/ReceiveWizardDialog";
 import { getIncomingCargoSummary } from "@/lib/onlycargo/incoming.functions";
 import { listIncomingCargoReceipts } from "@/lib/onlycargo/receive.functions";
@@ -776,6 +777,11 @@ function CargoDetailDialog({
               trackNumber={trackNumber!}
               cargoStatus={currentStatus || undefined}
               cargoSummary={{ weight: detail.weight, description: detail.description }}
+            />
+
+            <ShipmentCostSummary
+              merchantId={merchantId}
+              trackNumber={trackNumber!}
             />
 
 
