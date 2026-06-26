@@ -67,14 +67,15 @@ export const listMerchantCargo = createServerFn({ method: "POST" })
       to: data.to,
       phone: cargoLink.phone,
     });
-    // Defensive: never return rows belonging to a different verified phone.
-    // Allow rows with no phone only when they positively match by customer_code.
+    // Defensive: never return rows whose phone is set AND differs from the
+    // verified phone. Rows with no phone field rely on upstream's phone
+    // filter (we already pass cargoLink.phone to the API), since the
+    // hidden customer_code may not be present on upstream rows.
     const verified = cargoLink.phone;
     const filtered = result.data.filter((row: any) => {
       const rowPhone = normalizeCargoPhone(row?.phone);
-      if (rowPhone && rowPhone === verified) return true;
-      if (!rowPhone && cargoLink.customerCode && row?.customer_code === cargoLink.customerCode) return true;
-      return false;
+      if (!rowPhone) return true; // trust upstream phone filter
+      return rowPhone === verified;
     });
     return { ...result, data: filtered };
   });
