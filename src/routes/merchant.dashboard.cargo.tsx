@@ -631,7 +631,7 @@ function CargoDetailDialog({
                 />
                 <Info
                   label="Үнэ"
-                  value={fee != null ? `${Number(fee).toLocaleString("mn-MN")}₮` : "-"}
+                  value={(() => { const m = formatMoney(fee); return m === "-" ? "-" : `${m}₮`; })()}
                 />
                 <Info
                   label="Байршил"
