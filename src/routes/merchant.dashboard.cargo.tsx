@@ -318,50 +318,129 @@ function CargoView({ merchantId }: { merchantId: string }) {
   );
 }
 
-function SetupCargoPhone({
+type PhoneStatus = {
+  phone: string | null;
+  verifiedAt: string | null;
+  pendingPhone: string | null;
+  pendingAt: string | null;
+  syncError: string | null;
+  lastSyncedAt: string | null;
+} | undefined;
+
+function CargoPhoneVerification({
   merchantId,
-  currentPhone = "",
+  status,
   compact = false,
 }: {
   merchantId: string;
-  currentPhone?: string;
+  status: PhoneStatus;
   compact?: boolean;
 }) {
   const [open, setOpen] = useState(false);
-  const [phone, setPhone] = useState(currentPhone);
+  const inline = !compact;
+  const isVerified = !!status?.verifiedAt;
+
+  if (compact) {
+    return (
+      <>
+        <Button type="button" variant="outline" size="sm" onClick={() => setOpen(true)}>
+          Утас солих
+        </Button>
+        <Dialog open={open} onOpenChange={setOpen}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Каргоны утас солих</DialogTitle>
+              <DialogDescription>
+                Шинэ утсаа OTP-ээр баталгаажуулна уу. Хуучин утас баталгаажих хүртэл идэвхтэй хэвээр.
+              </DialogDescription>
+            </DialogHeader>
+            <OtpFlow merchantId={merchantId} onDone={() => setOpen(false)} />
+          </DialogContent>
+        </Dialog>
+      </>
+    );
+  }
+
+  return (
+    <Card className="p-6 space-y-4 max-w-xl">
+      <div>
+        <h2 className="font-semibold flex items-center gap-2">
+          {isVerified ? (
+            <ShieldCheck className="h-4 w-4 text-emerald-600" />
+          ) : (
+            <ShieldAlert className="h-4 w-4 text-amber-600" />
+          )}
+          Каргоны утас баталгаажуулах
+        </h2>
+        <p className="text-sm text-muted-foreground mt-1">
+          Карго систем дээр ачаагаа бүртгүүлэх утасны дугаараа оруулаад OTP-ээр баталгаажуулна уу.
+          Баталгаажсан утсан дээрх ачаа л Only Hub-д харагдана.
+        </p>
+        {status?.pendingPhone && !isVerified && (
+          <p className="text-xs text-muted-foreground mt-2">
+            Хүлээгдэж буй: <span className="font-mono">{status.pendingPhone}</span>
+          </p>
+        )}
+      </div>
+      <OtpFlow merchantId={merchantId} inline={inline} />
+    </Card>
+  );
+}
+
+function OtpFlow({
+  merchantId,
+  onDone,
+  inline = false,
+}: {
+  merchantId: string;
+  onDone?: () => void;
+  inline?: boolean;
+}) {
   const qc = useQueryClient();
+  const [phone, setPhone] = useState("");
+  const [code, setCode] = useState("");
+  const [stage, setStage] = useState<"phone" | "code">("phone");
+  const [cooldown, setCooldown] = useState(0);
 
   useEffect(() => {
-    if (!open) setPhone(currentPhone);
-  }, [currentPhone, open]);
+    if (cooldown <= 0) return;
+    const t = setTimeout(() => setCooldown((c) => c - 1), 1000);
+    return () => clearTimeout(t);
+  }, [cooldown]);
 
-  const updateFn = useServerFn(updateMerchantCargoPhone);
-  const mut = useMutation({
-    mutationFn: (nextPhone: string) => updateFn({ data: { merchantId, phone: nextPhone } }),
-    onSuccess: () => {
-      toast.success("Хадгалагдлаа");
-      setOpen(false);
-      qc.invalidateQueries({ queryKey: ["merchant-onlycargo", merchantId] });
-      qc.invalidateQueries({ queryKey: ["onlycargo-list", merchantId] });
-      qc.invalidateQueries({ queryKey: ["onlycargo-counts", merchantId] });
+  const requestFn = useServerFn(requestCargoPhoneOtp);
+  const verifyFn = useServerFn(verifyCargoPhoneOtp);
+
+  const requestMut = useMutation({
+    mutationFn: (p: string) => requestFn({ data: { merchantId, phone: p } }),
+    onSuccess: (res: any) => {
+      toast.success("OTP илгээлээ");
+      setStage("code");
+      setCooldown(res?.cooldownSec ?? 60);
     },
     onError: (e: any) => toast.error(e?.message ?? "Алдаа"),
   });
 
-  if (compact) {
-    return (
-      <Dialog open={open} onOpenChange={setOpen}>
-        <Button type="button" variant="outline" size="sm" onClick={() => setOpen(true)}>
-          Солих
-        </Button>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Каргоны утас солих</DialogTitle>
-            <DialogDescription>
-              Карго систем дээр ачаагаа бүртгүүлэх утасны дугаараа оруулна уу.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-3">
+  const verifyMut = useMutation({
+    mutationFn: () => verifyFn({ data: { merchantId, phone, code } }),
+    onSuccess: () => {
+      toast.success("Утас баталгаажлаа");
+      qc.invalidateQueries({ queryKey: ["merchant-cargo-phone-status", merchantId] });
+      qc.invalidateQueries({ queryKey: ["onlycargo-list", merchantId] });
+      qc.invalidateQueries({ queryKey: ["onlycargo-counts", merchantId] });
+      setCode("");
+      setStage("phone");
+      onDone?.();
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Код буруу байна"),
+  });
+
+  return (
+    <div className={inline ? "space-y-3" : "space-y-3"}>
+      {stage === "phone" ? (
+        <>
+          <Label className="text-sm">Утасны дугаар</Label>
+          <div className="flex gap-2">
             <Input
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
@@ -369,47 +448,56 @@ function SetupCargoPhone({
               inputMode="tel"
               maxLength={30}
             />
-            <div className="flex justify-end gap-2">
-              <Button type="button" variant="outline" onClick={() => setOpen(false)}>
-                Болих
-              </Button>
-              <Button disabled={phone.trim().length < 6 || mut.isPending} onClick={() => mut.mutate(phone.trim())}>
-                {mut.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Хадгалах
-              </Button>
-            </div>
+            <Button
+              disabled={phone.trim().length < 6 || requestMut.isPending || cooldown > 0}
+              onClick={() => requestMut.mutate(phone.trim())}
+            >
+              {requestMut.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {cooldown > 0 ? `${cooldown}s` : "OTP код авах"}
+            </Button>
           </div>
-        </DialogContent>
-      </Dialog>
-    );
-  }
-
-  return (
-    <Card className="p-6 space-y-4 max-w-xl">
-      <div>
-        <h2 className="font-semibold">Каргоны утас тохируулах</h2>
-        <p className="text-sm text-muted-foreground mt-1">
-          Карго систем дээр ачаагаа бүртгүүлэх утасны дугаараа оруулна уу. Дотоод холболтын код
-          backend дээр автоматаар үүсэж, merchant-д тусад нь харагдахгүй.
-        </p>
-      </div>
-      <div className="flex gap-2">
-        <Input
-          value={phone}
-          onChange={(e) => setPhone(e.target.value)}
-          placeholder="жишээ нь: 88660000"
-          inputMode="tel"
-          maxLength={30}
-        />
-        <Button
-          disabled={phone.trim().length < 6 || mut.isPending}
-          onClick={() => mut.mutate(phone.trim())}
-        >
-          {mut.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          Хадгалах
-        </Button>
-      </div>
-    </Card>
+        </>
+      ) : (
+        <>
+          <Label className="text-sm">
+            <span className="font-mono">{phone}</span> руу ирсэн 6 оронтой код
+          </Label>
+          <div className="flex flex-wrap items-center gap-3">
+            <InputOTP maxLength={6} value={code} onChange={setCode}>
+              <InputOTPGroup>
+                {[0, 1, 2, 3, 4, 5].map((i) => (
+                  <InputOTPSlot key={i} index={i} />
+                ))}
+              </InputOTPGroup>
+            </InputOTP>
+            <Button
+              disabled={code.length !== 6 || verifyMut.isPending}
+              onClick={() => verifyMut.mutate()}
+            >
+              {verifyMut.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Баталгаажуулах
+            </Button>
+          </div>
+          <div className="flex items-center gap-3 text-xs text-muted-foreground">
+            <button
+              type="button"
+              className="underline disabled:opacity-50"
+              disabled={cooldown > 0 || requestMut.isPending}
+              onClick={() => requestMut.mutate(phone.trim())}
+            >
+              {cooldown > 0 ? `Дахин код илгээх (${cooldown}s)` : "Дахин код илгээх"}
+            </button>
+            <button
+              type="button"
+              className="underline"
+              onClick={() => { setStage("phone"); setCode(""); }}
+            >
+              Утас солих
+            </button>
+          </div>
+        </>
+      )}
+    </div>
   );
 }
 
