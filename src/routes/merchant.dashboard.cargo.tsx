@@ -771,6 +771,14 @@ function CargoDetailDialog({
               cargoStatus={currentStatus || undefined}
             />
 
+            <ReceiveSection
+              merchantId={merchantId}
+              trackNumber={trackNumber!}
+              cargoStatus={currentStatus || undefined}
+              cargoSummary={{ weight: detail.weight, description: detail.description }}
+            />
+
+
 
             {/* Images */}
             {images.length > 0 && (
