@@ -72,7 +72,7 @@ export const saveShipmentCosts = createServerFn({ method: "POST" })
       _customs_fee: data.customsFee,
       _local_delivery_fee: data.localDeliveryFee,
       _other_expenses: data.otherExpenses,
-      _notes: data.notes ?? null,
+      _notes: (data.notes ?? "") as string,
     });
     if (error) throw new Response(error.message, { status: 500 });
     return res as any;
