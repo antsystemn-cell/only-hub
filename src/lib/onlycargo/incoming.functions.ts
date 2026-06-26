@@ -121,7 +121,7 @@ export const updateIncomingCargoItem = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     await assertAccess(context.supabase, context.userId, data.merchantId);
-    const patch: Record<string, unknown> = {};
+    const patch: any = {};
     if (data.plannedProductName !== undefined) patch.planned_product_name = data.plannedProductName;
     if (data.plannedQuantity !== undefined) patch.planned_quantity = data.plannedQuantity;
     if (data.plannedUnitCost !== undefined) patch.planned_unit_cost = data.plannedUnitCost;
