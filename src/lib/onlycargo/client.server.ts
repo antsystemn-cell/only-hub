@@ -142,6 +142,13 @@ export function parseMoney(value: unknown): number | null {
     const n = Number(cleaned);
     return Number.isFinite(n) ? n : null;
   }
+  if (typeof value === "object") {
+    const obj = value as Record<string, unknown>;
+    for (const key of ["total", "amount", "fee", "price", "value", "totalFee", "total_fee"]) {
+      const parsed = parseMoney(obj[key]);
+      if (parsed !== null) return parsed;
+    }
+  }
   return null;
 }
 
@@ -269,11 +276,14 @@ export const onlyCargo = {
       order: params.order,
       status: params.status,
       q: params.q,
+      search: params.q,
       merchant_id: params.merchant_id,
       customer_code: params.customer_code,
       phone: params.phone,
       phone_number: params.phone,
+      phoneNumber: params.phone,
       customer_phone: params.phone,
+      customerPhone: params.phone,
       from: params.from,
       to: params.to,
     });
