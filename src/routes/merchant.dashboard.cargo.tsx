@@ -286,6 +286,7 @@ function CargoView({ merchantId }: { merchantId: string }) {
                           <TableRow>
                             <TableHead>Track №</TableHead>
                             <TableHead>Статус</TableHead>
+                            <TableHead>Бараа</TableHead>
                             <TableHead>Утас</TableHead>
                             <TableHead className="text-right">Жин (кг)</TableHead>
                             <TableHead className="text-right">Үнэ ₮</TableHead>
@@ -293,7 +294,9 @@ function CargoView({ merchantId }: { merchantId: string }) {
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {rows.map((r: any) => (
+                          {rows.map((r: any) => {
+                            const s = summaryByTrack[String(r.track_number)];
+                            return (
                             <TableRow
                               key={r.track_number}
                               className="cursor-pointer"
@@ -301,6 +304,22 @@ function CargoView({ merchantId }: { merchantId: string }) {
                             >
                               <TableCell className="font-mono text-sm">{r.track_number}</TableCell>
                               <TableCell><StatusBadge status={String(r.status ?? "")} /></TableCell>
+                              <TableCell>
+                                {s && s.items > 0 ? (
+                                  <div className="flex flex-wrap gap-1">
+                                    <Badge variant="secondary" className="text-[10px]">
+                                      {s.items} бараа · {s.planned_qty.toLocaleString("mn-MN")} ш
+                                    </Badge>
+                                    {s.ready > 0 && (
+                                      <Badge className="text-[10px] bg-amber-500 hover:bg-amber-500">
+                                        {s.ready} бэлэн
+                                      </Badge>
+                                    )}
+                                  </div>
+                                ) : (
+                                  <span className="text-xs text-muted-foreground">—</span>
+                                )}
+                              </TableCell>
                               <TableCell className="text-sm">{r.phone ?? "-"}</TableCell>
                               <TableCell className="text-right text-sm">
                                 {formatWeight(r.weight)}
@@ -313,7 +332,8 @@ function CargoView({ merchantId }: { merchantId: string }) {
                                 {r.created_at ? new Date(r.created_at).toLocaleString("mn-MN") : "-"}
                               </TableCell>
                             </TableRow>
-                          ))}
+                            );
+                          })}
                         </TableBody>
                       </Table>
                     </div>
