@@ -130,6 +130,12 @@ function normalizePhone(value: string | null | undefined) {
   return digits.startsWith("976") && digits.length === 11 ? digits.slice(3) : digits;
 }
 
+function normalizeDisplayPhone(value: string | null | undefined) {
+  const raw = String(value ?? "").trim();
+  if (/[*x•·#?]/i.test(raw)) return raw;
+  return normalizePhone(raw);
+}
+
 // Safe money parser shared by client + server. Accepts number or numeric
 // string (may include ₮, commas, spaces). Returns null when invalid so the
 // UI never renders NaN.
@@ -173,7 +179,7 @@ export function normalizeShipment(raw: any): OnlyCargoShipment {
       status: pick<string>(src, "status") ?? "unknown",
       customer_code: pick<string>(src, "customer_code", "customerCode") ?? null,
       merchant_id: pick<string>(src, "merchant_id", "merchantId") ?? null,
-      phone: normalizePhone(pick<string>(src, "phone", "phone_number", "phoneNumber", "customer_phone", "customerPhone")) || null,
+      phone: normalizeDisplayPhone(pick<string>(src, "phone", "phone_number", "phoneNumber", "customer_phone", "customerPhone")) || null,
       weight: pick<number>(src, "weight"),
       volume: pick<number>(src, "volume", "volumeM3", "volume_m3"),
       length: pick<number>(src, "length"),
