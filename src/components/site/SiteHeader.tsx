@@ -24,7 +24,7 @@ type Props = {
  * Marketplace-style sticky header — orange ONLY logo, search, cart, AccountNav.
  * Visual layer only; no business logic.
  */
-export function SiteHeader({ showSearch = true, rightOfLogo, cartHref = "/stores", trailing }: Props) {
+export function SiteHeader({ showSearch = true, rightOfLogo, cartHref = "/cart", trailing }: Props) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [q, setQ] = useState("");
   const brandingFn = useServerFn(getPublicBrandingFn);
