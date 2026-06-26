@@ -37,6 +37,27 @@ export const Route = createFileRoute("/merchant/dashboard/cargo")({
   component: CargoPage,
 });
 
+function parseMoneyClient(value: unknown): number | null {
+  if (value === null || value === undefined || value === "") return null;
+  if (typeof value === "number") return Number.isFinite(value) ? value : null;
+  if (typeof value === "string") {
+    const cleaned = value.replace(/[₮,\s]/g, "").replace(/[^\d.\-]/g, "");
+    if (!cleaned) return null;
+    const n = Number(cleaned);
+    return Number.isFinite(n) ? n : null;
+  }
+  return null;
+}
+function formatMoney(value: unknown): string {
+  const n = parseMoneyClient(value);
+  return n == null ? "-" : n.toLocaleString("mn-MN");
+}
+function formatWeight(value: unknown): string {
+  const n = parseMoneyClient(value);
+  return n == null ? "-" : n.toFixed(2);
+}
+
+
 const TAB_STATUSES = [
   { value: "all", label: "Бүгд", apiStatus: undefined },
   { value: "created", label: "Шинэ ачаа", apiStatus: "created" },
