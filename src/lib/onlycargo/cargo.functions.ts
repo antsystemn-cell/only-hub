@@ -58,7 +58,7 @@ export const listMerchantCargo = createServerFn({ method: "POST" })
       context.userId,
     );
     const { onlyCargo } = await import("./client.server");
-    return onlyCargo.listShipments({
+    const result = await onlyCargo.listShipments({
       page: data.page,
       pageSize: data.pageSize,
       status: data.status,
@@ -67,7 +67,18 @@ export const listMerchantCargo = createServerFn({ method: "POST" })
       to: data.to,
       phone: cargoLink.phone,
     });
+    // Defensive: never return rows belonging to a different verified phone.
+    // Allow rows with no phone only when they positively match by customer_code.
+    const verified = cargoLink.phone;
+    const filtered = result.data.filter((row: any) => {
+      const rowPhone = normalizeCargoPhone(row?.phone);
+      if (rowPhone && rowPhone === verified) return true;
+      if (!rowPhone && cargoLink.customerCode && row?.customer_code === cargoLink.customerCode) return true;
+      return false;
+    });
+    return { ...result, data: filtered };
   });
+
 
 export const getMerchantCargoCounts = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
