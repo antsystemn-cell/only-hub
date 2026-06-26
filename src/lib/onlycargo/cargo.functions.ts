@@ -23,45 +23,30 @@ function generateHiddenCargoCode(merchantId: string) {
 }
 
 /**
- * Strict ownership check. Returns true ONLY when the row phone can be
- * positively matched to the verified phone.
+ * Loose ownership check per product spec:
+ *   "Do not apply strict masked phone comparison that hides valid rows.
+ *    If OnlyCargo already filters by phone, trust that result.
+ *    Only reject row if it clearly has a full different phone number."
  *
- * - Empty/missing → false (cannot prove ownership).
- * - Fully digits → compare last 8.
- * - Masked (contains * x • · # ?) → align last 8 positions and require every
- *   unmasked digit to equal verified[i].
+ * Returns true unless we can positively prove the row belongs to a
+ * different phone (fully unmasked digits that don't match the last 8
+ * digits of the verified phone). Empty, missing, or masked phones are
+ * trusted — the upstream API already filtered by phone.
  */
-function phoneOwnedByMerchant(
+function isClearlyDifferentPhone(
   rowPhoneRaw: string | null | undefined,
   verifiedPhone: string,
 ): boolean {
   const raw = String(rowPhoneRaw ?? "").trim();
-  if (!raw) return false;
+  if (!raw) return false; // empty → trust upstream
+  if (/[*x•·#?]/i.test(raw)) return false; // masked → trust upstream
+  const digits = normalizeCargoPhone(raw);
+  if (digits.length < 8) return false; // unparseable → trust upstream
   const verifiedLast8 = verifiedPhone.slice(-8);
   if (verifiedLast8.length < 8) return false;
-
-  const hasMask = /[*x•·#?]/i.test(raw);
-  if (!hasMask) {
-    const digits = normalizeCargoPhone(raw);
-    if (digits.length < 8) return false;
-    return digits.slice(-8) === verifiedLast8;
-  }
-
-  let cleaned = raw.replace(/[\s\-()]/g, "");
-  if (cleaned.startsWith("+976")) cleaned = cleaned.slice(4);
-  else if (cleaned.startsWith("976") && cleaned.length >= 11) cleaned = cleaned.slice(3);
-  if (cleaned.length < 8) return false;
-  const tail = cleaned.slice(-8);
-  for (let i = 0; i < 8; i++) {
-    const c = tail[i];
-    if (/\d/.test(c)) {
-      if (c !== verifiedLast8[i]) return false;
-    } else if (!/[*x•·#?]/i.test(c)) {
-      return false;
-    }
-  }
-  return true;
+  return digits.slice(-8) !== verifiedLast8;
 }
+
 
 
 
