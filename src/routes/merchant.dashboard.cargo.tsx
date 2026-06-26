@@ -610,7 +610,7 @@ function CargoDetailDialog({
                   value={
                     <span className="inline-flex items-center gap-1">
                       <Scale className="h-3.5 w-3.5 text-muted-foreground" />
-                      {detail.weight != null ? `${Number(detail.weight).toFixed(2)} кг` : "-"}
+                      {(() => { const w = parseMoneyClient(detail.weight); return w == null ? "-" : `${w.toFixed(2)} кг`; })()}
                     </span>
                   }
                 />
