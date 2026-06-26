@@ -135,7 +135,7 @@ export const getMerchantCargoCounts = createServerFn({ method: "POST" })
       return {} as Record<string, number>;
     }
     const { onlyCargo } = await import("./client.server");
-    const statuses = ["created", "in_transit", "arrived", "ready_for_pickup"];
+    const statuses = ["created", "received", "processing", "in_transit", "arrived", "ready_for_pickup", "completed", "cancelled", "archived"];
     const results = await Promise.all(
       statuses.map((s) =>
         onlyCargo
