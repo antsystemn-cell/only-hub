@@ -355,10 +355,11 @@ export const onlyCargo = {
       { method: "GET" },
     );
     return {
-      fee: pick<number>(raw ?? {}, "fee", "amount", "price") ?? null,
+      fee: parseMoney(pick<unknown>(raw ?? {}, "fee", "amount", "price", "cargo_fee", "cargoFee", "total_fee", "totalFee")),
       currency: pick<string>(raw ?? {}, "currency") ?? "MNT",
     };
   },
+
 
   async createShipment(payload: {
     trackNumber: string;
