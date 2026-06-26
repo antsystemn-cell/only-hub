@@ -190,7 +190,7 @@ export const getMerchantCargoDetail = createServerFn({ method: "POST" })
       }
       const codeMatches = shipmentCode && cargoLink.customerCode && shipmentCode === cargoLink.customerCode;
       const merchantMatches = shipmentMerchantId && shipmentMerchantId === data.merchantId;
-      const phoneMatches = shipmentPhone && normalizeCargoPhone(shipmentPhone) === cargoLink.phone;
+      const phoneMatches = shipmentPhone && !isClearlyDifferentPhone(shipmentPhone, cargoLink.phone);
       if (!codeMatches && !merchantMatches && !phoneMatches) {
         console.warn("[cargo] cross-merchant access blocked", {
           trackNumber: data.trackNumber,
