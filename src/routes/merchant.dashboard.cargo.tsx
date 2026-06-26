@@ -281,11 +281,12 @@ function CargoView({ merchantId }: { merchantId: string }) {
                               <TableCell><StatusBadge status={String(r.status ?? "")} /></TableCell>
                               <TableCell className="text-sm">{r.phone ?? "-"}</TableCell>
                               <TableCell className="text-right text-sm">
-                                {r.weight != null ? Number(r.weight).toFixed(2) : "-"}
+                                {formatWeight(r.weight)}
                               </TableCell>
                               <TableCell className="text-right text-sm">
-                                {r.price != null ? Number(r.price).toLocaleString("mn-MN") : "-"}
+                                {formatMoney(r.price ?? r.fee)}
                               </TableCell>
+
                               <TableCell className="text-sm text-muted-foreground">
                                 {r.created_at ? new Date(r.created_at).toLocaleString("mn-MN") : "-"}
                               </TableCell>
