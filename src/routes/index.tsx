@@ -529,6 +529,37 @@ function Index() {
     },
   });
 
+  // Only Orders featured categories
+  const ONLY_ORDERS_MID = "824c7be1-eba6-4e2c-9fe8-8e777a60be28";
+  const { data: perfumeItems } = useQuery({
+    queryKey: ["home-only-orders", "perfume"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("products")
+        .select("id,name,price,original_price,image_url,thumbnail_url,merchant_id,is_new,is_on_sale,slug,description,discount,sales,source_country,default_delivery_min_days,default_delivery_max_days,product_type")
+        .eq("is_active", true)
+        .eq("merchant_id", ONLY_ORDERS_MID)
+        .eq("category", "Оригинал үнэртэй ус")
+        .order("created_at", { ascending: false })
+        .limit(12);
+      return data ?? [];
+    },
+  });
+  const { data: sneakerItems } = useQuery({
+    queryKey: ["home-only-orders", "sneakers"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("products")
+        .select("id,name,price,original_price,image_url,thumbnail_url,merchant_id,is_new,is_on_sale,slug,description,discount,sales,source_country,default_delivery_min_days,default_delivery_max_days,product_type")
+        .eq("is_active", true)
+        .eq("merchant_id", ONLY_ORDERS_MID)
+        .eq("category", "Оригинал пүүз, гутал")
+        .order("created_at", { ascending: false })
+        .limit(12);
+      return data ?? [];
+    },
+  });
+
   // All products list (infinite) — shuffled randomly per page
   const productsQ = useInfiniteQuery({
     queryKey: ["home-products-all-random"],
