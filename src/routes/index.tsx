@@ -712,6 +712,23 @@ function Index() {
         onQuickView={(p) => setQuickView(p)}
       />
 
+      <ProductRail
+        title="Оригинал үнэртэй ус"
+        icon={<span>🌸</span>}
+        items={perfumeItems ?? []}
+        merchantById={merchantById}
+        onQuickView={(p) => setQuickView(p)}
+      />
+
+      <ProductRail
+        title="Оригинал пүүз, гутал"
+        icon={<span>👟</span>}
+        items={sneakerItems ?? []}
+        merchantById={merchantById}
+        onQuickView={(p) => setQuickView(p)}
+      />
+
+
       {/* New products grid (full pagination) */}
       <section className="container mx-auto px-3 py-8 sm:px-4">
         <div className="mb-4 flex items-end justify-between gap-3">
