@@ -21,6 +21,18 @@ import { getPublicBrandingFn } from "@/lib/branding.functions";
 
 const PAGE_SIZE = 12;
 
+const platformBannersQuery = {
+  queryKey: ["platform-banners-home"] as const,
+  queryFn: async () => {
+    const { data } = await supabase
+      .from("platform_banners")
+      .select("title,subtitle,button_text,button_link,bg_gradient,banner_image,is_active,position")
+      .eq("is_active", true)
+      .order("position", { ascending: true });
+    return data ?? [];
+  },
+};
+
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
@@ -30,6 +42,7 @@ export const Route = createFileRoute("/")({
       { property: "og:description", content: "Олон мерчантуудыг нэгтгэсэн платформ." },
     ],
   }),
+  loader: ({ context }) => context.queryClient.ensureQueryData(platformBannersQuery),
   component: Index,
 });
 
