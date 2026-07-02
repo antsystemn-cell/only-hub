@@ -54,18 +54,12 @@ const FALLBACK_SLIDES = [
 ];
 
 function Banner() {
-  const { data: dbSlides } = useQuery({
-    queryKey: ["platform-banners-home"],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("platform_banners")
-        .select("title,subtitle,button_text,button_link,bg_gradient,banner_image,is_active,position")
-        .eq("is_active", true)
-        .order("position", { ascending: true });
-      return data ?? [];
-    },
-  });
-  const SLIDES = (dbSlides && dbSlides.length > 0 ? dbSlides : FALLBACK_SLIDES) as any[];
+  const { data: dbSlides, isLoading } = useQuery(platformBannersQuery);
+  const hasDb = Array.isArray(dbSlides) && dbSlides.length > 0;
+  // Only use fallback when we've confirmed there are no admin-configured banners.
+  // While loading, render nothing to avoid flashing the default gradient banners.
+  if (isLoading && !hasDb) return null;
+  const SLIDES = (hasDb ? dbSlides : FALLBACK_SLIDES) as any[];
 
   const [i, setI] = useState(0);
   const [paused, setPaused] = useState(false);
