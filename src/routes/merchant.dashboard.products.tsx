@@ -547,26 +547,28 @@ function ProductsPage() {
           {filtered.length === 0 ? (
             <p className="py-10 text-center text-muted-foreground">Бүтээгдэхүүн алга</p>
           ) : filtered.map((p: any) => (
-            <div key={p.id} className="flex items-center gap-3 rounded-xl border border-border p-3">
+            <div key={p.id} className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 rounded-xl border border-border p-3 sm:flex sm:items-center">
               {p.thumbnail_url || p.image_url ? (
-                <img src={p.thumbnail_url || p.image_url} className="h-14 w-14 rounded-lg object-cover" />
+                <img src={p.thumbnail_url || p.image_url} className="h-14 w-14 shrink-0 rounded-lg object-cover" />
               ) : (
-                <div className="flex h-14 w-14 items-center justify-center rounded-lg bg-muted"><ImageIcon className="h-5 w-5 text-muted-foreground" /></div>
+                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg bg-muted"><ImageIcon className="h-5 w-5 text-muted-foreground" /></div>
               )}
-              <div className="flex-1 min-w-0">
+              <div className="min-w-0 sm:flex-1">
                 <div className="font-medium truncate">{p.name}</div>
-                <div className="text-xs text-muted-foreground flex items-center gap-2">
-                  <span>{p.category ?? "—"} • {p.product_code ?? ""}</span>
+                <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
+                  <span className="truncate">{p.category ?? "—"} {p.product_code ? `• ${p.product_code}` : ""}</span>
                   {(linkedProductIds as Set<string>).has(p.id) ? (
                     <span className="rounded-md bg-emerald-500/10 px-1.5 py-0.5 text-[10px] text-emerald-700">Нөөцтэй холбогдсон</span>
                   ) : (
                     <span className="rounded-md bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">Нөөцтэй холбогдоогүй</span>
                   )}
+                  <span className="sm:hidden font-semibold text-foreground">{fmtMnt(p.price)}</span>
+                  {p.discount > 0 && <span className="sm:hidden rounded-md bg-red-500/10 px-1.5 py-0.5 text-[10px] text-red-600">-{p.discount}%</span>}
                 </div>
               </div>
-              <div className="text-sm font-semibold">{fmtMnt(p.price)}</div>
-              {p.discount > 0 && <span className="rounded-md bg-red-500/10 px-2 py-0.5 text-xs text-red-600">-{p.discount}%</span>}
-              <div className="flex gap-1">
+              <div className="hidden sm:block text-sm font-semibold whitespace-nowrap">{fmtMnt(p.price)}</div>
+              {p.discount > 0 && <span className="hidden sm:inline-block rounded-md bg-red-500/10 px-2 py-0.5 text-xs text-red-600">-{p.discount}%</span>}
+              <div className="col-span-3 flex justify-end gap-1 sm:col-span-1 border-t border-border/50 pt-2 sm:border-0 sm:pt-0">
                 <Button size="icon" variant="ghost" onClick={() => { setEditing(p); setEditId(p.id); setShowForm(true); }}><Edit className="h-4 w-4" /></Button>
                 <Button size="icon" variant="ghost" onClick={() => duplicate(p)}><Copy className="h-4 w-4" /></Button>
                 <AlertDialog>
@@ -585,6 +587,7 @@ function ProductsPage() {
               </div>
             </div>
           ))}
+
         </div>
       </Card>
         </TabsContent>
