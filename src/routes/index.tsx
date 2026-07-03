@@ -335,12 +335,14 @@ function ProductRail({
   items,
   merchantById,
   onQuickView,
+  viewAllHref,
 }: {
   title: string;
   icon: React.ReactNode;
   items: any[];
   merchantById: Record<string, { slug: string; name: string; logo_url?: string | null }>;
   onQuickView: (p: any) => void;
+  viewAllHref?: string;
 }) {
   const scrollerRef = useRef<HTMLDivElement>(null);
   const scrollBy = (dir: 1 | -1) => {
@@ -350,6 +352,7 @@ function ProductRail({
     el.scrollBy({ left: dir * amt, behavior: "smooth" });
   };
   if (items.length === 0) return null;
+  const href = viewAllHref ?? "/stores";
   return (
     <section className="container mx-auto px-3 pt-6 sm:px-4 sm:pt-8">
       <div className="mb-3 flex items-center justify-between gap-3">
@@ -357,9 +360,9 @@ function ProductRail({
           <span>{icon}</span>
           <span>{title}</span>
         </h2>
-        <Link to="/stores" className="shrink-0 text-xs font-medium text-orange-600 hover:underline sm:text-sm">
+        <a href={href} className="shrink-0 text-xs font-medium text-orange-600 hover:underline sm:text-sm">
           Бүгдийг харах →
-        </Link>
+        </a>
       </div>
       <div className="relative">
         <div
