@@ -728,6 +728,7 @@ function Index() {
         items={perfumeItems ?? []}
         merchantById={merchantById}
         onQuickView={(p) => setQuickView(p)}
+        viewAllHref={`/store/only-orders?category=${encodeURIComponent("Оригинал үнэртэй ус")}`}
       />
 
       <ProductRail
@@ -736,7 +737,9 @@ function Index() {
         items={sneakerItems ?? []}
         merchantById={merchantById}
         onQuickView={(p) => setQuickView(p)}
+        viewAllHref={`/store/only-orders?category=${encodeURIComponent("Оригинал пүүз, гутал")}`}
       />
+
 
 
       {/* New products grid (full pagination) */}
