@@ -150,7 +150,7 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
           <span className="font-semibold">Only Dashboard</span>
         </header>
 
-        <main className="flex-1 overflow-auto p-4 md:p-8">{children}</main>
+        <main className="min-w-0 flex-1 overflow-x-hidden overflow-y-auto p-4 md:p-8">{children}</main>
       </div>
     </div>
   );
