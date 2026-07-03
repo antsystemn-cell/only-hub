@@ -11,7 +11,12 @@ import { SiteHeader } from "@/components/site/SiteHeader";
 import { SiteFooter } from "@/components/site/SiteFooter";
 import { AvailabilityBadge } from "@/components/product/ForeignOrderBadge";
 
-export const Route = createFileRoute("/store/$merchantSlug")({ component: StorePage });
+export const Route = createFileRoute("/store/$merchantSlug")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    category: typeof search.category === "string" ? search.category : undefined,
+  }),
+  component: StorePage,
+});
 
 function StorePage() {
   const { merchantSlug } = Route.useParams();
@@ -37,9 +42,14 @@ function StorePage() {
     queryFn: async () => (await supabase.from("categories").select("*").eq("merchant_id", merchant!.id).order("position")).data ?? [],
   });
 
+  const searchParams = Route.useSearch();
   const [activeBanner, setActiveBanner] = useState(0);
-  const [activeCategory, setActiveCategory] = useState("all");
+  const [activeCategory, setActiveCategory] = useState(searchParams.category ?? "all");
   const [searchQuery, setSearchQuery] = useState("");
+
+  useEffect(() => {
+    if (searchParams.category) setActiveCategory(searchParams.category);
+  }, [searchParams.category]);
 
   useEffect(() => {
     if (banners.length < 2) return;
