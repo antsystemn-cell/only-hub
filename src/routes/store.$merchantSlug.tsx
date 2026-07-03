@@ -11,7 +11,12 @@ import { SiteHeader } from "@/components/site/SiteHeader";
 import { SiteFooter } from "@/components/site/SiteFooter";
 import { AvailabilityBadge } from "@/components/product/ForeignOrderBadge";
 
-export const Route = createFileRoute("/store/$merchantSlug")({ component: StorePage });
+export const Route = createFileRoute("/store/$merchantSlug")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    category: typeof search.category === "string" ? search.category : undefined,
+  }),
+  component: StorePage,
+});
 
 function StorePage() {
   const { merchantSlug } = Route.useParams();
