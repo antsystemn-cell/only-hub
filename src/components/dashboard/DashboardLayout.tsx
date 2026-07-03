@@ -135,7 +135,7 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
       </aside>
 
       {/* Mobile header */}
-      <div className="flex flex-1 flex-col">
+      <div className="flex min-w-0 flex-1 flex-col">
         <header className="flex h-14 items-center gap-3 border-b border-border bg-card px-4 md:hidden">
           <Sheet open={open} onOpenChange={setOpen}>
             <SheetTrigger asChild>
@@ -150,7 +150,7 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
           <span className="font-semibold">Only Dashboard</span>
         </header>
 
-        <main className="flex-1 overflow-auto p-4 md:p-8">{children}</main>
+        <main className="min-w-0 flex-1 overflow-x-hidden overflow-y-auto p-4 md:p-8">{children}</main>
       </div>
     </div>
   );
