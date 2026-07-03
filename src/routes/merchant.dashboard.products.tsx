@@ -554,9 +554,9 @@ function ProductsPage() {
                 <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg bg-muted"><ImageIcon className="h-5 w-5 text-muted-foreground" /></div>
               )}
               <div className="min-w-0 sm:flex-1">
-                <div className="font-medium truncate">{p.name}</div>
+                <div className="font-medium break-words">{p.name}</div>
                 <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
-                  <span className="truncate">{p.category ?? "—"} {p.product_code ? `• ${p.product_code}` : ""}</span>
+                  <span className="break-words">{p.category ?? "—"} {p.product_code ? `• ${p.product_code}` : ""}</span>
                   {(linkedProductIds as Set<string>).has(p.id) ? (
                     <span className="rounded-md bg-emerald-500/10 px-1.5 py-0.5 text-[10px] text-emerald-700">Нөөцтэй холбогдсон</span>
                   ) : (
