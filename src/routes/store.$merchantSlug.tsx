@@ -42,9 +42,14 @@ function StorePage() {
     queryFn: async () => (await supabase.from("categories").select("*").eq("merchant_id", merchant!.id).order("position")).data ?? [],
   });
 
+  const searchParams = Route.useSearch();
   const [activeBanner, setActiveBanner] = useState(0);
-  const [activeCategory, setActiveCategory] = useState("all");
+  const [activeCategory, setActiveCategory] = useState(searchParams.category ?? "all");
   const [searchQuery, setSearchQuery] = useState("");
+
+  useEffect(() => {
+    if (searchParams.category) setActiveCategory(searchParams.category);
+  }, [searchParams.category]);
 
   useEffect(() => {
     if (banners.length < 2) return;
