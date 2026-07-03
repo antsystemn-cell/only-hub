@@ -81,13 +81,13 @@ export function ForeignSyncView() {
             <tbody>
               {(productsQuery.data ?? []).map((p: any) => (
                 <tr key={p.id} className="border-t">
-                  <td className="py-2 pr-3">
-                    <div className="font-medium">{p.name}</div>
+                  <td className="py-2 pr-3 max-w-xs">
+                    <div className="font-medium break-words whitespace-normal">{p.name}</div>
                     <a
                       href={p.source_url}
                       target="_blank"
                       rel="noreferrer"
-                      className="text-xs text-orange-600 hover:underline"
+                      className="text-xs text-orange-600 hover:underline break-all"
                     >
                       Эх сурвалж →
                     </a>
