@@ -48,10 +48,22 @@ export const FOREIGN_SOURCES: Record<ForeignSource, ForeignSourceDef> = {
     name: "Taobao",
     country: "CN",
     currency: "CNY",
-    active: false,
+    active: true,
     defaultDeliveryMinDays: 10,
     defaultDeliveryMaxDays: 18,
     badgeLabel: "Taobao-с захиалгаар",
+    urlPattern: /^https?:\/\/([\w-]+\.)?(taobao|tmall|1688)\.com\//i,
+    extractProductId: (url: string) => {
+      try {
+        const u = new URL(url);
+        const id = u.searchParams.get("id");
+        if (id && /^\d+$/.test(id)) return id;
+        const m = url.match(/[?&]id=(\d+)/);
+        return m ? m[1] : null;
+      } catch {
+        return null;
+      }
+    },
   },
   TMALL: {
     key: "TMALL",
