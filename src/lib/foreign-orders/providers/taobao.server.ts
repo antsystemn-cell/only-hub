@@ -237,13 +237,18 @@ function extractOptionGroupsAndVariants(config: any): {
   });
 
   const sku2info = config?.data?.skuCore?.sku2info ?? apiStackValue?.skuCore?.sku2info ?? null;
-  const skus: any[] = skuBase.skus ?? sku2info
-    ? Object.entries(sku2info ?? {}).map(([id, info]: any) => ({
-        skuId: id,
-        propPath: info?.propPath,
-        price: info?.price?.priceText ?? info?.price?.priceMoney ?? info?.price,
-      }))
-    : skuBase.skus ?? [];
+  const rawSkus: any[] = Array.isArray(skuBase.skus) ? skuBase.skus : [];
+  const skus: any[] =
+    sku2info && Object.keys(sku2info).length > 0
+      ? Object.entries(sku2info).map(([id, info]: any) => {
+          const fromBase = rawSkus.find((s) => String(s?.skuId ?? s?.sku_id ?? "") === String(id));
+          return {
+            skuId: id,
+            propPath: info?.propPath ?? fromBase?.propPath ?? fromBase?.properties,
+            price: info?.price?.priceText ?? info?.price?.priceMoney ?? info?.price,
+          };
+        })
+      : rawSkus;
 
   for (const sku of skus) {
     const propPath: string = String(sku?.propPath ?? sku?.props ?? "");
