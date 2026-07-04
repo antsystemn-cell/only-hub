@@ -20,12 +20,14 @@
 // ParsedProduct shell with warnings so the shared ForeignProductImporter UI
 // can render the manual edit form.
 import type {
+  DeliveryOption,
   ExternalCatalogProvider,
   ExtractionMethod,
   OptionGroup,
   ParsedProduct,
   ParsedVariant,
   ProductInfoRow,
+  ProductIntroSection,
 } from "./types";
 import { buildOptionSignature } from "./types";
 import { FOREIGN_SOURCES } from "../sources";
