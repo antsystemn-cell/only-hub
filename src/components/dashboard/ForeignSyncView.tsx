@@ -71,7 +71,25 @@ export function ForeignSyncView() {
       </div>
 
       <Card className="p-4">
-        <h3 className="mb-3 font-semibold">Бүтээгдэхүүний sync төлөв</h3>
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+          <h3 className="font-semibold">Бүтээгдэхүүний sync төлөв</h3>
+          <div className="flex flex-wrap gap-1.5">
+            <button
+              type="button"
+              onClick={() => setSourceTab("POIZON_KR")}
+              className={`rounded-full border px-3 py-1 text-xs ${sourceTab === "POIZON_KR" ? "border-orange-500 bg-orange-50 text-orange-700" : "border-border bg-background text-muted-foreground hover:bg-muted"}`}
+            >
+              🇰🇷 Poizon Korea <span className="ml-1 opacity-70">{countPoizon}</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setSourceTab("TAOBAO")}
+              className={`rounded-full border px-3 py-1 text-xs ${sourceTab === "TAOBAO" ? "border-orange-500 bg-orange-50 text-orange-700" : "border-border bg-background text-muted-foreground hover:bg-muted"}`}
+            >
+              🇨🇳 Taobao <span className="ml-1 opacity-70">{countTaobao}</span>
+            </button>
+          </div>
+        </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="text-left text-xs text-muted-foreground">
@@ -85,7 +103,7 @@ export function ForeignSyncView() {
               </tr>
             </thead>
             <tbody>
-              {(productsQuery.data ?? []).map((p: any) => (
+              {filteredProducts.map((p: any) => (
                 <tr key={p.id} className="border-t">
                   <td className="py-2 pr-3 max-w-xs">
                     <div className="font-medium break-words whitespace-normal">{p.name}</div>
@@ -148,10 +166,10 @@ export function ForeignSyncView() {
                   </td>
                 </tr>
               ))}
-              {productsQuery.data?.length === 0 && (
+              {filteredProducts.length === 0 && (
                 <tr>
                   <td colSpan={6} className="py-6 text-center text-muted-foreground">
-                    Гадаад эх сурвалжтай бараа алга.
+                    {sourceTab === "POIZON_KR" ? "Poizon Korea" : "Taobao"} бараа алга.
                   </td>
                 </tr>
               )}
