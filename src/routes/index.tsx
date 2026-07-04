@@ -570,22 +570,43 @@ function Index() {
     },
   });
 
-  // All products list (infinite) — shuffled randomly per page
+  // All products list (infinite) — shuffle the ENTIRE catalog, then paginate
+  const allIdsQ = useQuery({
+    queryKey: ["home-products-all-ids"],
+    staleTime: 5 * 60 * 1000,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("products")
+        .select("id")
+        .eq("is_active", true)
+        .limit(5000);
+      const ids = (data ?? []).map((r: any) => r.id as string);
+      for (let i = ids.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [ids[i], ids[j]] = [ids[j], ids[i]];
+      }
+      return ids;
+    },
+  });
+
+  const shuffledIds = allIdsQ.data ?? [];
+
   const productsQ = useInfiniteQuery({
-    queryKey: ["home-products-all-random"],
+    queryKey: ["home-products-all-shuffled", shuffledIds.length],
+    enabled: shuffledIds.length > 0,
     initialPageParam: 0,
     queryFn: async ({ pageParam }) => {
       const from = (pageParam as number) * PAGE_SIZE;
-      const to = from + PAGE_SIZE - 1;
-      const { data, count } = await supabase
+      const to = from + PAGE_SIZE;
+      const pageIds = shuffledIds.slice(from, to);
+      if (pageIds.length === 0) return { items: [], count: shuffledIds.length, page: pageParam as number };
+      const { data } = await supabase
         .from("products")
-        .select("id,name,price,original_price,image_url,thumbnail_url,merchant_id,is_new,is_on_sale,slug,description,discount,sales,source_country,default_delivery_min_days,default_delivery_max_days,product_type", { count: "exact" })
-        .eq("is_active", true)
-        .order("created_at", { ascending: false })
-        .order("id", { ascending: false })
-        .range(from, to);
-      const shuffled = [...(data ?? [])].sort(() => Math.random() - 0.5);
-      return { items: shuffled, count: count ?? 0, page: pageParam as number };
+        .select("id,name,price,original_price,image_url,thumbnail_url,merchant_id,is_new,is_on_sale,slug,description,discount,sales,source_country,default_delivery_min_days,default_delivery_max_days,product_type")
+        .in("id", pageIds);
+      const byId = new Map((data ?? []).map((p: any) => [p.id, p]));
+      const ordered = pageIds.map((id) => byId.get(id)).filter(Boolean);
+      return { items: ordered, count: shuffledIds.length, page: pageParam as number };
     },
     getNextPageParam: (last) => {
       const loaded = (last.page + 1) * PAGE_SIZE;
