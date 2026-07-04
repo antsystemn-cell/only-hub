@@ -20,6 +20,7 @@ import { fmtMnt, slugify } from "@/lib/format";
 import { uploadOptimized } from "@/lib/image";
 import { AddProductTypeDialog } from "@/components/merchant/AddProductTypeDialog";
 import { ForeignProductImporter } from "@/components/merchant/ForeignProductImporter";
+import { ManualForeignProductImporter } from "@/components/merchant/ManualForeignProductImporter";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ForeignSyncView } from "@/components/dashboard/ForeignSyncView";
 import type { Database } from "@/integrations/supabase/types";
