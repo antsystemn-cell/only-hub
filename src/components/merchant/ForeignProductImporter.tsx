@@ -361,7 +361,11 @@ export function ForeignProductImporter({ merchantId, source, onClose }: Props) {
           <div className="flex gap-2">
             <Input
               className="h-9 text-sm"
-              placeholder="https://kr.poizon.com/product/..."
+              placeholder={
+                source === "TAOBAO"
+                  ? "https://item.taobao.com/item.htm?id=..."
+                  : "https://kr.poizon.com/product/..."
+              }
               value={url}
               onChange={(e) => setUrl(e.target.value)}
             />
@@ -379,7 +383,9 @@ export function ForeignProductImporter({ merchantId, source, onClose }: Props) {
             </Button>
           </div>
           <p className="text-[11px] text-muted-foreground">
-            Жишээ: https://kr.poizon.com/product/new-balance-530-...-60886973
+            {source === "TAOBAO"
+              ? "Жишээ: https://item.taobao.com/item.htm?id=1234567890"
+              : "Жишээ: https://kr.poizon.com/product/new-balance-530-...-60886973"}
           </p>
           <div className="mt-2 flex items-start justify-between gap-3 rounded-md border border-border/60 bg-muted/30 px-3 py-2">
             <div className="space-y-0.5">

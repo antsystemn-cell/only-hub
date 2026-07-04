@@ -209,7 +209,7 @@ function ProductsPage() {
       />
 
       {foreignImporterSource && (
-        foreignImporterSource === "POIZON_KR" ? (
+        foreignImporterSource === "POIZON_KR" || foreignImporterSource === "TAOBAO" ? (
           <ForeignProductImporter
             merchantId={merchantId}
             source={foreignImporterSource}
