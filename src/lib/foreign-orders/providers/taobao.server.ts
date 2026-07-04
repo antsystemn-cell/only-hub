@@ -31,7 +31,7 @@ import type {
 } from "./types";
 import { buildOptionSignature } from "./types";
 import { FOREIGN_SOURCES } from "../sources";
-import { createHash } from "crypto";
+
 
 const SRC = FOREIGN_SOURCES.TAOBAO;
 
@@ -410,7 +410,8 @@ function extractIntroSections(html: string, config: any): ProductIntroSection[] 
   return sections;
 }
 
-function md5Hex(value: string): string {
+async function md5Hex(value: string): Promise<string> {
+  const { createHash } = await import("node:crypto");
   return createHash("md5").update(value).digest("hex");
 }
 
@@ -485,7 +486,7 @@ async function fetchMtop(
   const dataText = JSON.stringify(data);
   const token = extractMtopToken(cookieHeader);
   const t = String(Date.now());
-  const sign = md5Hex(`${token}&${t}&${TAOBAO_H5_APP_KEY}&${dataText}`);
+  const sign = await md5Hex(`${token}&${t}&${TAOBAO_H5_APP_KEY}&${dataText}`);
   const params = new URLSearchParams({
     jsv: "2.7.2",
     appKey: TAOBAO_H5_APP_KEY,
