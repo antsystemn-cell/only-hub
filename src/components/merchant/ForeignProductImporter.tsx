@@ -600,7 +600,7 @@ export function ForeignProductImporter({ merchantId, source, onClose }: Props) {
           {preview.baseSourcePrice != null && (
             <div className="flex flex-wrap items-center gap-2 rounded-lg border bg-muted/30 p-2 text-xs">
               <Badge variant="secondary" className="text-xs">
-                Үндсэн үнэ: {preview.baseSourcePrice.toLocaleString()} KRW
+                Үндсэн үнэ: {preview.baseSourcePrice.toLocaleString()} {sourceDef.currency}
               </Badge>
               <Badge variant="outline" className="text-[11px]">
                 Эх сурвалж: {preview.extractionMethod}
@@ -671,11 +671,11 @@ export function ForeignProductImporter({ merchantId, source, onClose }: Props) {
                       <span className="text-muted-foreground">{d.estimatedDays}</span>
                     )}
                     {d.displayedPrice != null && (
-                      <span>{d.displayedPrice.toLocaleString()} KRW</span>
+                      <span>{d.displayedPrice.toLocaleString()} {sourceDef.currency}</span>
                     )}
                     {d.domesticDeliveryFee != null && (
                       <span className="text-[11px] text-muted-foreground">
-                        Дотоодын хүргэлт: {d.domesticDeliveryFee.toLocaleString()} KRW
+                        Дотоодын хүргэлт: {d.domesticDeliveryFee.toLocaleString()} {sourceDef.currency}
                       </span>
                     )}
                   </div>
