@@ -161,7 +161,7 @@ export const createForeignProduct = createServerFn({ method: "POST" })
     const { supabase } = context;
     const settings = await loadOrDefaultSettings(supabase, data.merchantId, data.source);
     if (settings.exchangeRate <= 0) {
-      throw new Error("Валютын ханш тохируулагдаагүй байна. Тохиргоо хэсгээс KRW→MNT ханш оруулна уу.");
+      throw new Error(`Валютын ханш тохируулагдаагүй байна. Тохиргоо хэсгээс ${src.currency}→MNT ханш оруулна уу.`);
     }
 
     const src = FOREIGN_SOURCES[data.source as keyof typeof FOREIGN_SOURCES];
