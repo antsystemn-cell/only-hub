@@ -205,11 +205,19 @@ function ProductsPage() {
       />
 
       {foreignImporterSource && (
-        <ForeignProductImporter
-          merchantId={merchantId}
-          source={foreignImporterSource}
-          onClose={() => setForeignImporterSource(null)}
-        />
+        foreignImporterSource === "POIZON_KR" ? (
+          <ForeignProductImporter
+            merchantId={merchantId}
+            source={foreignImporterSource}
+            onClose={() => setForeignImporterSource(null)}
+          />
+        ) : (
+          <ManualForeignProductImporter
+            merchantId={merchantId}
+            source={foreignImporterSource}
+            onClose={() => setForeignImporterSource(null)}
+          />
+        )
       )}
 
       <Tabs defaultValue="products" className="space-y-6">
