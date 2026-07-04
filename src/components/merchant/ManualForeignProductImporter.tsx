@@ -168,7 +168,7 @@ export function ManualForeignProductImporter({ merchantId, source, onClose }: Pr
     if (!coverImage && gallery.length > 0) setCoverImage(gallery[0]);
   }, [gallery, coverImage]);
 
-  const isCreateDisabled = !hasSettings || createMutation.isPending || !title.trim() || !hasPrice;
+  const isCreateDisabled = !hasSettings || createMutation.isPending;
 
   return (
     <Card className="rounded-2xl p-4 md:p-5">
