@@ -74,6 +74,7 @@ function ProductsPage() {
   const [editId, setEditId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [filterCat, setFilterCat] = useState<string>("all");
+  const [filterSource, setFilterSource] = useState<"all" | "POIZON_KR" | "TAOBAO">("all");
   const [uploading, setUploading] = useState(false);
 
   const { data: products = [] } = useQuery({
@@ -174,8 +175,11 @@ function ProductsPage() {
   const filtered = products.filter((p: any) => {
     const matchSearch = !search || p.name.toLowerCase().includes(search.toLowerCase()) || (p.product_code ?? "").toLowerCase().includes(search.toLowerCase());
     const matchCat = filterCat === "all" || p.category === filterCat;
-    return matchSearch && matchCat;
+    const matchSource = filterSource === "all" || p.foreign_source === filterSource;
+    return matchSearch && matchCat && matchSource;
   });
+  const countPoizon = products.filter((p: any) => p.foreign_source === "POIZON_KR").length;
+  const countTaobao = products.filter((p: any) => p.foreign_source === "TAOBAO").length;
 
   return (
     <div className="space-y-6">
@@ -539,6 +543,29 @@ function ProductsPage() {
       )}
 
       <Card className="rounded-2xl p-4">
+        <div className="mb-3 flex flex-wrap gap-1.5">
+          <button
+            type="button"
+            onClick={() => setFilterSource("all")}
+            className={`rounded-full border px-3 py-1 text-xs ${filterSource === "all" ? "border-orange-500 bg-orange-50 text-orange-700" : "border-border bg-background text-muted-foreground hover:bg-muted"}`}
+          >
+            Бүгд <span className="ml-1 opacity-70">{products.length}</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setFilterSource("POIZON_KR")}
+            className={`rounded-full border px-3 py-1 text-xs ${filterSource === "POIZON_KR" ? "border-orange-500 bg-orange-50 text-orange-700" : "border-border bg-background text-muted-foreground hover:bg-muted"}`}
+          >
+            🇰🇷 Poizon Korea <span className="ml-1 opacity-70">{countPoizon}</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setFilterSource("TAOBAO")}
+            className={`rounded-full border px-3 py-1 text-xs ${filterSource === "TAOBAO" ? "border-orange-500 bg-orange-50 text-orange-700" : "border-border bg-background text-muted-foreground hover:bg-muted"}`}
+          >
+            🇨🇳 Taobao <span className="ml-1 opacity-70">{countTaobao}</span>
+          </button>
+        </div>
         <div className="mb-4 flex flex-wrap gap-2">
           <div className="relative flex-1 min-w-[200px]">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
