@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
+import { useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
@@ -16,6 +17,7 @@ export function ForeignSyncView() {
   const { primaryMerchantId } = useAuth();
   const merchantId = primaryMerchantId ?? null;
   const qc = useQueryClient();
+  const [sourceTab, setSourceTab] = useState<"POIZON_KR" | "TAOBAO">("POIZON_KR");
 
   const productsQuery = useQuery({
     queryKey: ["foreign-sync-products", merchantId],
@@ -24,7 +26,7 @@ export function ForeignSyncView() {
       const { data, error } = await supabase
         .from("products")
         .select(
-          "id,name,source_url,sync_enabled,last_source_sync_at,next_sync_at,source_sync_status,source_sync_error,low_stock_warning",
+          "id,name,source_url,foreign_source,sync_enabled,last_source_sync_at,next_sync_at,source_sync_status,source_sync_error,low_stock_warning",
         )
         .eq("merchant_id", merchantId!)
         .eq("product_type", "FOREIGN_ORDER")
@@ -34,6 +36,10 @@ export function ForeignSyncView() {
       return data ?? [];
     },
   });
+  const allProducts = productsQuery.data ?? [];
+  const countPoizon = allProducts.filter((p: any) => p.foreign_source === "POIZON_KR").length;
+  const countTaobao = allProducts.filter((p: any) => p.foreign_source === "TAOBAO").length;
+  const filteredProducts = allProducts.filter((p: any) => p.foreign_source === sourceTab);
 
   const listJobs = useServerFn(listForeignSyncJobs);
   const jobsQuery = useQuery({
