@@ -31,6 +31,7 @@ import type {
 } from "./types";
 import { buildOptionSignature } from "./types";
 import { FOREIGN_SOURCES } from "../sources";
+import { createHash } from "crypto";
 
 const SRC = FOREIGN_SOURCES.TAOBAO;
 
@@ -51,6 +52,8 @@ const DESKTOP_HEADERS: Record<string, string> = {
   Referer: "https://www.taobao.com/",
   "Cache-Control": "no-cache",
 };
+
+const TAOBAO_H5_APP_KEY = "12574478";
 
 const decodeEntities = (s: string) =>
   s
@@ -80,6 +83,14 @@ function extractTitleTag(html: string): string | null {
   return decodeEntities(m[1])
     .replace(/[-_|]+\s*(淘宝|天猫|taobao|tmall|1688).*$/i, "")
     .trim() || null;
+}
+
+function isGenericTaobaoIntlPage(html: string): boolean {
+  const title = extractTitleTag(html) ?? "";
+  const desc = extractMeta(html, "description") ?? extractMeta(html, "page-desc") ?? "";
+  return /天貓淘寶海外|淘宝全球|花更少|買到寶|跨境电商平台|跨境電商平台/i.test(
+    `${title} ${desc}`,
+  );
 }
 
 /**
@@ -127,15 +138,16 @@ function collectImages(html: string, config: any): string[] {
   push(extractMeta(html, "og:image"));
 
   // Common structured locations across Taobao pages.
-  const item = config?.data?.item ?? config?.item ?? config?.props?.item ?? null;
+  const apiStackValue = config?.data?.apiStackValue ?? config?.apiStackValue ?? null;
+  const item = config?.data?.item ?? config?.item ?? config?.props?.item ?? apiStackValue?.item ?? null;
   const images: any[] =
-    item?.images ?? item?.imgs ?? config?.data?.images ?? config?.images ?? [];
+    item?.images ?? item?.imgs ?? config?.data?.images ?? config?.images ?? apiStackValue?.images ?? [];
   for (const im of images) {
     if (typeof im === "string") push(im);
     else if (im?.url) push(im.url);
     else if (im?.src) push(im.src);
   }
-  const skuBase = config?.data?.skuBase ?? config?.skuBase ?? null;
+  const skuBase = config?.data?.skuBase ?? config?.skuBase ?? apiStackValue?.skuBase ?? null;
   for (const p of skuBase?.props ?? []) {
     for (const v of p?.values ?? []) push(v?.image);
   }
@@ -165,13 +177,34 @@ function extractPropsAsInfo(config: any): ProductInfoRow[] {
     seen.add(k);
     rows.push({ label: l, value: v });
   };
-  const item = config?.data?.item ?? config?.item ?? null;
+  const apiStackValue = config?.data?.apiStackValue ?? config?.apiStackValue ?? null;
+  const item = config?.data?.item ?? config?.item ?? apiStackValue?.item ?? null;
   const props: any[] = item?.props ?? item?.attributes ?? [];
   for (const p of props) {
     if (p?.name && p?.value) push(String(p.name), String(p.value));
     else if (typeof p === "string" && p.includes(":")) {
       const [a, b] = p.split(":");
       if (a && b) push(a, b);
+    }
+  }
+  const groupProps: any[] =
+    config?.data?.props?.groupProps ??
+    config?.props?.groupProps ??
+    apiStackValue?.props?.groupProps ??
+    [];
+  for (const group of groupProps) {
+    if (!group || typeof group !== "object") continue;
+    for (const entries of Object.values(group)) {
+      const list = Array.isArray(entries) ? entries : [entries];
+      for (const entry of list) {
+        if (!entry || typeof entry !== "object") continue;
+        for (const [label, value] of Object.entries(entry)) {
+          if (value == null) continue;
+          if (typeof value === "string" || typeof value === "number") {
+            push(label, String(value));
+          }
+        }
+      }
     }
   }
   return rows;
@@ -183,7 +216,8 @@ function extractOptionGroupsAndVariants(config: any): {
 } {
   const groups: OptionGroup[] = [];
   const variants: ParsedVariant[] = [];
-  const skuBase = config?.data?.skuBase ?? config?.skuBase ?? null;
+  const apiStackValue = config?.data?.apiStackValue ?? config?.apiStackValue ?? null;
+  const skuBase = config?.data?.skuBase ?? config?.skuBase ?? apiStackValue?.skuBase ?? null;
   if (!skuBase) return { optionGroups: groups, variants: variants };
 
   const props: any[] = skuBase.props ?? [];
@@ -202,11 +236,12 @@ function extractOptionGroupsAndVariants(config: any): {
     groups.push({ name: groupName, level: i + 1, prefix: null, values });
   });
 
-  const skus: any[] = skuBase.skus ?? config?.data?.skuCore?.sku2info
-    ? Object.entries(config?.data?.skuCore?.sku2info ?? {}).map(([id, info]: any) => ({
+  const sku2info = config?.data?.skuCore?.sku2info ?? apiStackValue?.skuCore?.sku2info ?? null;
+  const skus: any[] = skuBase.skus ?? sku2info
+    ? Object.entries(sku2info ?? {}).map(([id, info]: any) => ({
         skuId: id,
         propPath: info?.propPath,
-        price: info?.price?.priceText ?? info?.price,
+        price: info?.price?.priceText ?? info?.price?.priceMoney ?? info?.price,
       }))
     : skuBase.skus ?? [];
 
@@ -258,11 +293,15 @@ function extractOptionGroupsAndVariants(config: any): {
 }
 
 function extractBasePrice(config: any, variants: ParsedVariant[]): number | null {
-  const item = config?.data?.item ?? config?.item ?? null;
+  const apiStackValue = config?.data?.apiStackValue ?? config?.apiStackValue ?? null;
+  const item = config?.data?.item ?? config?.item ?? apiStackValue?.item ?? null;
   const candidates: any[] = [
     config?.data?.price?.price?.priceText,
     config?.data?.price?.price?.priceMoney,
     config?.data?.price?.extraPrices?.[0]?.priceText,
+    apiStackValue?.price?.price?.priceText,
+    apiStackValue?.price?.price?.priceMoney,
+    apiStackValue?.price?.extraPrices?.[0]?.priceText,
     item?.price,
     item?.priceInfo?.price,
     item?.priceInfo?.finalPrice,
@@ -287,10 +326,13 @@ function extractBasePrice(config: any, variants: ParsedVariant[]): number | null
 
 function extractDeliveryOptions(config: any): DeliveryOption[] {
   const out: DeliveryOption[] = [];
-  const item = config?.data?.item ?? config?.item ?? null;
+  const apiStackValue = config?.data?.apiStackValue ?? config?.apiStackValue ?? null;
+  const item = config?.data?.item ?? config?.item ?? apiStackValue?.item ?? null;
   const delivery =
     config?.data?.delivery ??
     config?.data?.deliveryVO ??
+    apiStackValue?.delivery ??
+    apiStackValue?.deliveryVO ??
     item?.delivery ??
     item?.deliveryInfo ??
     null;
@@ -339,7 +381,8 @@ function extractDeliveryOptions(config: any): DeliveryOption[] {
 
 function extractIntroSections(html: string, config: any): ProductIntroSection[] {
   const sections: ProductIntroSection[] = [];
-  const item = config?.data?.item ?? config?.item ?? null;
+  const apiStackValue = config?.data?.apiStackValue ?? config?.apiStackValue ?? null;
+  const item = config?.data?.item ?? config?.item ?? apiStackValue?.item ?? null;
   const desc =
     item?.description ?? item?.desc ?? item?.detailDesc ?? config?.description ?? null;
   if (typeof desc === "string" && desc.trim().length > 0) {
@@ -360,6 +403,172 @@ function extractIntroSections(html: string, config: any): ProductIntroSection[] 
     }
   }
   return sections;
+}
+
+function md5Hex(value: string): string {
+  return createHash("md5").update(value).digest("hex");
+}
+
+function parseSetCookie(headers: Headers): string {
+  const anyHeaders = headers as Headers & { getSetCookie?: () => string[] };
+  const cookies = anyHeaders.getSetCookie?.() ?? [];
+  const single = headers.get("set-cookie");
+  if (single) cookies.push(single);
+  return cookies
+    .map((cookie) => cookie.split(";")[0]?.trim())
+    .filter(Boolean)
+    .join("; ");
+}
+
+function extractMtopToken(cookieHeader: string): string {
+  const m = cookieHeader.match(/(?:^|;\s*)_m_h5_tk=([^_;]+)/);
+  return m?.[1] ?? "";
+}
+
+function parseMtopResponse(text: string): any | null {
+  const trimmed = text.trim();
+  const jsonText = trimmed.startsWith("{")
+    ? trimmed
+    : trimmed.replace(/^[^(]*\(/, "").replace(/\);?\s*$/, "");
+  try {
+    return JSON.parse(jsonText);
+  } catch {
+    return null;
+  }
+}
+
+function isMtopBlocked(payload: any): boolean {
+  const ret = Array.isArray(payload?.ret) ? payload.ret.join(" ") : String(payload?.ret ?? "");
+  const url = String(payload?.data?.url ?? payload?.data?.h5url ?? "");
+  return /RGV587|USER_VALIDATE|被挤爆|login\.taobao|_____tmd_____|punish|captcha|验证/i.test(`${ret} ${url}`);
+}
+
+function buildMtopConfig(data: any): any | null {
+  if (!data || typeof data !== "object") return null;
+  let apiStackValue: any = null;
+  const apiStackRaw = data?.apiStack?.[0]?.value;
+  if (typeof apiStackRaw === "string") {
+    try {
+      const parsed = JSON.parse(apiStackRaw);
+      apiStackValue = parsed?.global?.data ?? parsed;
+    } catch {
+      apiStackValue = null;
+    }
+  }
+  return {
+    data: {
+      ...data,
+      apiStackValue,
+      item: data.item ?? apiStackValue?.item,
+      skuBase: data.skuBase ?? apiStackValue?.skuBase,
+      skuCore: data.skuCore ?? apiStackValue?.skuCore,
+      props: data.props ?? apiStackValue?.props,
+      price: data.price ?? apiStackValue?.price,
+      delivery: data.delivery ?? apiStackValue?.delivery,
+      deliveryVO: data.deliveryVO ?? apiStackValue?.deliveryVO,
+    },
+  };
+}
+
+async function fetchMtop(
+  host: string,
+  api: string,
+  version: string,
+  data: Record<string, unknown>,
+  cookieHeader = "",
+): Promise<{ payload: any | null; cookieHeader: string; status: number; bodyLength: number }> {
+  const dataText = JSON.stringify(data);
+  const token = extractMtopToken(cookieHeader);
+  const t = String(Date.now());
+  const sign = md5Hex(`${token}&${t}&${TAOBAO_H5_APP_KEY}&${dataText}`);
+  const params = new URLSearchParams({
+    jsv: "2.7.2",
+    appKey: TAOBAO_H5_APP_KEY,
+    t,
+    sign,
+    api,
+    v: version,
+    type: "json",
+    dataType: "json",
+    data: dataText,
+  });
+  const res = await fetch(`${host}/h5/${api.toLowerCase()}/${version}/?${params.toString()}`, {
+    headers: {
+      ...MOBILE_HEADERS,
+      Accept: "application/json,text/javascript,*/*;q=0.8",
+      Referer: "https://m.intl.taobao.com/",
+      ...(cookieHeader ? { Cookie: cookieHeader } : {}),
+    },
+    redirect: "follow",
+  });
+  const body = await res.text();
+  const newCookies = parseSetCookie(res.headers);
+  const mergedCookie = [cookieHeader, newCookies].filter(Boolean).join("; ");
+  return {
+    payload: parseMtopResponse(body),
+    cookieHeader: mergedCookie,
+    status: res.status,
+    bodyLength: body.length,
+  };
+}
+
+async function fetchMtopDetailConfig(productId: string): Promise<{
+  config: any | null;
+  blocked: boolean;
+}> {
+  const detailData = {
+    exParams: JSON.stringify({
+      countryCode: "US",
+      channel: "oversea_seo",
+      ultron2: "true",
+      _ultron2_: "true",
+      pageCode: "miniAppDetail",
+      _from_: "miniapp",
+      openFrom: "pagedetail",
+      pageSource: "1",
+      supportV7: "true",
+    }),
+    detail_v: "3.5.0",
+    channel: "oversea_seo",
+    id: productId,
+  };
+  const legacyData = {
+    exParams: JSON.stringify({ countryCode: "US", channel: "oversea_seo" }),
+    channel: "oversea_seo",
+    itemNumId: productId,
+  };
+  const attempts = [
+    { host: "https://h5api-intl.m.taobao.com", api: "mtop.taobao.detail.data.get", version: "1.0", data: detailData },
+    { host: "https://h5api.m.taobao.com", api: "mtop.taobao.detail.data.get", version: "1.0", data: detailData },
+    { host: "https://acs.m.taobao.com", api: "mtop.taobao.detail.data.get", version: "1.0", data: detailData },
+    { host: "https://h5api.m.taobao.com", api: "mtop.taobao.detail.getdetail", version: "6.0", data: legacyData },
+  ];
+  let cookieHeader = "";
+  let blocked = false;
+  for (const attempt of attempts) {
+    try {
+      let result = await fetchMtop(attempt.host, attempt.api, attempt.version, attempt.data, cookieHeader);
+      cookieHeader = result.cookieHeader;
+      const ret = Array.isArray(result.payload?.ret) ? result.payload.ret.join(" ") : "";
+      if (/TOKEN_EMPTY|TOKEN_EXOIRED|ILLEGAL_ACCESS/i.test(ret) && cookieHeader) {
+        result = await fetchMtop(attempt.host, attempt.api, attempt.version, attempt.data, cookieHeader);
+        cookieHeader = result.cookieHeader;
+      }
+      if (isMtopBlocked(result.payload)) {
+        blocked = true;
+        continue;
+      }
+      if (result.payload?.data && !/FAIL|ERROR/i.test(ret)) {
+        const config = buildMtopConfig(result.payload.data);
+        if (config?.data?.item || config?.data?.skuBase || config?.data?.apiStackValue) {
+          return { config, blocked };
+        }
+      }
+    } catch {
+      continue;
+    }
+  }
+  return { config: null, blocked };
 }
 
 function emptyDiagnostics(htmlLength: number, fetchedAt: string, status: number | null) {
