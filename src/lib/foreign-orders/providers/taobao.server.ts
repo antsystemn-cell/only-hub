@@ -675,22 +675,21 @@ export const taobaoProvider: ExternalCatalogProvider = {
 
     const base: ParsedProduct = shell(url, productId, warnings, res.status, html.length);
 
-    // Detect obvious anti-bot blocks and short-circuit to manual editing.
-    if (
-      /login\.taobao\.com|nc_iconfont|滑动验证|verify\.taobao|请输入验证|slide-verify/i.test(
-        html,
-      ) ||
-      html.length < 800
-    ) {
+    const blockedHtml =
+      /login\.taobao\.com|nc_iconfont|滑动验证|verify\.taobao|请输入验证|slide-verify/i.test(html) ||
+      html.length < 800;
+    const genericIntlHtml = isGenericTaobaoIntlPage(html);
+    if (blockedHtml || genericIntlHtml) {
       warnings.push(
-        "Taobao автомат татахаас сэргийлж байна. Мэдээллийг гараар оруулна уу — үлдсэн үнэ/зургийг доор шууд засах боломжтой.",
+        "Taobao үндсэн хуудасны өгөгдлийг хаасан тул MTop/SEO өгөгдлийн сувгаар дахин татаж байна…",
       );
-      return base;
     }
 
     // Meta baseline
-    base.title = extractMeta(html, "og:title") || extractTitleTag(html);
-    base.description = extractMeta(html, "og:description") || extractMeta(html, "description");
+    if (!genericIntlHtml) {
+      base.title = extractMeta(html, "og:title") || extractTitleTag(html);
+      base.description = extractMeta(html, "og:description") || extractMeta(html, "description");
+    }
     const ogImage = normalizeImage(extractMeta(html, "og:image"));
     if (ogImage) base.coverImage = ogImage;
 
@@ -718,6 +717,21 @@ export const taobaoProvider: ExternalCatalogProvider = {
       }
     }
 
+    // Fallback: the actual Taobao mobile app uses MTop JSON endpoints. These
+    // often carry the full image / SKU / price matrix even when the public HTML
+    // is only the generic international landing shell.
+    if (!config || genericIntlHtml) {
+      const mtop = await fetchMtopDetailConfig(productId);
+      if (mtop.config) {
+        config = mtop.config;
+        extractionMethod = "EMBEDDED_JSON";
+      } else if (mtop.blocked) {
+        warnings.push(
+          "Taobao MTop өгөгдлийн суваг баталгаажуулалт шаардсан тул бүх сонголт, үнэ, зураг бүрэн татагдсангүй.",
+        );
+      }
+    }
+
     const gallery = collectImages(html, config ?? {});
     if (gallery.length > 0) {
       base.gallery = gallery;
@@ -732,7 +746,8 @@ export const taobaoProvider: ExternalCatalogProvider = {
       if (optionGroups.length) base.optionGroups = optionGroups;
       if (variants.length) base.variants = variants;
 
-      const item = config?.data?.item ?? config?.item ?? null;
+      const apiStackValue = config?.data?.apiStackValue ?? config?.apiStackValue ?? null;
+      const item = config?.data?.item ?? config?.item ?? apiStackValue?.item ?? null;
       if (item?.title && !base.title) base.title = String(item.title);
       if (item?.categoryName && !base.category) base.category = String(item.categoryName);
 
