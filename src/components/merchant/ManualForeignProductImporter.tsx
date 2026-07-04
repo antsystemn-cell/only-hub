@@ -44,6 +44,13 @@ type Props = {
   onClose: () => void;
 };
 
+const initialVariantDraft = (): VariantDraft => ({
+  sizeLabel: "Үндсэн",
+  colorLabel: "",
+  sourcePrice: 0,
+  isPurchasable: true,
+});
+
 export function ManualForeignProductImporter({ merchantId, source, onClose }: Props) {
   const qc = useQueryClient();
   const navigate = useNavigate();
@@ -58,9 +65,7 @@ export function ManualForeignProductImporter({ merchantId, source, onClose }: Pr
   const [description, setDescription] = useState("");
   const [coverImage, setCoverImage] = useState("");
   const [galleryText, setGalleryText] = useState("");
-  const [variants, setVariants] = useState<VariantDraft[]>([
-    { sizeLabel: "", colorLabel: "", sourcePrice: 0, isPurchasable: true },
-  ]);
+  const [variants, setVariants] = useState<VariantDraft[]>([initialVariantDraft()]);
 
   const fetchSettings = useServerFn(getMerchantForeignSettings);
   const settingsQuery = useQuery({
@@ -105,21 +110,23 @@ export function ManualForeignProductImporter({ merchantId, source, onClose }: Pr
   );
 
   const createFn = useServerFn(createForeignProduct);
+  const hasPrice = variants.some((v) => Number(v.sourcePrice) > 0);
+  const canCreateProduct = hasSettings && !!title.trim() && hasPrice && !createMutationIsPendingPlaceholder;
   const createMutation = useMutation({
     mutationFn: async () => {
       if (!title.trim()) throw new Error("Барааны нэрээ бөглөнө үү.");
       if (!sourceUrl.trim()) throw new Error("Эх сурвалжийн линкээ оруулна уу.");
       const pid = sourceProductId.trim() || fallbackProductId(sourceUrl);
       const validVariants = variants
-        .filter((v) => v.sizeLabel.trim() && v.sourcePrice > 0)
+        .filter((v) => v.sourcePrice > 0)
         .map((v) => ({
-          sizeLabel: v.sizeLabel.trim(),
+          sizeLabel: v.sizeLabel.trim() || "Үндсэн",
           colorLabel: v.colorLabel.trim() || null,
           sourcePrice: Number(v.sourcePrice),
           isPurchasable: v.isPurchasable,
         }));
       if (validVariants.length === 0) {
-        throw new Error("Хамгийн багадаа нэг хувилбар (хэмжээ + үнэ) оруулна уу.");
+        throw new Error(`Хамгийн багадаа нэг ${sourceDef.currency} үнэ оруулна уу.`);
       }
       return createFn({
         data: {
@@ -161,6 +168,8 @@ export function ManualForeignProductImporter({ merchantId, source, onClose }: Pr
   useEffect(() => {
     if (!coverImage && gallery.length > 0) setCoverImage(gallery[0]);
   }, [gallery, coverImage]);
+
+  const isCreateDisabled = !hasSettings || createMutation.isPending || !title.trim() || !hasPrice;
 
   return (
     <Card className="rounded-2xl p-4 md:p-5">
@@ -339,7 +348,7 @@ export function ManualForeignProductImporter({ merchantId, source, onClose }: Pr
             <Button
               size="sm"
               onClick={() => createMutation.mutate()}
-              disabled={!hasSettings || createMutation.isPending || !title.trim()}
+              disabled={isCreateDisabled}
             >
               {createMutation.isPending ? <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> : null}
               Бараа үүсгэх
@@ -374,7 +383,7 @@ function VariantsEditor({
     setVariants(variants.map((v, j) => (i === j ? { ...v, ...patch } : v)));
   const remove = (i: number) => setVariants(variants.filter((_, j) => j !== i));
   const add = () =>
-    setVariants([...variants, { sizeLabel: "", colorLabel: "", sourcePrice: 0, isPurchasable: true }]);
+    setVariants([...variants, initialVariantDraft()]);
 
   return (
     <div>

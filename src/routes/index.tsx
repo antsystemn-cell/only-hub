@@ -58,7 +58,6 @@ function Banner() {
   const hasDb = Array.isArray(dbSlides) && dbSlides.length > 0;
   // Only use fallback when we've confirmed there are no admin-configured banners.
   // While loading, render nothing to avoid flashing the default gradient banners.
-  if (isLoading && !hasDb) return null;
   const SLIDES = (hasDb ? dbSlides : FALLBACK_SLIDES) as any[];
 
   const [i, setI] = useState(0);
@@ -77,6 +76,8 @@ function Banner() {
     const t = setInterval(() => setI((v) => (v + 1) % SLIDES.length), 5500);
     return () => clearInterval(t);
   }, [paused, SLIDES.length]);
+
+  if (isLoading && !hasDb) return null;
 
   const onTouchStart = (e: React.TouchEvent) => {
     touchStartX.current = e.touches[0].clientX;
