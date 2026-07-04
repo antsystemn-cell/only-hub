@@ -111,7 +111,6 @@ export function ManualForeignProductImporter({ merchantId, source, onClose }: Pr
 
   const createFn = useServerFn(createForeignProduct);
   const hasPrice = variants.some((v) => Number(v.sourcePrice) > 0);
-  const canCreateProduct = hasSettings && !!title.trim() && hasPrice && !createMutationIsPendingPlaceholder;
   const createMutation = useMutation({
     mutationFn: async () => {
       if (!title.trim()) throw new Error("Барааны нэрээ бөглөнө үү.");
