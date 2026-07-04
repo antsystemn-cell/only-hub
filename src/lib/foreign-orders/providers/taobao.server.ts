@@ -20,12 +20,14 @@
 // ParsedProduct shell with warnings so the shared ForeignProductImporter UI
 // can render the manual edit form.
 import type {
+  DeliveryOption,
   ExternalCatalogProvider,
   ExtractionMethod,
   OptionGroup,
   ParsedProduct,
   ParsedVariant,
   ProductInfoRow,
+  ProductIntroSection,
 } from "./types";
 import { buildOptionSignature } from "./types";
 import { FOREIGN_SOURCES } from "../sources";
@@ -255,6 +257,111 @@ function extractOptionGroupsAndVariants(config: any): {
   return { optionGroups: groups, variants };
 }
 
+function extractBasePrice(config: any, variants: ParsedVariant[]): number | null {
+  const item = config?.data?.item ?? config?.item ?? null;
+  const candidates: any[] = [
+    config?.data?.price?.price?.priceText,
+    config?.data?.price?.price?.priceMoney,
+    config?.data?.price?.extraPrices?.[0]?.priceText,
+    item?.price,
+    item?.priceInfo?.price,
+    item?.priceInfo?.finalPrice,
+    config?.price,
+    config?.skuBase?.price,
+  ];
+  for (const c of candidates) {
+    if (c == null) continue;
+    if (typeof c === "number" && c > 0) return Math.round(c * 100) / 100;
+    if (typeof c === "string") {
+      const m = c.match(/(\d+(?:\.\d+)?)/);
+      if (m) return Math.round(Number(m[1]) * 100) / 100;
+    }
+  }
+  // Derive from variants: minimum available price.
+  const prices = variants
+    .map((v) => v.sourcePrice)
+    .filter((p): p is number => typeof p === "number" && p > 0);
+  if (prices.length) return Math.min(...prices);
+  return null;
+}
+
+function extractDeliveryOptions(config: any): DeliveryOption[] {
+  const out: DeliveryOption[] = [];
+  const item = config?.data?.item ?? config?.item ?? null;
+  const delivery =
+    config?.data?.delivery ??
+    config?.data?.deliveryVO ??
+    item?.delivery ??
+    item?.deliveryInfo ??
+    null;
+  if (!delivery) return out;
+
+  const fromCity: string | null =
+    delivery?.from ?? delivery?.fromCity ?? delivery?.location ?? null;
+  const toCity: string | null = delivery?.to ?? delivery?.toCity ?? null;
+  const feeRaw =
+    delivery?.postage ??
+    delivery?.expressFee ??
+    delivery?.freight ??
+    delivery?.fee ??
+    null;
+
+  let fee: number | null = null;
+  if (typeof feeRaw === "number") fee = feeRaw;
+  else if (typeof feeRaw === "string") {
+    const m = feeRaw.match(/(\d+(?:\.\d+)?)/);
+    if (m) fee = Number(m[1]);
+    if (/免运费|包邮|free/i.test(feeRaw)) fee = 0;
+  }
+
+  const label = [fromCity, toCity].filter(Boolean).join(" → ") || "Taobao хүргэлт";
+  out.push({
+    type: label,
+    estimatedDays: null,
+    displayedPrice: fee,
+    domesticDeliveryFee: fee,
+  });
+
+  const services: any[] = delivery?.services ?? delivery?.serviceList ?? [];
+  for (const s of services) {
+    if (!s) continue;
+    const t = String(s?.title ?? s?.name ?? "").trim();
+    if (!t) continue;
+    out.push({
+      type: t,
+      estimatedDays: s?.days ? String(s.days) : null,
+      displayedPrice: typeof s?.fee === "number" ? s.fee : null,
+      domesticDeliveryFee: null,
+    });
+  }
+  return out;
+}
+
+function extractIntroSections(html: string, config: any): ProductIntroSection[] {
+  const sections: ProductIntroSection[] = [];
+  const item = config?.data?.item ?? config?.item ?? null;
+  const desc =
+    item?.description ?? item?.desc ?? item?.detailDesc ?? config?.description ?? null;
+  if (typeof desc === "string" && desc.trim().length > 0) {
+    const clean = desc.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+    if (clean.length > 10) {
+      sections.push({ title: "Барааны танилцуулга", content: clean.slice(0, 4000) });
+    }
+  }
+
+  // Extract description-detail images/text block from mobile HTML.
+  const descBlock = html.match(
+    /<div[^>]+(?:id|class)=["'][^"']*(?:desc|detail)[^"']*["'][^>]*>([\s\S]*?)<\/div>/i,
+  );
+  if (descBlock?.[1] && sections.length === 0) {
+    const clean = descBlock[1].replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+    if (clean.length > 20) {
+      sections.push({ title: "Дэлгэрэнгүй", content: clean.slice(0, 4000) });
+    }
+  }
+  return sections;
+}
+
 function emptyDiagnostics(htmlLength: number, fetchedAt: string, status: number | null) {
   return {
     httpStatus: status,
@@ -379,8 +486,28 @@ export const taobaoProvider: ExternalCatalogProvider = {
     if (ogImage) base.coverImage = ogImage;
 
     // Structured JSON, if we can find it.
-    const config = extractPageConfig(html);
+    let config = extractPageConfig(html);
     if (config) extractionMethod = "EMBEDDED_JSON";
+
+    // Fallback: try Taobao's cached mobile detail JSON API when the mobile
+    // HTML shell did not embed a config blob.
+    if (!config) {
+      const apiRes = await tryFetch(
+        `https://hws.m.taobao.com/cache/wdetail/5.0/?id=${productId}`,
+        MOBILE_HEADERS,
+      );
+      if (apiRes && apiRes.status < 400) {
+        // Endpoint returns either raw JSON or JSONP-wrapped JSON.
+        const jsonText = apiRes.body.replace(/^[^{]*/, "").replace(/[^}]*$/, "");
+        try {
+          const parsed = JSON.parse(jsonText);
+          config = parsed?.data ? { data: parsed.data } : parsed;
+          extractionMethod = "EMBEDDED_JSON";
+        } catch {
+          /* keep null */
+        }
+      }
+    }
 
     const gallery = collectImages(html, config ?? {});
     if (gallery.length > 0) {
@@ -399,6 +526,15 @@ export const taobaoProvider: ExternalCatalogProvider = {
       const item = config?.data?.item ?? config?.item ?? null;
       if (item?.title && !base.title) base.title = String(item.title);
       if (item?.categoryName && !base.category) base.category = String(item.categoryName);
+
+      const basePrice = extractBasePrice(config, base.variants);
+      if (basePrice != null) base.baseSourcePrice = basePrice;
+
+      const delivery = extractDeliveryOptions(config);
+      if (delivery.length) base.deliveryOptions = delivery;
+
+      const intro = extractIntroSections(html, config);
+      if (intro.length) base.productIntroSections = intro;
     }
 
     // Decide overall status.
@@ -421,6 +557,7 @@ export const taobaoProvider: ExternalCatalogProvider = {
     base.diagnostics.foundProductInfoCount = base.productInfo.length;
     base.diagnostics.foundOptionGroupsCount = base.optionGroups.length;
     base.diagnostics.foundVariantsCount = base.variants.length;
+    base.diagnostics.foundDeliveryOptionsCount = base.deliveryOptions.length;
     base.diagnostics.variantsAvailable = base.variants.filter(
       (v) => v.availabilityStatus === "AVAILABLE",
     ).length;
