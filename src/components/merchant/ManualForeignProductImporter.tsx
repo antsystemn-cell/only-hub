@@ -515,5 +515,3 @@ function QuickSettingsForm({ merchantId, source }: { merchantId: string; source:
     </div>
   );
 }
-// Silence unused import warning when Badge isn't rendered directly.
-export const __manual_importer_badge_ref = Badge;
