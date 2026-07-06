@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as WishlistRouteImport } from './routes/wishlist'
 import { Route as StoresRouteImport } from './routes/stores'
 import { Route as RegisterRouteImport } from './routes/register'
+import { Route as McpRouteImport } from './routes/mcp'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as DriverRouteImport } from './routes/driver'
 import { Route as CartRouteImport } from './routes/cart'
@@ -42,6 +43,8 @@ import { Route as AdminBannersRouteImport } from './routes/admin.banners'
 import { Route as AdminBackupOldDeliveryRouteImport } from './routes/admin.backup-old-delivery'
 import { Route as AdminAnalyticsRouteImport } from './routes/admin.analytics'
 import { Route as AccountOrdersRouteImport } from './routes/account.orders'
+import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
+import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]/list-tools'
 import { Route as MerchantDashboardIndexRouteImport } from './routes/merchant.dashboard.index'
 import { Route as AdminBlogIndexRouteImport } from './routes/admin.blog.index'
 import { Route as StoreMerchantSlugCheckoutRouteImport } from './routes/store.$merchantSlug.checkout'
@@ -63,6 +66,7 @@ import { Route as AuthTokiLoginRouteImport } from './routes/auth.toki.login'
 import { Route as AuthTokiCallbackRouteImport } from './routes/auth.toki.callback'
 import { Route as AdminBlogNewRouteImport } from './routes/admin.blog.new'
 import { Route as AdminBlogIdRouteImport } from './routes/admin.blog.$id'
+import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[.mcp]/invoke-tool/$tool'
 import { Route as MerchantDashboardInventoryIndexRouteImport } from './routes/merchant.dashboard.inventory.index'
 import { Route as StoreMerchantSlugProductProductSlugRouteImport } from './routes/store.$merchantSlug.product.$productSlug'
 import { Route as StoreMerchantSlugOrderOrderIdRouteImport } from './routes/store.$merchantSlug.order.$orderId'
@@ -96,6 +100,11 @@ const StoresRoute = StoresRouteImport.update({
 const RegisterRoute = RegisterRouteImport.update({
   id: '/register',
   path: '/register',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const McpRoute = McpRouteImport.update({
+  id: '/mcp',
+  path: '/mcp',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -248,6 +257,18 @@ const AccountOrdersRoute = AccountOrdersRouteImport.update({
   path: '/orders',
   getParentRoute: () => AccountRoute,
 } as any)
+const Char91DotwellKnownChar93OauthProtectedResourceRoute =
+  Char91DotwellKnownChar93OauthProtectedResourceRouteImport.update({
+    id: '/.well-known/oauth-protected-resource',
+    path: '/.well-known/oauth-protected-resource',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const Char91DotmcpChar93ListToolsRoute =
+  Char91DotmcpChar93ListToolsRouteImport.update({
+    id: '/.mcp/list-tools',
+    path: '/.mcp/list-tools',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const MerchantDashboardIndexRoute = MerchantDashboardIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -363,6 +384,12 @@ const AdminBlogIdRoute = AdminBlogIdRouteImport.update({
   path: '/blog/$id',
   getParentRoute: () => AdminRoute,
 } as any)
+const Char91DotmcpChar93InvokeToolToolRoute =
+  Char91DotmcpChar93InvokeToolToolRouteImport.update({
+    id: '/.mcp/invoke-tool/$tool',
+    path: '/.mcp/invoke-tool/$tool',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const MerchantDashboardInventoryIndexRoute =
   MerchantDashboardInventoryIndexRouteImport.update({
     id: '/',
@@ -481,9 +508,12 @@ export interface FileRoutesByFullPath {
   '/cart': typeof CartRoute
   '/driver': typeof DriverRoute
   '/login': typeof LoginRoute
+  '/mcp': typeof McpRoute
   '/register': typeof RegisterRoute
   '/stores': typeof StoresRoute
   '/wishlist': typeof WishlistRoute
+  '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
+  '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/account/orders': typeof AccountOrdersRoute
   '/admin/analytics': typeof AdminAnalyticsRoute
   '/admin/backup-old-delivery': typeof AdminBackupOldDeliveryRoute
@@ -508,6 +538,7 @@ export interface FileRoutesByFullPath {
   '/track/$token': typeof TrackTokenRoute
   '/admin/': typeof AdminIndexRoute
   '/blog/': typeof BlogIndexRoute
+  '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/admin/blog/$id': typeof AdminBlogIdRoute
   '/admin/blog/new': typeof AdminBlogNewRoute
   '/auth/toki/callback': typeof AuthTokiCallbackRoute
@@ -555,9 +586,12 @@ export interface FileRoutesByTo {
   '/cart': typeof CartRoute
   '/driver': typeof DriverRoute
   '/login': typeof LoginRoute
+  '/mcp': typeof McpRoute
   '/register': typeof RegisterRoute
   '/stores': typeof StoresRoute
   '/wishlist': typeof WishlistRoute
+  '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
+  '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/account/orders': typeof AccountOrdersRoute
   '/admin/analytics': typeof AdminAnalyticsRoute
   '/admin/backup-old-delivery': typeof AdminBackupOldDeliveryRoute
@@ -581,6 +615,7 @@ export interface FileRoutesByTo {
   '/track/$token': typeof TrackTokenRoute
   '/admin': typeof AdminIndexRoute
   '/blog': typeof BlogIndexRoute
+  '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/admin/blog/$id': typeof AdminBlogIdRoute
   '/admin/blog/new': typeof AdminBlogNewRoute
   '/auth/toki/callback': typeof AuthTokiCallbackRoute
@@ -629,9 +664,12 @@ export interface FileRoutesById {
   '/cart': typeof CartRoute
   '/driver': typeof DriverRoute
   '/login': typeof LoginRoute
+  '/mcp': typeof McpRoute
   '/register': typeof RegisterRoute
   '/stores': typeof StoresRoute
   '/wishlist': typeof WishlistRoute
+  '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
+  '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/account/orders': typeof AccountOrdersRoute
   '/admin/analytics': typeof AdminAnalyticsRoute
   '/admin/backup-old-delivery': typeof AdminBackupOldDeliveryRoute
@@ -656,6 +694,7 @@ export interface FileRoutesById {
   '/track/$token': typeof TrackTokenRoute
   '/admin/': typeof AdminIndexRoute
   '/blog/': typeof BlogIndexRoute
+  '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/admin/blog/$id': typeof AdminBlogIdRoute
   '/admin/blog/new': typeof AdminBlogNewRoute
   '/auth/toki/callback': typeof AuthTokiCallbackRoute
@@ -706,9 +745,12 @@ export interface FileRouteTypes {
     | '/cart'
     | '/driver'
     | '/login'
+    | '/mcp'
     | '/register'
     | '/stores'
     | '/wishlist'
+    | '/.mcp/list-tools'
+    | '/.well-known/oauth-protected-resource'
     | '/account/orders'
     | '/admin/analytics'
     | '/admin/backup-old-delivery'
@@ -733,6 +775,7 @@ export interface FileRouteTypes {
     | '/track/$token'
     | '/admin/'
     | '/blog/'
+    | '/.mcp/invoke-tool/$tool'
     | '/admin/blog/$id'
     | '/admin/blog/new'
     | '/auth/toki/callback'
@@ -780,9 +823,12 @@ export interface FileRouteTypes {
     | '/cart'
     | '/driver'
     | '/login'
+    | '/mcp'
     | '/register'
     | '/stores'
     | '/wishlist'
+    | '/.mcp/list-tools'
+    | '/.well-known/oauth-protected-resource'
     | '/account/orders'
     | '/admin/analytics'
     | '/admin/backup-old-delivery'
@@ -806,6 +852,7 @@ export interface FileRouteTypes {
     | '/track/$token'
     | '/admin'
     | '/blog'
+    | '/.mcp/invoke-tool/$tool'
     | '/admin/blog/$id'
     | '/admin/blog/new'
     | '/auth/toki/callback'
@@ -853,9 +900,12 @@ export interface FileRouteTypes {
     | '/cart'
     | '/driver'
     | '/login'
+    | '/mcp'
     | '/register'
     | '/stores'
     | '/wishlist'
+    | '/.mcp/list-tools'
+    | '/.well-known/oauth-protected-resource'
     | '/account/orders'
     | '/admin/analytics'
     | '/admin/backup-old-delivery'
@@ -880,6 +930,7 @@ export interface FileRouteTypes {
     | '/track/$token'
     | '/admin/'
     | '/blog/'
+    | '/.mcp/invoke-tool/$tool'
     | '/admin/blog/$id'
     | '/admin/blog/new'
     | '/auth/toki/callback'
@@ -929,9 +980,12 @@ export interface RootRouteChildren {
   CartRoute: typeof CartRoute
   DriverRoute: typeof DriverRoute
   LoginRoute: typeof LoginRoute
+  McpRoute: typeof McpRoute
   RegisterRoute: typeof RegisterRoute
   StoresRoute: typeof StoresRoute
   WishlistRoute: typeof WishlistRoute
+  Char91DotmcpChar93ListToolsRoute: typeof Char91DotmcpChar93ListToolsRoute
+  Char91DotwellKnownChar93OauthProtectedResourceRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   BlogSlugRoute: typeof BlogSlugRoute
   MerchantDashboardRoute: typeof MerchantDashboardRouteWithChildren
   MerchantLoginRoute: typeof MerchantLoginRoute
@@ -939,6 +993,7 @@ export interface RootRouteChildren {
   StoreMerchantSlugRoute: typeof StoreMerchantSlugRouteWithChildren
   TrackTokenRoute: typeof TrackTokenRoute
   BlogIndexRoute: typeof BlogIndexRoute
+  Char91DotmcpChar93InvokeToolToolRoute: typeof Char91DotmcpChar93InvokeToolToolRoute
   AuthTokiCallbackRoute: typeof AuthTokiCallbackRoute
   AuthTokiLoginRoute: typeof AuthTokiLoginRoute
   ApiPublicDeliveryWebhookRoute: typeof ApiPublicDeliveryWebhookRoute
@@ -977,6 +1032,13 @@ declare module '@tanstack/react-router' {
       path: '/register'
       fullPath: '/register'
       preLoaderRoute: typeof RegisterRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/mcp': {
+      id: '/mcp'
+      path: '/mcp'
+      fullPath: '/mcp'
+      preLoaderRoute: typeof McpRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -1189,6 +1251,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AccountOrdersRouteImport
       parentRoute: typeof AccountRoute
     }
+    '/.well-known/oauth-protected-resource': {
+      id: '/.well-known/oauth-protected-resource'
+      path: '/.well-known/oauth-protected-resource'
+      fullPath: '/.well-known/oauth-protected-resource'
+      preLoaderRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/.mcp/list-tools': {
+      id: '/.mcp/list-tools'
+      path: '/.mcp/list-tools'
+      fullPath: '/.mcp/list-tools'
+      preLoaderRoute: typeof Char91DotmcpChar93ListToolsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/merchant/dashboard/': {
       id: '/merchant/dashboard/'
       path: '/'
@@ -1335,6 +1411,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/blog/$id'
       preLoaderRoute: typeof AdminBlogIdRouteImport
       parentRoute: typeof AdminRoute
+    }
+    '/.mcp/invoke-tool/$tool': {
+      id: '/.mcp/invoke-tool/$tool'
+      path: '/.mcp/invoke-tool/$tool'
+      fullPath: '/.mcp/invoke-tool/$tool'
+      preLoaderRoute: typeof Char91DotmcpChar93InvokeToolToolRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/merchant/dashboard/inventory/': {
       id: '/merchant/dashboard/inventory/'
@@ -1615,9 +1698,13 @@ const rootRouteChildren: RootRouteChildren = {
   CartRoute: CartRoute,
   DriverRoute: DriverRoute,
   LoginRoute: LoginRoute,
+  McpRoute: McpRoute,
   RegisterRoute: RegisterRoute,
   StoresRoute: StoresRoute,
   WishlistRoute: WishlistRoute,
+  Char91DotmcpChar93ListToolsRoute: Char91DotmcpChar93ListToolsRoute,
+  Char91DotwellKnownChar93OauthProtectedResourceRoute:
+    Char91DotwellKnownChar93OauthProtectedResourceRoute,
   BlogSlugRoute: BlogSlugRoute,
   MerchantDashboardRoute: MerchantDashboardRouteWithChildren,
   MerchantLoginRoute: MerchantLoginRoute,
@@ -1625,6 +1712,7 @@ const rootRouteChildren: RootRouteChildren = {
   StoreMerchantSlugRoute: StoreMerchantSlugRouteWithChildren,
   TrackTokenRoute: TrackTokenRoute,
   BlogIndexRoute: BlogIndexRoute,
+  Char91DotmcpChar93InvokeToolToolRoute: Char91DotmcpChar93InvokeToolToolRoute,
   AuthTokiCallbackRoute: AuthTokiCallbackRoute,
   AuthTokiLoginRoute: AuthTokiLoginRoute,
   ApiPublicDeliveryWebhookRoute: ApiPublicDeliveryWebhookRoute,
@@ -1646,3 +1734,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
