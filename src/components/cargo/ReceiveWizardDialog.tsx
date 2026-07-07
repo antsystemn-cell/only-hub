@@ -1,9 +1,10 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import {
-  Loader2, PackageCheck, ArrowRight, ArrowLeft, CheckCircle2, AlertTriangle, ClipboardCheck,
+  Loader2, PackageCheck, ArrowRight, ArrowLeft, CheckCircle2, AlertTriangle,
+  ClipboardCheck, Split, Plus, X,
 } from "lucide-react";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
@@ -15,11 +16,26 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
 import { listIncomingCargoItems } from "@/lib/onlycargo/incoming.functions";
-import { receiveIncomingCargoItems } from "@/lib/onlycargo/receive.functions";
+import {
+  receiveIncomingCargoItems,
+  getReceiveValidationContext,
+} from "@/lib/onlycargo/receive.functions";
+
+type SplitLine = {
+  variant_id: string | null;
+  received_quantity: number;
+  damaged_quantity: number;
+  unit_cost: number | null;
+  notes: string;
+};
 
 type Draft = {
   incoming_item_id: string;
@@ -27,14 +43,32 @@ type Draft = {
   damaged_quantity: number;
   unit_cost: number | null;
   notes: string;
+  variant_id: string | null; // override / current
+  allow_extra: boolean;
+  splits: SplitLine[] | null; // null = not split
 };
 
 const STEPS = [
   { key: 1, label: "Ачаа" },
   { key: 2, label: "Бараа" },
-  { key: 3, label: "Тоо хэмжээ" },
+  { key: 3, label: "Хувилбар / Тоо" },
   { key: 4, label: "Баталгаажуулах" },
 ] as const;
+
+function variantLabel(v: any): string {
+  return (
+    v?.label ||
+    [v?.size_label, v?.color_label].filter(Boolean).join(" / ") ||
+    v?.option_signature ||
+    v?.id?.slice(0, 6) ||
+    "хувилбар"
+  );
+}
+
+function normalizeQty(v: unknown): number {
+  const n = Number(v);
+  return Number.isFinite(n) && n >= 0 ? n : 0;
+}
 
 export function ReceiveWizardDialog({
   open,
@@ -54,6 +88,7 @@ export function ReceiveWizardDialog({
   const qc = useQueryClient();
   const listFn = useServerFn(listIncomingCargoItems);
   const receiveFn = useServerFn(receiveIncomingCargoItems);
+  const ctxFn = useServerFn(getReceiveValidationContext);
 
   const { data: rows = [], isLoading } = useQuery({
     queryKey: ["incoming-cargo-items", merchantId, trackNumber],
@@ -61,7 +96,6 @@ export function ReceiveWizardDialog({
     enabled: open,
   });
 
-  // exclude items already fully received or cancelled
   const receivable = useMemo(
     () =>
       (rows as any[]).filter(
@@ -69,6 +103,25 @@ export function ReceiveWizardDialog({
       ),
     [rows],
   );
+
+  const linkedProductIds = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          receivable.map((r) => r.product_id).filter(Boolean) as string[],
+        ),
+      ),
+    [receivable],
+  );
+
+  const { data: ctx } = useQuery({
+    queryKey: ["receive-ctx", merchantId, linkedProductIds.sort().join(",")],
+    queryFn: () =>
+      ctxFn({ data: { merchantId, productIds: linkedProductIds } }),
+    enabled: open && linkedProductIds.length > 0,
+  });
+
+  const variantsByProduct: Record<string, any[]> = ctx?.variants ?? {};
 
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
   const [drafts, setDrafts] = useState<Record<string, Draft>>({});
@@ -80,28 +133,33 @@ export function ReceiveWizardDialog({
     pending_planned: number;
   }>(null);
 
-  // seed drafts on open / data change
-  useMemo(() => {
+  // Seed drafts when dialog opens or data loads.
+  useEffect(() => {
     if (!open) return;
-    const next: Record<string, Draft> = {};
-    for (const r of receivable) {
-      const remaining = Math.max(
-        0,
-        Number(r.planned_quantity ?? 0) -
-          Number(r.received_quantity ?? 0) -
-          Number(r.damaged_quantity ?? 0),
-      );
-      next[r.id] = drafts[r.id] ?? {
-        incoming_item_id: r.id,
-        received_quantity: remaining,
-        damaged_quantity: 0,
-        unit_cost: r.planned_unit_cost == null ? null : Number(r.planned_unit_cost),
-        notes: "",
-      };
-    }
-    setDrafts(next);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, rows]);
+    setDrafts((prev) => {
+      const next: Record<string, Draft> = { ...prev };
+      for (const r of receivable) {
+        if (next[r.id]) continue;
+        const remaining = Math.max(
+          0,
+          Number(r.planned_quantity ?? 0) -
+            Number(r.received_quantity ?? 0) -
+            Number(r.damaged_quantity ?? 0),
+        );
+        next[r.id] = {
+          incoming_item_id: r.id,
+          received_quantity: remaining,
+          damaged_quantity: 0,
+          unit_cost: r.planned_unit_cost == null ? null : Number(r.planned_unit_cost),
+          notes: "",
+          variant_id: r.variant_id ?? null,
+          allow_extra: false,
+          splits: null,
+        };
+      }
+      return next;
+    });
+  }, [open, receivable]);
 
   function resetAndClose(v: boolean) {
     if (!v) {
@@ -112,14 +170,115 @@ export function ReceiveWizardDialog({
     onOpenChange(v);
   }
 
+  function patch(id: string, p: Partial<Draft>) {
+    setDrafts((prev) => ({ ...prev, [id]: { ...prev[id], ...p } }));
+  }
+
+  function addSplit(id: string) {
+    setDrafts((prev) => {
+      const d = prev[id];
+      const base: SplitLine = {
+        variant_id: null,
+        received_quantity: 0,
+        damaged_quantity: 0,
+        unit_cost: d.unit_cost,
+        notes: "",
+      };
+      const splits = d.splits ?? [
+        {
+          variant_id: d.variant_id,
+          received_quantity: d.received_quantity,
+          damaged_quantity: d.damaged_quantity,
+          unit_cost: d.unit_cost,
+          notes: d.notes,
+        },
+      ];
+      return { ...prev, [id]: { ...d, splits: [...splits, base] } };
+    });
+  }
+
+  function updateSplit(id: string, idx: number, p: Partial<SplitLine>) {
+    setDrafts((prev) => {
+      const d = prev[id];
+      if (!d.splits) return prev;
+      const splits = d.splits.map((s, i) => (i === idx ? { ...s, ...p } : s));
+      return { ...prev, [id]: { ...d, splits } };
+    });
+  }
+
+  function removeSplit(id: string, idx: number) {
+    setDrafts((prev) => {
+      const d = prev[id];
+      if (!d.splits) return prev;
+      const splits = d.splits.filter((_, i) => i !== idx);
+      return {
+        ...prev,
+        [id]: { ...d, splits: splits.length === 0 ? null : splits },
+      };
+    });
+  }
+
+  function collapseSplits(id: string) {
+    setDrafts((prev) => ({ ...prev, [id]: { ...prev[id], splits: null } }));
+  }
+
+  // Validation for step 3 → step 4 progression.
+  const validation = useMemo(() => {
+    const errs: string[] = [];
+    for (const r of receivable) {
+      const d = drafts[r.id];
+      if (!d) continue;
+      const variants = r.product_id ? (variantsByProduct[r.product_id] ?? []) : [];
+      const hasVariants = variants.length > 0;
+      const remaining = Math.max(
+        0,
+        Number(r.planned_quantity ?? 0) -
+          Number(r.received_quantity ?? 0) -
+          Number(r.damaged_quantity ?? 0),
+      );
+
+      if (d.splits) {
+        const total = d.splits.reduce(
+          (s, l) => s + normalizeQty(l.received_quantity) + normalizeQty(l.damaged_quantity),
+          0,
+        );
+        if (total === 0) continue;
+        if (hasVariants && d.splits.some((l) => !l.variant_id)) {
+          errs.push(`"${r.planned_product_name}" — хуваалт бүрд хувилбар сонгоно уу.`);
+        }
+        if (!d.allow_extra && total > remaining) {
+          errs.push(`"${r.planned_product_name}" — хуваалтын нийлбэр үлдэгдлээс их байна.`);
+        }
+      } else {
+        const total = normalizeQty(d.received_quantity) + normalizeQty(d.damaged_quantity);
+        if (total === 0) continue;
+        if (hasVariants && !d.variant_id) {
+          errs.push(`"${r.planned_product_name}" — хувилбар сонгоно уу.`);
+        }
+        if (!d.allow_extra && total > remaining) {
+          errs.push(`"${r.planned_product_name}" — Хүлээн авсан тоо төлөвлөснөөс их байна.`);
+        }
+      }
+    }
+    return errs;
+  }, [receivable, drafts, variantsByProduct]);
+
   const totals = useMemo(() => {
-    let units = 0,
-      damaged = 0,
-      lines = 0;
+    let units = 0, damaged = 0, lines = 0;
     for (const d of Object.values(drafts)) {
-      if (d.received_quantity > 0 || d.damaged_quantity > 0) lines++;
-      units += d.received_quantity;
-      damaged += d.damaged_quantity;
+      if (d.splits) {
+        for (const l of d.splits) {
+          const r = normalizeQty(l.received_quantity);
+          const dm = normalizeQty(l.damaged_quantity);
+          if (r > 0 || dm > 0) lines++;
+          units += r; damaged += dm;
+        }
+      } else {
+        const r = normalizeQty(d.received_quantity);
+        const dm = normalizeQty(d.damaged_quantity);
+        if (r > 0 || dm > 0) lines++;
+        units += r; damaged += dm;
+      }
     }
     return { units, damaged, lines };
   }, [drafts]);
@@ -131,14 +290,38 @@ export function ReceiveWizardDialog({
           merchantId,
           trackNumber,
           items: Object.values(drafts)
-            .filter((d) => d.received_quantity > 0 || d.damaged_quantity > 0)
-            .map((d) => ({
-              incoming_item_id: d.incoming_item_id,
-              received_quantity: d.received_quantity,
-              damaged_quantity: d.damaged_quantity,
-              unit_cost: d.unit_cost ?? null,
-              notes: d.notes.trim() || null,
-            })),
+            .map((d) => {
+              if (d.splits) {
+                const clean = d.splits
+                  .filter((l) => normalizeQty(l.received_quantity) > 0 || normalizeQty(l.damaged_quantity) > 0)
+                  .map((l) => ({
+                    variant_id: l.variant_id,
+                    received_quantity: normalizeQty(l.received_quantity),
+                    damaged_quantity: normalizeQty(l.damaged_quantity),
+                    unit_cost: l.unit_cost ?? null,
+                    notes: l.notes.trim() || null,
+                  }));
+                if (clean.length === 0) return null;
+                return {
+                  incoming_item_id: d.incoming_item_id,
+                  received_quantity: 0,
+                  damaged_quantity: 0,
+                  allow_extra: d.allow_extra,
+                  splits: clean,
+                };
+              }
+              if (d.received_quantity <= 0 && d.damaged_quantity <= 0) return null;
+              return {
+                incoming_item_id: d.incoming_item_id,
+                received_quantity: normalizeQty(d.received_quantity),
+                damaged_quantity: normalizeQty(d.damaged_quantity),
+                unit_cost: d.unit_cost ?? null,
+                notes: d.notes.trim() || null,
+                variant_id: d.variant_id,
+                allow_extra: d.allow_extra,
+              };
+            })
+            .filter(Boolean) as any[],
         },
       }),
     onSuccess: (res: any) => {
@@ -170,7 +353,6 @@ export function ReceiveWizardDialog({
           </DialogDescription>
         </DialogHeader>
 
-        {/* Stepper */}
         {!done && (
           <ol className="grid grid-cols-4 gap-2 mb-2">
             {STEPS.map((s) => (
@@ -231,8 +413,8 @@ export function ReceiveWizardDialog({
                   </div>
                 )}
                 <div className="border-t pt-2 mt-2 text-xs text-muted-foreground">
-                  Дараагийн алхамд барааны жагсаалт, хүлээн авах тоог тохируулна. Нөөц зөвхөн
-                  баталгаажуулсны дараа л өөрчлөгдөнө.
+                  Дараагийн алхмуудад бараа, хувилбар, бодит тоог баталгаажуулна. Нөөц зөвхөн эцсийн
+                  баталгаажуулалтын дараа л шинэчлэгдэнэ.
                 </div>
               </Card>
             )}
@@ -243,9 +425,10 @@ export function ReceiveWizardDialog({
                   <TableHeader>
                     <TableRow>
                       <TableHead>Бараа</TableHead>
-                      <TableHead className="text-right">Хүлээгдэж буй</TableHead>
-                      <TableHead className="text-right">Өмнө авсан</TableHead>
+                      <TableHead className="text-right">Төлөвл.</TableHead>
+                      <TableHead className="text-right">Өмнө</TableHead>
                       <TableHead className="text-right">Үлдсэн</TableHead>
+                      <TableHead>Хувилбар</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -256,6 +439,7 @@ export function ReceiveWizardDialog({
                           Number(r.received_quantity ?? 0) -
                           Number(r.damaged_quantity ?? 0),
                       );
+                      const variants = r.product_id ? (variantsByProduct[r.product_id] ?? []) : [];
                       return (
                         <TableRow key={r.id}>
                           <TableCell>
@@ -267,6 +451,11 @@ export function ReceiveWizardDialog({
                           <TableCell className="text-right">{Number(r.planned_quantity).toLocaleString("mn-MN")}</TableCell>
                           <TableCell className="text-right">{Number(r.received_quantity).toLocaleString("mn-MN")}</TableCell>
                           <TableCell className="text-right font-semibold">{remaining.toLocaleString("mn-MN")}</TableCell>
+                          <TableCell className="text-xs">
+                            {variants.length === 0
+                              ? <span className="text-muted-foreground">—</span>
+                              : <Badge variant="outline">{variants.length} хувилбар</Badge>}
+                          </TableCell>
                         </TableRow>
                       );
                     })}
@@ -280,91 +469,174 @@ export function ReceiveWizardDialog({
                 {receivable.map((r: any) => {
                   const d = drafts[r.id];
                   if (!d) return null;
+                  const variants: any[] = r.product_id ? (variantsByProduct[r.product_id] ?? []) : [];
+                  const hasVariants = variants.length > 0;
                   const remaining = Math.max(
                     0,
                     Number(r.planned_quantity ?? 0) -
                       Number(r.received_quantity ?? 0) -
                       Number(r.damaged_quantity ?? 0),
                   );
-                  const total = d.received_quantity + d.damaged_quantity;
-                  const over = total > remaining;
+                  const currentTotal = d.splits
+                    ? d.splits.reduce((s, l) => s + normalizeQty(l.received_quantity) + normalizeQty(l.damaged_quantity), 0)
+                    : normalizeQty(d.received_quantity) + normalizeQty(d.damaged_quantity);
+                  const missing = Math.max(0, remaining - currentTotal);
+                  const over = !d.allow_extra && currentTotal > remaining;
+
                   return (
-                    <Card key={r.id} className="p-3 space-y-2">
+                    <Card key={r.id} className="p-3 space-y-3">
                       <div className="flex items-center justify-between gap-2 flex-wrap">
                         <div>
                           <div className="font-medium text-sm">{r.planned_product_name}</div>
                           <div className="text-[11px] text-muted-foreground">
                             Үлдсэн: <b>{remaining.toLocaleString("mn-MN")}</b>
+                            {" • "}Дутуу: <b>{missing.toLocaleString("mn-MN")}</b>
                           </div>
                         </div>
-                        {over && (
-                          <Badge variant="destructive" className="text-[10px]">
-                            <AlertTriangle className="h-3 w-3 mr-1" /> Үлдэгдлээс хэтэрсэн
-                          </Badge>
-                        )}
+                        <div className="flex gap-1">
+                          {hasVariants && !d.splits && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              type="button"
+                              onClick={() => addSplit(r.id)}
+                            >
+                              <Split className="h-3.5 w-3.5 mr-1" /> Хувилбар болгон хуваах
+                            </Button>
+                          )}
+                          {d.splits && (
+                            <Button size="sm" variant="ghost" type="button" onClick={() => collapseSplits(r.id)}>
+                              Хуваалт буцаах
+                            </Button>
+                          )}
+                          {over && (
+                            <Badge variant="destructive" className="text-[10px]">
+                              <AlertTriangle className="h-3 w-3 mr-1" /> Үлдэгдлээс их
+                            </Badge>
+                          )}
+                        </div>
                       </div>
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                        <div className="space-y-1">
-                          <Label className="text-[11px]">Хүлээн авсан</Label>
+
+                      {!d.splits ? (
+                        <>
+                          <div className="grid grid-cols-1 md:grid-cols-5 gap-2">
+                            {hasVariants && (
+                              <div className="space-y-1 md:col-span-2">
+                                <Label className="text-[11px]">Хувилбар *</Label>
+                                <Select
+                                  value={d.variant_id ?? ""}
+                                  onValueChange={(v) => patch(r.id, { variant_id: v || null })}
+                                >
+                                  <SelectTrigger className={cn(!d.variant_id && "border-destructive/60")}>
+                                    <SelectValue placeholder="Хувилбар сонгох" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {variants.map((v) => (
+                                      <SelectItem key={v.id} value={v.id}>{variantLabel(v)}</SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            )}
+                            <div className="space-y-1">
+                              <Label className="text-[11px]">Хүлээн авсан</Label>
+                              <Input
+                                type="number" min="0" step="1"
+                                value={d.received_quantity}
+                                onChange={(e) => patch(r.id, { received_quantity: normalizeQty(e.target.value) })}
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <Label className="text-[11px]">Гэмтэлтэй</Label>
+                              <Input
+                                type="number" min="0" step="1"
+                                value={d.damaged_quantity}
+                                onChange={(e) => patch(r.id, { damaged_quantity: normalizeQty(e.target.value) })}
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <Label className="text-[11px]">Нэгж зардал ₮</Label>
+                              <Input
+                                type="number" min="0" step="0.01"
+                                value={d.unit_cost ?? ""}
+                                onChange={(e) => patch(r.id, { unit_cost: e.target.value === "" ? null : Number(e.target.value) })}
+                              />
+                            </div>
+                          </div>
                           <Input
-                            type="number"
-                            min="0"
-                            step="1"
-                            value={d.received_quantity}
-                            onChange={(e) =>
-                              setDrafts((prev) => ({
-                                ...prev,
-                                [r.id]: { ...d, received_quantity: Number(e.target.value || 0) },
-                              }))
-                            }
-                          />
-                        </div>
-                        <div className="space-y-1">
-                          <Label className="text-[11px]">Гэмтэлтэй</Label>
-                          <Input
-                            type="number"
-                            min="0"
-                            step="1"
-                            value={d.damaged_quantity}
-                            onChange={(e) =>
-                              setDrafts((prev) => ({
-                                ...prev,
-                                [r.id]: { ...d, damaged_quantity: Number(e.target.value || 0) },
-                              }))
-                            }
-                          />
-                        </div>
-                        <div className="space-y-1">
-                          <Label className="text-[11px]">Нэгж зардал ₮</Label>
-                          <Input
-                            type="number"
-                            min="0"
-                            step="0.01"
-                            value={d.unit_cost ?? ""}
-                            onChange={(e) =>
-                              setDrafts((prev) => ({
-                                ...prev,
-                                [r.id]: {
-                                  ...d,
-                                  unit_cost: e.target.value === "" ? null : Number(e.target.value),
-                                },
-                              }))
-                            }
-                          />
-                        </div>
-                        <div className="space-y-1">
-                          <Label className="text-[11px]">Тэмдэглэл</Label>
-                          <Input
+                            placeholder="Тэмдэглэл"
                             value={d.notes}
-                            onChange={(e) =>
-                              setDrafts((prev) => ({
-                                ...prev,
-                                [r.id]: { ...d, notes: e.target.value },
-                              }))
-                            }
+                            onChange={(e) => patch(r.id, { notes: e.target.value })}
                           />
+                        </>
+                      ) : (
+                        <div className="space-y-2">
+                          {d.splits.map((l, idx) => (
+                            <div key={idx} className="rounded border p-2 space-y-2 bg-muted/30">
+                              <div className="flex items-center justify-between">
+                                <span className="text-[11px] font-medium">Хуваалт #{idx + 1}</span>
+                                <Button
+                                  size="icon" variant="ghost" type="button"
+                                  onClick={() => removeSplit(r.id, idx)}
+                                  className="h-6 w-6"
+                                >
+                                  <X className="h-3.5 w-3.5" />
+                                </Button>
+                              </div>
+                              <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
+                                <div className="space-y-1 md:col-span-2">
+                                  <Label className="text-[11px]">Хувилбар *</Label>
+                                  <Select
+                                    value={l.variant_id ?? ""}
+                                    onValueChange={(v) => updateSplit(r.id, idx, { variant_id: v || null })}
+                                  >
+                                    <SelectTrigger className={cn(!l.variant_id && "border-destructive/60")}>
+                                      <SelectValue placeholder="Хувилбар сонгох" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {variants.map((v) => (
+                                        <SelectItem key={v.id} value={v.id}>{variantLabel(v)}</SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                                <div className="space-y-1">
+                                  <Label className="text-[11px]">Хүлээн авсан</Label>
+                                  <Input
+                                    type="number" min="0" step="1"
+                                    value={l.received_quantity}
+                                    onChange={(e) => updateSplit(r.id, idx, { received_quantity: normalizeQty(e.target.value) })}
+                                  />
+                                </div>
+                                <div className="space-y-1">
+                                  <Label className="text-[11px]">Гэмтэлтэй</Label>
+                                  <Input
+                                    type="number" min="0" step="1"
+                                    value={l.damaged_quantity}
+                                    onChange={(e) => updateSplit(r.id, idx, { damaged_quantity: normalizeQty(e.target.value) })}
+                                  />
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                          <Button
+                            size="sm" variant="outline" type="button"
+                            onClick={() => addSplit(r.id)}
+                          >
+                            <Plus className="h-3.5 w-3.5 mr-1" /> Хуваалт нэмэх
+                          </Button>
                         </div>
-                      </div>
+                      )}
+
+                      {over && (
+                        <label className="flex items-center gap-2 text-xs">
+                          <Checkbox
+                            checked={d.allow_extra}
+                            onCheckedChange={(v) => patch(r.id, { allow_extra: !!v })}
+                          />
+                          Илүү хүлээн авахыг зөвшөөрөх
+                        </label>
+                      )}
                     </Card>
                   );
                 })}
@@ -378,6 +650,11 @@ export function ReceiveWizardDialog({
                   <Stat label="Хүлээн авах" value={totals.units} />
                   <Stat label="Гэмтэлтэй" value={totals.damaged} />
                 </div>
+                {validation.length > 0 && (
+                  <div className="text-xs rounded border border-destructive/40 bg-destructive/5 text-destructive p-2 space-y-1">
+                    {validation.map((e, i) => <div key={i}>• {e}</div>)}
+                  </div>
+                )}
                 <div className="text-xs text-muted-foreground border-t pt-3 flex gap-2">
                   <ClipboardCheck className="h-4 w-4" />
                   Баталгаажуулмагц нөөц нэмэгдэж, холбоосон бараанд автоматаар sync хийгдэнэ.
@@ -386,7 +663,6 @@ export function ReceiveWizardDialog({
               </Card>
             )}
 
-            {/* Nav */}
             <div className="flex justify-between gap-2 pt-2">
               <Button
                 variant="outline"
@@ -397,13 +673,21 @@ export function ReceiveWizardDialog({
                 {step === 1 ? "Болих" : "Буцах"}
               </Button>
               {step < 4 ? (
-                <Button onClick={() => setStep((s) => (s + 1) as any)}>
+                <Button
+                  onClick={() => {
+                    if (step === 3 && validation.length > 0) {
+                      toast.error(validation[0]);
+                      return;
+                    }
+                    setStep((s) => (s + 1) as any);
+                  }}
+                >
                   Үргэлжлүүлэх <ArrowRight className="h-4 w-4 ml-1" />
                 </Button>
               ) : (
                 <Button
                   onClick={() => confirmMut.mutate()}
-                  disabled={confirmMut.isPending || totals.lines === 0}
+                  disabled={confirmMut.isPending || totals.lines === 0 || validation.length > 0}
                 >
                   {confirmMut.isPending && <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />}
                   Хүлээн авч баталгаажуулах
