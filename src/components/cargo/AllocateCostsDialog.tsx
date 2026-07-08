@@ -118,6 +118,15 @@ export function AllocateCostsDialog({
     return { c, cu, o };
   }, [manual]);
 
+  const manualSum = manualTotals.c + manualTotals.cu + manualTotals.o;
+  const manualMismatch =
+    method === "manual" && Math.abs(manualSum - totalExpense) > 1;
+  const missingUnitCost = batches.some(
+    (b) => !Number(b.purchase_price) || Number(b.purchase_price) <= 0,
+  );
+  const valueFallback =
+    method === "value" && purchaseTotal <= 0 && batches.length > 0;
+
   const allocFn = useServerFn(allocateCargoCosts);
   const allocMut = useMutation({
     mutationFn: () =>
@@ -149,6 +158,21 @@ export function AllocateCostsDialog({
     },
     onError: (e: any) => toast.error(e?.message ?? "Алдаа"),
   });
+
+  const handleSubmit = () => {
+    if (manualMismatch) {
+      toast.error("Хуваарилсан нийт зардал нийт нэмэлт зардалтай тэнцэхгүй байна.");
+      return;
+    }
+    if (alreadyAllocated) {
+      const ok = window.confirm(
+        "Энэ ачааны өртөг аль хэдийн хуваарилагдсан байна. Дахин тооцоолох уу?",
+      );
+      if (!ok) return;
+    }
+    allocMut.mutate();
+  };
+
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
