@@ -303,8 +303,9 @@ export function AllocateCostsDialog({
           </div>
 
           {method === "manual" && (
-            <div className="text-xs text-muted-foreground">
-              Гарын тооцоо нийт: Карго {fmt(manualTotals.c)}₮ · Гааль {fmt(manualTotals.cu)}₮ · Бусад {fmt(manualTotals.o)}₮ · Зорилго: {fmt(totalExpense)}₮
+            <div className={`text-xs ${manualMismatch ? "text-destructive font-medium" : "text-muted-foreground"}`}>
+              Гарын тооцоо нийт: {fmt(manualSum)}₮ · Зорилго: {fmt(totalExpense)}₮
+              {manualMismatch && " — Тэнцэхгүй байна (±1₮ зөвшөөрөгдөнө)"}
             </div>
           )}
         </div>
@@ -313,11 +314,12 @@ export function AllocateCostsDialog({
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={allocMut.isPending}>
             Болих
           </Button>
-          <Button onClick={() => allocMut.mutate()} disabled={allocMut.isPending}>
+          <Button onClick={handleSubmit} disabled={allocMut.isPending || manualMismatch}>
             {allocMut.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Хуваарилах
           </Button>
         </DialogFooter>
+
       </DialogContent>
     </Dialog>
   );
