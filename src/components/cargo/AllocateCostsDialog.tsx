@@ -49,6 +49,7 @@ export function AllocateCostsDialog({
   trackNumber,
   batches,
   purchaseTotal,
+  alreadyAllocated,
   defaults,
 }: Props) {
   const qc = useQueryClient();
