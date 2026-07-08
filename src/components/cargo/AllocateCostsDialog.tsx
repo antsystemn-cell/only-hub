@@ -33,6 +33,7 @@ interface Props {
   trackNumber: string;
   batches: any[];
   purchaseTotal: number;
+  alreadyAllocated?: boolean;
   defaults: {
     cargoFee: number;
     customsFee: number;
@@ -48,6 +49,7 @@ export function AllocateCostsDialog({
   trackNumber,
   batches,
   purchaseTotal,
+  alreadyAllocated,
   defaults,
 }: Props) {
   const qc = useQueryClient();
@@ -116,6 +118,15 @@ export function AllocateCostsDialog({
     return { c, cu, o };
   }, [manual]);
 
+  const manualSum = manualTotals.c + manualTotals.cu + manualTotals.o;
+  const manualMismatch =
+    method === "manual" && Math.abs(manualSum - totalExpense) > 1;
+  const missingUnitCost = batches.some(
+    (b) => !Number(b.purchase_price) || Number(b.purchase_price) <= 0,
+  );
+  const valueFallback =
+    method === "value" && purchaseTotal <= 0 && batches.length > 0;
+
   const allocFn = useServerFn(allocateCargoCosts);
   const allocMut = useMutation({
     mutationFn: () =>
@@ -148,6 +159,21 @@ export function AllocateCostsDialog({
     onError: (e: any) => toast.error(e?.message ?? "Алдаа"),
   });
 
+  const handleSubmit = () => {
+    if (manualMismatch) {
+      toast.error("Хуваарилсан нийт зардал нийт нэмэлт зардалтай тэнцэхгүй байна.");
+      return;
+    }
+    if (alreadyAllocated) {
+      const ok = window.confirm(
+        "Энэ ачааны өртөг аль хэдийн хуваарилагдсан байна. Дахин тооцоолох уу?",
+      );
+      if (!ok) return;
+    }
+    allocMut.mutate();
+  };
+
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
@@ -161,6 +187,22 @@ export function AllocateCostsDialog({
         </DialogHeader>
 
         <div className="space-y-4">
+          {alreadyAllocated && (
+            <div className="rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-700">
+              Энэ ачааны өртөг аль хэдийн хуваарилагдсан байна. Дахин тооцоолвол өмнөх утгууд дарагдана.
+            </div>
+          )}
+          {missingUnitCost && (
+            <div className="rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-700">
+              Зарим шошгонд нэгж өртөг дутуу байна. Landed cost зөв тооцоологдохгүй байж болзошгүй.
+            </div>
+          )}
+          {valueFallback && (
+            <div className="rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-700">
+              Худалдан авалтын дүн 0 тул үнэлгээгээр хуваарилах боломжгүй — тоо ширхэгийн аргаар тооцоолно.
+            </div>
+          )}
+
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             <NumField label="Карго (₮)" value={cargoFee} onChange={setCargoFee} />
             <NumField label="Гааль (₮)" value={customsFee} onChange={setCustomsFee} />
@@ -261,8 +303,9 @@ export function AllocateCostsDialog({
           </div>
 
           {method === "manual" && (
-            <div className="text-xs text-muted-foreground">
-              Гарын тооцоо нийт: Карго {fmt(manualTotals.c)}₮ · Гааль {fmt(manualTotals.cu)}₮ · Бусад {fmt(manualTotals.o)}₮ · Зорилго: {fmt(totalExpense)}₮
+            <div className={`text-xs ${manualMismatch ? "text-destructive font-medium" : "text-muted-foreground"}`}>
+              Гарын тооцоо нийт: {fmt(manualSum)}₮ · Зорилго: {fmt(totalExpense)}₮
+              {manualMismatch && " — Тэнцэхгүй байна (±1₮ зөвшөөрөгдөнө)"}
             </div>
           )}
         </div>
@@ -271,11 +314,12 @@ export function AllocateCostsDialog({
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={allocMut.isPending}>
             Болих
           </Button>
-          <Button onClick={() => allocMut.mutate()} disabled={allocMut.isPending}>
+          <Button onClick={handleSubmit} disabled={allocMut.isPending || manualMismatch}>
             {allocMut.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Хуваарилах
           </Button>
         </DialogFooter>
+
       </DialogContent>
     </Dialog>
   );
