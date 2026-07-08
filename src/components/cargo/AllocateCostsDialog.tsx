@@ -33,6 +33,7 @@ interface Props {
   trackNumber: string;
   batches: any[];
   purchaseTotal: number;
+  alreadyAllocated?: boolean;
   defaults: {
     cargoFee: number;
     customsFee: number;
