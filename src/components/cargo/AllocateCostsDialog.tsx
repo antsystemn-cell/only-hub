@@ -187,6 +187,22 @@ export function AllocateCostsDialog({
         </DialogHeader>
 
         <div className="space-y-4">
+          {alreadyAllocated && (
+            <div className="rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-700">
+              Энэ ачааны өртөг аль хэдийн хуваарилагдсан байна. Дахин тооцоолвол өмнөх утгууд дарагдана.
+            </div>
+          )}
+          {missingUnitCost && (
+            <div className="rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-700">
+              Зарим шошгонд нэгж өртөг дутуу байна. Landed cost зөв тооцоологдохгүй байж болзошгүй.
+            </div>
+          )}
+          {valueFallback && (
+            <div className="rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-700">
+              Худалдан авалтын дүн 0 тул үнэлгээгээр хуваарилах боломжгүй — тоо ширхэгийн аргаар тооцоолно.
+            </div>
+          )}
+
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             <NumField label="Карго (₮)" value={cargoFee} onChange={setCargoFee} />
             <NumField label="Гааль (₮)" value={customsFee} onChange={setCustomsFee} />
