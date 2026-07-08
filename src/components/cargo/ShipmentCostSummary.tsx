@@ -160,6 +160,7 @@ export function ShipmentCostSummary({
         trackNumber={trackNumber}
         batches={batches}
         purchaseTotal={purchaseTotal}
+        alreadyAllocated={Boolean(cost?.allocation_method && cost?.allocated_at)}
         defaults={{
           cargoFee: Number(cargoFee) || 0,
           customsFee: Number(customsFee) || 0,
@@ -167,6 +168,7 @@ export function ShipmentCostSummary({
           otherExpenses: Number(otherExpenses) || 0,
         }}
       />
+
     </Card>
   );
 }
