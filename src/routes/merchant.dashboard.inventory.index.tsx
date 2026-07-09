@@ -180,6 +180,14 @@ function InventoryListPage() {
                           <Button
                             size="sm"
                             variant="ghost"
+                            onClick={() => setHistoryTarget(r)}
+                            title="Худалдан авалтын түүх"
+                          >
+                            <History className="h-3.5 w-3.5" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
                             onClick={() => syncMut.mutate(r.id)}
                             disabled={syncMut.isPending}
                             title="Stock шинэчлэх"
