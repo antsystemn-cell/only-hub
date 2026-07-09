@@ -139,3 +139,74 @@ export const listInventoryBatches = createServerFn({ method: "POST" })
     if (error) throw new Response(error.message, { status: 500 });
     return rows ?? [];
   });
+
+// ---------- Purchase history for a product (all batches across variants) ----------
+
+export const listBatchesForProduct = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) =>
+    z.object({
+      merchantId: z.string().uuid(),
+      productId: z.string().uuid(),
+    }).parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    await assertAccess(context.supabase, context.userId, data.merchantId);
+    const { data: rows, error } = await context.supabase
+      .from("inventory_batches")
+      .select("*")
+      .eq("merchant_id", data.merchantId)
+      .eq("product_id", data.productId)
+      .order("received_at", { ascending: false });
+    if (error) throw new Response(error.message, { status: 500 });
+    return rows ?? [];
+  });
+
+// ---------- Batch detail (single batch with linked receipt) ----------
+
+export const getBatchDetail = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) =>
+    z.object({
+      merchantId: z.string().uuid(),
+      batchId: z.string().uuid(),
+    }).parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    await assertAccess(context.supabase, context.userId, data.merchantId);
+    const { data: batch, error } = await context.supabase
+      .from("inventory_batches")
+      .select("*")
+      .eq("merchant_id", data.merchantId)
+      .eq("id", data.batchId)
+      .maybeSingle();
+    if (error) throw new Response(error.message, { status: 500 });
+    if (!batch) throw new Response("not_found", { status: 404 });
+
+    const [{ data: receipt }, { data: shipmentCost }, { data: movements }] = await Promise.all([
+      batch.receipt_id
+        ? context.supabase
+            .from("incoming_cargo_receipts")
+            .select("*")
+            .eq("id", batch.receipt_id)
+            .maybeSingle()
+        : Promise.resolve({ data: null } as any),
+      batch.track_number
+        ? context.supabase
+            .from("cargo_shipment_costs")
+            .select("*")
+            .eq("merchant_id", data.merchantId)
+            .eq("track_number", batch.track_number)
+            .maybeSingle()
+        : Promise.resolve({ data: null } as any),
+      context.supabase
+        .from("inventory_movements")
+        .select("*")
+        .eq("merchant_id", data.merchantId)
+        .eq("inventory_item_id", batch.inventory_item_id)
+        .order("created_at", { ascending: false })
+        .limit(30),
+    ]);
+
+    return { batch, receipt: receipt ?? null, shipmentCost: shipmentCost ?? null, movements: movements ?? [] };
+  });
