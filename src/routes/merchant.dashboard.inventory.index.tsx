@@ -9,11 +9,12 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Loader2, Search, PackageOpen, Link2, RefreshCw } from "lucide-react";
+import { Loader2, Search, PackageOpen, Link2, RefreshCw, History } from "lucide-react";
 import { toast } from "sonner";
 import { listInventoryItems } from "@/lib/inventory/inventory.functions";
 import { manualSyncInventoryLink } from "@/lib/inventory/links.functions";
 import { InventoryLinkDialog } from "@/components/inventory/InventoryLinkDialog";
+import { PurchaseHistoryDialog } from "@/components/inventory/PurchaseHistoryDialog";
 
 export const Route = createFileRoute("/merchant/dashboard/inventory/")({
   component: InventoryListPage,
@@ -28,6 +29,7 @@ function InventoryListPage() {
   const [lowStock, setLowStock] = useState(false);
   const [page, setPage] = useState(1);
   const [linkTarget, setLinkTarget] = useState<any | null>(null);
+  const [historyTarget, setHistoryTarget] = useState<any | null>(null);
   const pageSize = 20;
 
   const listFn = useServerFn(listInventoryItems);
@@ -178,6 +180,14 @@ function InventoryListPage() {
                           <Button
                             size="sm"
                             variant="ghost"
+                            onClick={() => setHistoryTarget(r)}
+                            title="Худалдан авалтын түүх"
+                          >
+                            <History className="h-3.5 w-3.5" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
                             onClick={() => syncMut.mutate(r.id)}
                             disabled={syncMut.isPending}
                             title="Stock шинэчлэх"
@@ -212,6 +222,12 @@ function InventoryListPage() {
         onOpenChange={(v) => { if (!v) setLinkTarget(null); }}
         merchantId={primaryMerchantId}
         inventoryItem={linkTarget}
+      />
+      <PurchaseHistoryDialog
+        open={!!historyTarget}
+        onOpenChange={(v) => { if (!v) setHistoryTarget(null); }}
+        merchantId={primaryMerchantId}
+        mode={historyTarget ? { kind: "inventory", inventoryItemId: historyTarget.id, title: historyTarget.name } : null}
       />
     </div>
   );
