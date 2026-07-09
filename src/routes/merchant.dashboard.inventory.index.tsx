@@ -223,6 +223,12 @@ function InventoryListPage() {
         merchantId={primaryMerchantId}
         inventoryItem={linkTarget}
       />
+      <PurchaseHistoryDialog
+        open={!!historyTarget}
+        onOpenChange={(v) => { if (!v) setHistoryTarget(null); }}
+        merchantId={primaryMerchantId}
+        mode={historyTarget ? { kind: "inventory", inventoryItemId: historyTarget.id, title: historyTarget.name } : null}
+      />
     </div>
   );
 }
