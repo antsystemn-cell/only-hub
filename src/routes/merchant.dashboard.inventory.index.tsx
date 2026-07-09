@@ -9,11 +9,12 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Loader2, Search, PackageOpen, Link2, RefreshCw } from "lucide-react";
+import { Loader2, Search, PackageOpen, Link2, RefreshCw, History } from "lucide-react";
 import { toast } from "sonner";
 import { listInventoryItems } from "@/lib/inventory/inventory.functions";
 import { manualSyncInventoryLink } from "@/lib/inventory/links.functions";
 import { InventoryLinkDialog } from "@/components/inventory/InventoryLinkDialog";
+import { PurchaseHistoryDialog } from "@/components/inventory/PurchaseHistoryDialog";
 
 export const Route = createFileRoute("/merchant/dashboard/inventory/")({
   component: InventoryListPage,
