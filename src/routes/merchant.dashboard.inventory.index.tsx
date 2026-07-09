@@ -29,6 +29,7 @@ function InventoryListPage() {
   const [lowStock, setLowStock] = useState(false);
   const [page, setPage] = useState(1);
   const [linkTarget, setLinkTarget] = useState<any | null>(null);
+  const [historyTarget, setHistoryTarget] = useState<any | null>(null);
   const pageSize = 20;
 
   const listFn = useServerFn(listInventoryItems);
