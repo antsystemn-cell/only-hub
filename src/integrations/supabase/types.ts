@@ -885,6 +885,7 @@ export type Database = {
           created_at: string
           created_by: string | null
           customs_cost: number
+          damaged_quantity: number
           id: string
           incoming_item_id: string | null
           inventory_item_id: string
@@ -895,10 +896,17 @@ export type Database = {
           purchase_price: number
           quantity: number
           receipt_id: string | null
+          receive_user_id: string | null
           received_at: string
+          remaining_quantity: number
+          reserved_quantity: number
+          sold_quantity: number
+          status: string
+          supplier_name: string | null
           track_number: string | null
           updated_at: string
           variant_id: string | null
+          warehouse_location: string | null
         }
         Insert: {
           allocated_at?: string | null
@@ -907,6 +915,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           customs_cost?: number
+          damaged_quantity?: number
           id?: string
           incoming_item_id?: string | null
           inventory_item_id: string
@@ -917,10 +926,17 @@ export type Database = {
           purchase_price?: number
           quantity: number
           receipt_id?: string | null
+          receive_user_id?: string | null
           received_at?: string
+          remaining_quantity?: number
+          reserved_quantity?: number
+          sold_quantity?: number
+          status?: string
+          supplier_name?: string | null
           track_number?: string | null
           updated_at?: string
           variant_id?: string | null
+          warehouse_location?: string | null
         }
         Update: {
           allocated_at?: string | null
@@ -929,6 +945,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           customs_cost?: number
+          damaged_quantity?: number
           id?: string
           incoming_item_id?: string | null
           inventory_item_id?: string
@@ -939,10 +956,17 @@ export type Database = {
           purchase_price?: number
           quantity?: number
           receipt_id?: string | null
+          receive_user_id?: string | null
           received_at?: string
+          remaining_quantity?: number
+          reserved_quantity?: number
+          sold_quantity?: number
+          status?: string
+          supplier_name?: string | null
           track_number?: string | null
           updated_at?: string
           variant_id?: string | null
+          warehouse_location?: string | null
         }
         Relationships: [
           {
