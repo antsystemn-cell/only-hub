@@ -145,6 +145,75 @@ export type Database = {
         }
         Relationships: []
       }
+      cargo_receive_logs: {
+        Row: {
+          action: string
+          actor_id: string | null
+          after_values: Json | null
+          before_values: Json | null
+          created_at: string
+          id: string
+          merchant_id: string
+          meta: Json | null
+          request_id: string | null
+          track_number: string | null
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          after_values?: Json | null
+          before_values?: Json | null
+          created_at?: string
+          id?: string
+          merchant_id: string
+          meta?: Json | null
+          request_id?: string | null
+          track_number?: string | null
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          after_values?: Json | null
+          before_values?: Json | null
+          created_at?: string
+          id?: string
+          merchant_id?: string
+          meta?: Json | null
+          request_id?: string | null
+          track_number?: string | null
+        }
+        Relationships: []
+      }
+      cargo_receive_requests: {
+        Row: {
+          created_at: string
+          id: string
+          merchant_id: string
+          received_by: string | null
+          request_id: string
+          result_json: Json
+          track_number: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          merchant_id: string
+          received_by?: string | null
+          request_id: string
+          result_json: Json
+          track_number: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          merchant_id?: string
+          received_by?: string | null
+          request_id?: string
+          result_json?: Json
+          track_number?: string
+        }
+        Relationships: []
+      }
       cargo_shipment_costs: {
         Row: {
           allocated_at: string | null
@@ -705,6 +774,9 @@ export type Database = {
       }
       incoming_cargo_items: {
         Row: {
+          cancel_reason: string | null
+          cancelled_at: string | null
+          cancelled_by: string | null
           created_at: string
           created_by: string | null
           damaged_quantity: number
@@ -726,6 +798,9 @@ export type Database = {
           variant_id: string | null
         }
         Insert: {
+          cancel_reason?: string | null
+          cancelled_at?: string | null
+          cancelled_by?: string | null
           created_at?: string
           created_by?: string | null
           damaged_quantity?: number
@@ -747,6 +822,9 @@ export type Database = {
           variant_id?: string | null
         }
         Update: {
+          cancel_reason?: string | null
+          cancelled_at?: string | null
+          cancelled_by?: string | null
           created_at?: string
           created_by?: string | null
           damaged_quantity?: number
@@ -3072,6 +3150,15 @@ export type Database = {
         }
         Returns: Json
       }
+      cancel_incoming_cargo_item: {
+        Args: {
+          _actor: string
+          _item_id: string
+          _merchant_id: string
+          _reason: string
+        }
+        Returns: Json
+      }
       confirm_inventory_reservations: {
         Args: { _order_id: string }
         Returns: Json
@@ -3148,6 +3235,16 @@ export type Database = {
           _items: Json
           _merchant_id: string
           _received_by: string
+          _track_number: string
+        }
+        Returns: Json
+      }
+      receive_incoming_cargo_items_v2: {
+        Args: {
+          _items: Json
+          _merchant_id: string
+          _received_by: string
+          _request_id: string
           _track_number: string
         }
         Returns: Json
