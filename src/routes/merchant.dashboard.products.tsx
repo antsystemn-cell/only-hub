@@ -15,7 +15,8 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { Plus, Edit, Copy, Trash2, Search, ImageIcon, X, Upload } from "lucide-react";
+import { Plus, Edit, Copy, Trash2, Search, ImageIcon, X, Upload, History } from "lucide-react";
+import { PurchaseHistoryDialog } from "@/components/inventory/PurchaseHistoryDialog";
 import { fmtMnt, slugify } from "@/lib/format";
 import { uploadOptimized } from "@/lib/image";
 import { AddProductTypeDialog } from "@/components/merchant/AddProductTypeDialog";
@@ -76,6 +77,7 @@ function ProductsPage() {
   const [filterCat, setFilterCat] = useState<string>("all");
   const [filterSource, setFilterSource] = useState<"all" | "POIZON_KR" | "TAOBAO">("all");
   const [uploading, setUploading] = useState(false);
+  const [historyProduct, setHistoryProduct] = useState<{ id: string; name: string } | null>(null);
 
   const { data: products = [] } = useQuery({
     queryKey: ["products", merchantId],
@@ -605,6 +607,7 @@ function ProductsPage() {
               <div className="hidden sm:block text-sm font-semibold whitespace-nowrap">{fmtMnt(p.price)}</div>
               {p.discount > 0 && <span className="hidden sm:inline-block rounded-md bg-red-500/10 px-2 py-0.5 text-xs text-red-600">-{p.discount}%</span>}
               <div className="col-span-3 flex justify-end gap-1 sm:col-span-1 border-t border-border/50 pt-2 sm:border-0 sm:pt-0">
+                <Button size="icon" variant="ghost" title="Худалдан авалтын түүх" onClick={() => setHistoryProduct({ id: p.id, name: p.name })}><History className="h-4 w-4" /></Button>
                 <Button size="icon" variant="ghost" onClick={() => { setEditing(p); setEditId(p.id); setShowForm(true); }}><Edit className="h-4 w-4" /></Button>
                 <Button size="icon" variant="ghost" onClick={() => duplicate(p)}><Copy className="h-4 w-4" /></Button>
                 <AlertDialog>
@@ -633,6 +636,12 @@ function ProductsPage() {
           </TabsContent>
         )}
       </Tabs>
+      <PurchaseHistoryDialog
+        open={!!historyProduct}
+        onOpenChange={(v) => { if (!v) setHistoryProduct(null); }}
+        merchantId={merchantId}
+        mode={historyProduct ? { kind: "product", productId: historyProduct.id, title: historyProduct.name } : null}
+      />
     </div>
   );
 }
