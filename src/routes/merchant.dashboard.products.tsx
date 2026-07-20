@@ -15,7 +15,8 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { Plus, Edit, Copy, Trash2, Search, ImageIcon, X, Upload } from "lucide-react";
+import { Plus, Edit, Copy, Trash2, Search, ImageIcon, X, Upload, History } from "lucide-react";
+import { PurchaseHistoryDialog } from "@/components/inventory/PurchaseHistoryDialog";
 import { fmtMnt, slugify } from "@/lib/format";
 import { uploadOptimized } from "@/lib/image";
 import { AddProductTypeDialog } from "@/components/merchant/AddProductTypeDialog";
@@ -76,6 +77,7 @@ function ProductsPage() {
   const [filterCat, setFilterCat] = useState<string>("all");
   const [filterSource, setFilterSource] = useState<"all" | "POIZON_KR" | "TAOBAO">("all");
   const [uploading, setUploading] = useState(false);
+  const [historyProduct, setHistoryProduct] = useState<{ id: string; name: string } | null>(null);
 
   const { data: products = [] } = useQuery({
     queryKey: ["products", merchantId],
