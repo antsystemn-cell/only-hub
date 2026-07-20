@@ -146,18 +146,37 @@ export const deleteIncomingCargoItem = createServerFn({ method: "POST" })
     z.object({
       merchantId: z.string().uuid(),
       id: z.string().uuid(),
+      reason: z.string().trim().max(500).optional(),
     }).parse(i),
   )
   .handler(async ({ data, context }) => {
     await assertAccess(context.supabase, context.userId, data.merchantId);
-    const { error } = await context.supabase
+
+    // Try hard delete first — the DB trigger rejects when receipts exist.
+    const { error: delErr } = await context.supabase
       .from("incoming_cargo_items")
       .delete()
       .eq("id", data.id)
       .eq("merchant_id", data.merchantId);
-    if (error) throw new Response(error.message, { status: 500 });
-    return { ok: true };
+    if (!delErr) return { ok: true, mode: "deleted" as const };
+
+    // Protected → soft-cancel via RPC so we keep receipts + audit trail.
+    if (/incoming_item_has_receipts/i.test(delErr.message)) {
+      const { data: res, error: cErr } = await context.supabase.rpc(
+        "cancel_incoming_cargo_item",
+        {
+          _merchant_id: data.merchantId,
+          _item_id: data.id,
+          _reason: data.reason ?? "deleted_by_user",
+          _actor: context.userId,
+        },
+      );
+      if (cErr) throw new Response(cErr.message, { status: 500 });
+      return { ok: true, mode: "cancelled" as const, result: res };
+    }
+    throw new Response(delErr.message, { status: 500 });
   });
+
 
 /**
  * Reconcile statuses for one shipment based on current cargo status (from API).
