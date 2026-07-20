@@ -283,12 +283,19 @@ export function ReceiveWizardDialog({
     return { units, damaged, lines };
   }, [drafts]);
 
+  const [requestId, setRequestId] = useState<string>(() =>
+    typeof crypto !== "undefined" && "randomUUID" in crypto
+      ? crypto.randomUUID()
+      : Math.random().toString(36).slice(2) + Date.now().toString(36),
+  );
+
   const confirmMut = useMutation({
     mutationFn: () =>
       receiveFn({
         data: {
           merchantId,
           trackNumber,
+          requestId,
           items: Object.values(drafts)
             .map((d) => {
               if (d.splits) {
@@ -330,6 +337,7 @@ export function ReceiveWizardDialog({
       qc.invalidateQueries({ queryKey: ["incoming-cargo-summary", merchantId] });
       qc.invalidateQueries({ queryKey: ["incoming-cargo-receipts", merchantId, trackNumber] });
       qc.invalidateQueries({ queryKey: ["inventory-items", merchantId] });
+      qc.invalidateQueries({ queryKey: ["inventory-batches", merchantId] });
       setDone({
         items_received: Number(res?.items_received ?? 0),
         total_units: Number(res?.total_units ?? 0),
@@ -338,8 +346,31 @@ export function ReceiveWizardDialog({
         pending_planned: Number(res?.pending_planned ?? 0),
       });
     },
-    onError: (e: any) => toast.error(e?.message ?? "Алдаа"),
+    onError: (e: any) => {
+      const code = String(e?.message ?? "").trim();
+      const map: Record<string, string> = {
+        shipment_mismatch: "Ачаа болон бараа таарахгүй байна",
+        variant_required: "Хувилбар (size/color) сонгоно уу",
+        invalid_variant: "Сонгосон хувилбар буруу байна",
+        qty_exceeded: "Төлөвлөсөн тооноос хэтэрсэн байна",
+        invalid_quantity: "Тоо хэмжээ буруу байна",
+        invalid_unit_cost: "Нэгжийн үнэ буруу байна",
+        item_cancelled: "Энэ мөр цуцлагдсан байна",
+        incoming_item_not_found: "Ирэх бараа олдсонгүй",
+        merchant_not_allowed: "Танд эрх байхгүй байна",
+        inventory_locked: "Өөр оператор одоо хүлээн авч байна, дахин оролдоно уу",
+        receive_failed: "Хүлээн авалт амжилтгүй боллоо",
+      };
+      toast.error(map[code] ?? code ?? "Алдаа");
+      // Rotate request id so the retry is a fresh attempt, not an idempotent replay
+      setRequestId(
+        typeof crypto !== "undefined" && "randomUUID" in crypto
+          ? crypto.randomUUID()
+          : Math.random().toString(36).slice(2) + Date.now().toString(36),
+      );
+    },
   });
+
 
   return (
     <Dialog open={open} onOpenChange={resetAndClose}>
