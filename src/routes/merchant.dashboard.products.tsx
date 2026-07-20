@@ -607,6 +607,7 @@ function ProductsPage() {
               <div className="hidden sm:block text-sm font-semibold whitespace-nowrap">{fmtMnt(p.price)}</div>
               {p.discount > 0 && <span className="hidden sm:inline-block rounded-md bg-red-500/10 px-2 py-0.5 text-xs text-red-600">-{p.discount}%</span>}
               <div className="col-span-3 flex justify-end gap-1 sm:col-span-1 border-t border-border/50 pt-2 sm:border-0 sm:pt-0">
+                <Button size="icon" variant="ghost" title="Худалдан авалтын түүх" onClick={() => setHistoryProduct({ id: p.id, name: p.name })}><History className="h-4 w-4" /></Button>
                 <Button size="icon" variant="ghost" onClick={() => { setEditing(p); setEditId(p.id); setShowForm(true); }}><Edit className="h-4 w-4" /></Button>
                 <Button size="icon" variant="ghost" onClick={() => duplicate(p)}><Copy className="h-4 w-4" /></Button>
                 <AlertDialog>
@@ -635,6 +636,12 @@ function ProductsPage() {
           </TabsContent>
         )}
       </Tabs>
+      <PurchaseHistoryDialog
+        open={!!historyProduct}
+        onOpenChange={(v) => { if (!v) setHistoryProduct(null); }}
+        merchantId={merchantId}
+        mode={historyProduct ? { kind: "product", productId: historyProduct.id, title: historyProduct.name } : null}
+      />
     </div>
   );
 }
