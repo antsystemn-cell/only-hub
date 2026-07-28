@@ -273,6 +273,7 @@ export type Database = {
           merchant_id: string
           name: string
           position: number
+          slug: string | null
         }
         Insert: {
           created_at?: string
@@ -281,6 +282,7 @@ export type Database = {
           merchant_id: string
           name: string
           position?: number
+          slug?: string | null
         }
         Update: {
           created_at?: string
@@ -289,6 +291,7 @@ export type Database = {
           merchant_id?: string
           name?: string
           position?: number
+          slug?: string | null
         }
         Relationships: [
           {
