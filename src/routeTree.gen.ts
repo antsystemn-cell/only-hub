@@ -20,6 +20,7 @@ import { Route as CartRouteImport } from './routes/cart'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AccountRouteImport } from './routes/account'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as OrdersIndexRouteImport } from './routes/orders.index'
 import { Route as BlogIndexRouteImport } from './routes/blog.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as TrackTokenRouteImport } from './routes/track.$token'
@@ -143,6 +144,11 @@ const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const OrdersIndexRoute = OrdersIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => OrdersRoute,
 } as any)
 const BlogIndexRoute = BlogIndexRouteImport.update({
   id: '/blog/',
@@ -552,6 +558,7 @@ export interface FileRoutesByFullPath {
   '/track/$token': typeof TrackTokenRoute
   '/admin/': typeof AdminIndexRoute
   '/blog/': typeof BlogIndexRoute
+  '/orders/': typeof OrdersIndexRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/admin/blog/$id': typeof AdminBlogIdRoute
   '/admin/blog/new': typeof AdminBlogNewRoute
@@ -601,7 +608,6 @@ export interface FileRoutesByTo {
   '/driver': typeof DriverRoute
   '/login': typeof LoginRoute
   '/mcp': typeof McpRoute
-  '/orders': typeof OrdersRouteWithChildren
   '/register': typeof RegisterRoute
   '/stores': typeof StoresRoute
   '/wishlist': typeof WishlistRoute
@@ -631,6 +637,7 @@ export interface FileRoutesByTo {
   '/track/$token': typeof TrackTokenRoute
   '/admin': typeof AdminIndexRoute
   '/blog': typeof BlogIndexRoute
+  '/orders': typeof OrdersIndexRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/admin/blog/$id': typeof AdminBlogIdRoute
   '/admin/blog/new': typeof AdminBlogNewRoute
@@ -712,6 +719,7 @@ export interface FileRoutesById {
   '/track/$token': typeof TrackTokenRoute
   '/admin/': typeof AdminIndexRoute
   '/blog/': typeof BlogIndexRoute
+  '/orders/': typeof OrdersIndexRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/admin/blog/$id': typeof AdminBlogIdRoute
   '/admin/blog/new': typeof AdminBlogNewRoute
@@ -795,6 +803,7 @@ export interface FileRouteTypes {
     | '/track/$token'
     | '/admin/'
     | '/blog/'
+    | '/orders/'
     | '/.mcp/invoke-tool/$tool'
     | '/admin/blog/$id'
     | '/admin/blog/new'
@@ -844,7 +853,6 @@ export interface FileRouteTypes {
     | '/driver'
     | '/login'
     | '/mcp'
-    | '/orders'
     | '/register'
     | '/stores'
     | '/wishlist'
@@ -874,6 +882,7 @@ export interface FileRouteTypes {
     | '/track/$token'
     | '/admin'
     | '/blog'
+    | '/orders'
     | '/.mcp/invoke-tool/$tool'
     | '/admin/blog/$id'
     | '/admin/blog/new'
@@ -954,6 +963,7 @@ export interface FileRouteTypes {
     | '/track/$token'
     | '/admin/'
     | '/blog/'
+    | '/orders/'
     | '/.mcp/invoke-tool/$tool'
     | '/admin/blog/$id'
     | '/admin/blog/new'
@@ -1114,6 +1124,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/orders/': {
+      id: '/orders/'
+      path: '/'
+      fullPath: '/orders/'
+      preLoaderRoute: typeof OrdersIndexRouteImport
+      parentRoute: typeof OrdersRoute
     }
     '/blog/': {
       id: '/blog/'
@@ -1653,10 +1670,12 @@ const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
 interface OrdersRouteChildren {
   OrdersCategorySlugRoute: typeof OrdersCategorySlugRoute
+  OrdersIndexRoute: typeof OrdersIndexRoute
 }
 
 const OrdersRouteChildren: OrdersRouteChildren = {
   OrdersCategorySlugRoute: OrdersCategorySlugRoute,
+  OrdersIndexRoute: OrdersIndexRoute,
 }
 
 const OrdersRouteWithChildren =
