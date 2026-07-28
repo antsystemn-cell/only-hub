@@ -447,6 +447,15 @@ export function ForeignProductImporter({ merchantId, source, onClose }: Props) {
               </Badge>
             )}
           </div>
+          {hasDuplicate && (
+            <DuplicateWarning
+              duplicates={duplicates}
+              allowDuplicate={allowDuplicate}
+              onToggle={setAllowDuplicate}
+              onCancel={onClose}
+            />
+          )}
+
           {warnings.length > 0 && (
             <Alert className="border-amber-300 bg-amber-50 py-2">
               <AlertCircle className="h-4 w-4 text-amber-600" />
