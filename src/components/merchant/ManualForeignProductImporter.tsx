@@ -110,6 +110,26 @@ export function ManualForeignProductImporter({ merchantId, source, onClose }: Pr
   );
 
   const createFn = useServerFn(createForeignProduct);
+  const findDupFn = useServerFn(findExistingForeignProduct);
+  const [allowDuplicate, setAllowDuplicate] = useState(false);
+
+  const effectiveProductId = sourceProductId.trim() || (sourceUrl ? fallbackProductId(sourceUrl) : "");
+  const dupQuery = useQuery({
+    queryKey: ["foreign-dup", merchantId, source, effectiveProductId, sourceUrl.trim()],
+    enabled: step === "form" && (!!effectiveProductId || !!sourceUrl.trim()),
+    queryFn: () =>
+      findDupFn({
+        data: {
+          merchantId,
+          source,
+          sourceProductId: effectiveProductId || null,
+          sourceUrl: sourceUrl.trim() || null,
+        },
+      }),
+  });
+  const duplicates = (dupQuery.data?.items ?? []) as Array<{ id: string; name: string; slug: string | null; image_url: string | null; is_active: boolean; created_at: string }>;
+  const hasDuplicate = duplicates.length > 0;
+
   const hasPrice = variants.some((v) => Number(v.sourcePrice) > 0);
   const createMutation = useMutation({
     mutationFn: async () => {
