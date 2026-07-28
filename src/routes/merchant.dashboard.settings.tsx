@@ -38,7 +38,7 @@ function SettingsPage() {
           <TabsTrigger value="import">📥 Импорт</TabsTrigger>
         </TabsList>
         <TabsContent value="store"><StoreProfileTab /></TabsContent>
-        <TabsContent value="categories"><CrudList table="categories" fields={[{ k: "name", l: "Нэр" }, { k: "icon", l: "Icon (emoji)" }]} /></TabsContent>
+        <TabsContent value="categories"><CategoriesTab /></TabsContent>
 
         <TabsContent value="brands"><CrudList table="brands" fields={[{ k: "name", l: "Нэр" }, { k: "logo_url", l: "Лого URL" }]} /></TabsContent>
         <TabsContent value="delivery">
