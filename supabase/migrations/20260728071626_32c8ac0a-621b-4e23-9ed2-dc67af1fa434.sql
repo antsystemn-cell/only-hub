@@ -1,0 +1,2 @@
+REVOKE SELECT ON public.merchants FROM anon, authenticated;
+GRANT SELECT (id, name, slug, logo_url, description, owner_id, is_active, created_at, updated_at, approval_status, rejection_reason, approved_at, approved_by, business_type, website_url, social_facebook, social_instagram, delivery_mode, use_platform_payment_fallback, shipping_config, policy_shipping, policy_return, followers_count, can_create_foreign_order_products, allowed_foreign_sources) ON public.merchants TO anon, authenticated;
