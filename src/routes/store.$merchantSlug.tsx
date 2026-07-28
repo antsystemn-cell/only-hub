@@ -163,13 +163,16 @@ function StorePage() {
               onClick={() => setActiveCategory("all")}>
               Бүгд ({products.length})
             </Button>
-            {(categories as any[]).map((cat) => (
-              <Button key={cat.id} size="sm" variant={activeCategory === cat.name ? "default" : "outline"}
-                className={`whitespace-nowrap rounded-full ${activeCategory === cat.name ? "bg-orange-500 hover:bg-orange-600" : ""}`}
-                onClick={() => setActiveCategory(cat.name)}>
-                {cat.icon} {cat.name}
-              </Button>
-            ))}
+            {(categories as any[]).map((cat) => {
+              const isActive = activeCategory === cat.name || activeCategory === cat.slug;
+              return (
+                <Button key={cat.id} size="sm" variant={isActive ? "default" : "outline"}
+                  className={`whitespace-nowrap rounded-full ${isActive ? "bg-orange-500 hover:bg-orange-600" : ""}`}
+                  onClick={() => setActiveCategory(cat.name)}>
+                  {cat.icon} {cat.name}
+                </Button>
+              );
+            })}
           </div>
         )}
 
