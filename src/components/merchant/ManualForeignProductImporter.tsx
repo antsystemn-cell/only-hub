@@ -265,6 +265,16 @@ export function ManualForeignProductImporter({ merchantId, source, onClose }: Pr
             </Button>
           </div>
 
+          {hasDuplicate && (
+            <DuplicateWarning
+              duplicates={duplicates}
+              allowDuplicate={allowDuplicate}
+              onToggle={setAllowDuplicate}
+              onCancel={onClose}
+            />
+          )}
+
+
           <div className="grid gap-4 md:grid-cols-[200px_1fr]">
             <div className="space-y-2">
               <div className="flex aspect-square w-full items-center justify-center overflow-hidden rounded-xl border bg-muted">
