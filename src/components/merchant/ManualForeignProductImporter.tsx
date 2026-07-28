@@ -162,6 +162,7 @@ export function ManualForeignProductImporter({ merchantId, source, onClose }: Pr
           productInfo: [],
           productIntroSections: [],
           variants: validVariants,
+          allowDuplicate,
         },
       });
     },
@@ -171,7 +172,14 @@ export function ManualForeignProductImporter({ merchantId, source, onClose }: Pr
       onClose();
       navigate({ to: "/merchant/dashboard/products" }).catch(() => {});
     },
-    onError: (e: any) => toast.error(e.message ?? "Үүсгэхэд алдаа гарлаа"),
+    onError: (e: any) => {
+      if (e?.code === "DUPLICATE_FOREIGN_PRODUCT" || /аль хэдийн бүртгэгдсэн/.test(e?.message ?? "")) {
+        dupQuery.refetch();
+        toast.warning("Энэ бараа аль хэдийн бүртгэгдсэн байна. Доорх сануулгыг уншаад дахин үүсгэхийг зөвшөөрнө үү.");
+        return;
+      }
+      toast.error(e.message ?? "Үүсгэхэд алдаа гарлаа");
+    },
   });
 
   const goToForm = () => {
@@ -181,6 +189,7 @@ export function ManualForeignProductImporter({ merchantId, source, onClose }: Pr
     }
     const extract = sourceDef.extractProductId?.(sourceUrl.trim()) ?? null;
     if (extract && !sourceProductId) setSourceProductId(extract);
+    setAllowDuplicate(false);
     setStep("form");
   };
 
@@ -188,7 +197,8 @@ export function ManualForeignProductImporter({ merchantId, source, onClose }: Pr
     if (!coverImage && gallery.length > 0) setCoverImage(gallery[0]);
   }, [gallery, coverImage]);
 
-  const isCreateDisabled = !hasSettings || createMutation.isPending;
+  const isCreateDisabled = !hasSettings || createMutation.isPending || (hasDuplicate && !allowDuplicate);
+
 
   return (
     <Card className="rounded-2xl p-4 md:p-5">
