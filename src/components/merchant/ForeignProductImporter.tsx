@@ -733,7 +733,7 @@ export function ForeignProductImporter({ merchantId, source, onClose }: Props) {
             <Button
               size="sm"
               onClick={() => createMutation.mutate()}
-              disabled={!hasSettings || createMutation.isPending || !preview.title.trim()}
+              disabled={!hasSettings || createMutation.isPending || !preview.title.trim() || (hasDuplicate && !allowDuplicate)}
             >
               {createMutation.isPending ? <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> : null}
               Бараа үүсгэх
