@@ -349,7 +349,15 @@ export function ForeignProductImporter({ merchantId, source, onClose }: Props) {
       onClose();
       navigate({ to: "/merchant/dashboard/products" }).catch(() => {});
     },
-    onError: (e: any) => toast.error(e.message ?? "Үүсгэхэд алдаа"),
+    onError: (e: any) => {
+      if (e?.code === "DUPLICATE_FOREIGN_PRODUCT" || /аль хэдийн бүртгэгдсэн/.test(e?.message ?? "")) {
+        dupQuery.refetch();
+        toast.warning("Энэ бараа аль хэдийн бүртгэгдсэн байна. Доорх сануулгыг уншаад дахин үүсгэхийг зөвшөөрнө үү.");
+        return;
+      }
+      toast.error(e.message ?? "Үүсгэхэд алдаа");
+    },
+
   });
 
   return (
