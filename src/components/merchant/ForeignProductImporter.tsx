@@ -336,9 +336,11 @@ export function ForeignProductImporter({ merchantId, source, onClose }: Props) {
               sourcePrice: Number(v.sourcePrice),
               isPurchasable: v.isPurchasable,
             })),
+          allowDuplicate,
         },
       });
     },
+
     onSuccess: (res) => {
       toast.success("Бараа үүсгэлээ");
       qc.invalidateQueries({ queryKey: ["products", merchantId] });
