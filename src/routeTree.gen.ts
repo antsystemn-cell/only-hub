@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as WishlistRouteImport } from './routes/wishlist'
 import { Route as StoresRouteImport } from './routes/stores'
 import { Route as RegisterRouteImport } from './routes/register'
+import { Route as OrdersRouteImport } from './routes/orders'
 import { Route as McpRouteImport } from './routes/mcp'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as DriverRouteImport } from './routes/driver'
@@ -100,6 +101,11 @@ const StoresRoute = StoresRouteImport.update({
 const RegisterRoute = RegisterRouteImport.update({
   id: '/register',
   path: '/register',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OrdersRoute = OrdersRouteImport.update({
+  id: '/orders',
+  path: '/orders',
   getParentRoute: () => rootRouteImport,
 } as any)
 const McpRoute = McpRouteImport.update({
@@ -509,6 +515,7 @@ export interface FileRoutesByFullPath {
   '/driver': typeof DriverRoute
   '/login': typeof LoginRoute
   '/mcp': typeof McpRoute
+  '/orders': typeof OrdersRoute
   '/register': typeof RegisterRoute
   '/stores': typeof StoresRoute
   '/wishlist': typeof WishlistRoute
@@ -587,6 +594,7 @@ export interface FileRoutesByTo {
   '/driver': typeof DriverRoute
   '/login': typeof LoginRoute
   '/mcp': typeof McpRoute
+  '/orders': typeof OrdersRoute
   '/register': typeof RegisterRoute
   '/stores': typeof StoresRoute
   '/wishlist': typeof WishlistRoute
@@ -665,6 +673,7 @@ export interface FileRoutesById {
   '/driver': typeof DriverRoute
   '/login': typeof LoginRoute
   '/mcp': typeof McpRoute
+  '/orders': typeof OrdersRoute
   '/register': typeof RegisterRoute
   '/stores': typeof StoresRoute
   '/wishlist': typeof WishlistRoute
@@ -746,6 +755,7 @@ export interface FileRouteTypes {
     | '/driver'
     | '/login'
     | '/mcp'
+    | '/orders'
     | '/register'
     | '/stores'
     | '/wishlist'
@@ -824,6 +834,7 @@ export interface FileRouteTypes {
     | '/driver'
     | '/login'
     | '/mcp'
+    | '/orders'
     | '/register'
     | '/stores'
     | '/wishlist'
@@ -901,6 +912,7 @@ export interface FileRouteTypes {
     | '/driver'
     | '/login'
     | '/mcp'
+    | '/orders'
     | '/register'
     | '/stores'
     | '/wishlist'
@@ -981,6 +993,7 @@ export interface RootRouteChildren {
   DriverRoute: typeof DriverRoute
   LoginRoute: typeof LoginRoute
   McpRoute: typeof McpRoute
+  OrdersRoute: typeof OrdersRoute
   RegisterRoute: typeof RegisterRoute
   StoresRoute: typeof StoresRoute
   WishlistRoute: typeof WishlistRoute
@@ -1032,6 +1045,13 @@ declare module '@tanstack/react-router' {
       path: '/register'
       fullPath: '/register'
       preLoaderRoute: typeof RegisterRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/orders': {
+      id: '/orders'
+      path: '/orders'
+      fullPath: '/orders'
+      preLoaderRoute: typeof OrdersRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/mcp': {
@@ -1699,6 +1719,7 @@ const rootRouteChildren: RootRouteChildren = {
   DriverRoute: DriverRoute,
   LoginRoute: LoginRoute,
   McpRoute: McpRoute,
+  OrdersRoute: OrdersRoute,
   RegisterRoute: RegisterRoute,
   StoresRoute: StoresRoute,
   WishlistRoute: WishlistRoute,
