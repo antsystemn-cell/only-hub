@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { AlertCircle, ArrowLeft, ExternalLink, Loader2, Plus, Trash2, X } from "lucide-react";
-import { createForeignProduct } from "@/lib/foreign-orders/importer.functions";
+import { createForeignProduct, findExistingForeignProduct } from "@/lib/foreign-orders/importer.functions";
 import {
   getMerchantForeignSettings, upsertMerchantForeignSettings,
 } from "@/lib/foreign-orders/settings.functions";
