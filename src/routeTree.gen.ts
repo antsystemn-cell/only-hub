@@ -24,6 +24,7 @@ import { Route as BlogIndexRouteImport } from './routes/blog.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as TrackTokenRouteImport } from './routes/track.$token'
 import { Route as StoreMerchantSlugRouteImport } from './routes/store.$merchantSlug'
+import { Route as OrdersCategorySlugRouteImport } from './routes/orders.$categorySlug'
 import { Route as MerchantRegisterRouteImport } from './routes/merchant.register'
 import { Route as MerchantLoginRouteImport } from './routes/merchant.login'
 import { Route as MerchantDashboardRouteImport } from './routes/merchant.dashboard'
@@ -162,6 +163,11 @@ const StoreMerchantSlugRoute = StoreMerchantSlugRouteImport.update({
   id: '/store/$merchantSlug',
   path: '/store/$merchantSlug',
   getParentRoute: () => rootRouteImport,
+} as any)
+const OrdersCategorySlugRoute = OrdersCategorySlugRouteImport.update({
+  id: '/$categorySlug',
+  path: '/$categorySlug',
+  getParentRoute: () => OrdersRoute,
 } as any)
 const MerchantRegisterRoute = MerchantRegisterRouteImport.update({
   id: '/merchant/register',
@@ -515,7 +521,7 @@ export interface FileRoutesByFullPath {
   '/driver': typeof DriverRoute
   '/login': typeof LoginRoute
   '/mcp': typeof McpRoute
-  '/orders': typeof OrdersRoute
+  '/orders': typeof OrdersRouteWithChildren
   '/register': typeof RegisterRoute
   '/stores': typeof StoresRoute
   '/wishlist': typeof WishlistRoute
@@ -541,6 +547,7 @@ export interface FileRoutesByFullPath {
   '/merchant/dashboard': typeof MerchantDashboardRouteWithChildren
   '/merchant/login': typeof MerchantLoginRoute
   '/merchant/register': typeof MerchantRegisterRoute
+  '/orders/$categorySlug': typeof OrdersCategorySlugRoute
   '/store/$merchantSlug': typeof StoreMerchantSlugRouteWithChildren
   '/track/$token': typeof TrackTokenRoute
   '/admin/': typeof AdminIndexRoute
@@ -594,7 +601,7 @@ export interface FileRoutesByTo {
   '/driver': typeof DriverRoute
   '/login': typeof LoginRoute
   '/mcp': typeof McpRoute
-  '/orders': typeof OrdersRoute
+  '/orders': typeof OrdersRouteWithChildren
   '/register': typeof RegisterRoute
   '/stores': typeof StoresRoute
   '/wishlist': typeof WishlistRoute
@@ -619,6 +626,7 @@ export interface FileRoutesByTo {
   '/blog/$slug': typeof BlogSlugRoute
   '/merchant/login': typeof MerchantLoginRoute
   '/merchant/register': typeof MerchantRegisterRoute
+  '/orders/$categorySlug': typeof OrdersCategorySlugRoute
   '/store/$merchantSlug': typeof StoreMerchantSlugRouteWithChildren
   '/track/$token': typeof TrackTokenRoute
   '/admin': typeof AdminIndexRoute
@@ -673,7 +681,7 @@ export interface FileRoutesById {
   '/driver': typeof DriverRoute
   '/login': typeof LoginRoute
   '/mcp': typeof McpRoute
-  '/orders': typeof OrdersRoute
+  '/orders': typeof OrdersRouteWithChildren
   '/register': typeof RegisterRoute
   '/stores': typeof StoresRoute
   '/wishlist': typeof WishlistRoute
@@ -699,6 +707,7 @@ export interface FileRoutesById {
   '/merchant/dashboard': typeof MerchantDashboardRouteWithChildren
   '/merchant/login': typeof MerchantLoginRoute
   '/merchant/register': typeof MerchantRegisterRoute
+  '/orders/$categorySlug': typeof OrdersCategorySlugRoute
   '/store/$merchantSlug': typeof StoreMerchantSlugRouteWithChildren
   '/track/$token': typeof TrackTokenRoute
   '/admin/': typeof AdminIndexRoute
@@ -781,6 +790,7 @@ export interface FileRouteTypes {
     | '/merchant/dashboard'
     | '/merchant/login'
     | '/merchant/register'
+    | '/orders/$categorySlug'
     | '/store/$merchantSlug'
     | '/track/$token'
     | '/admin/'
@@ -859,6 +869,7 @@ export interface FileRouteTypes {
     | '/blog/$slug'
     | '/merchant/login'
     | '/merchant/register'
+    | '/orders/$categorySlug'
     | '/store/$merchantSlug'
     | '/track/$token'
     | '/admin'
@@ -938,6 +949,7 @@ export interface FileRouteTypes {
     | '/merchant/dashboard'
     | '/merchant/login'
     | '/merchant/register'
+    | '/orders/$categorySlug'
     | '/store/$merchantSlug'
     | '/track/$token'
     | '/admin/'
@@ -993,7 +1005,7 @@ export interface RootRouteChildren {
   DriverRoute: typeof DriverRoute
   LoginRoute: typeof LoginRoute
   McpRoute: typeof McpRoute
-  OrdersRoute: typeof OrdersRoute
+  OrdersRoute: typeof OrdersRouteWithChildren
   RegisterRoute: typeof RegisterRoute
   StoresRoute: typeof StoresRoute
   WishlistRoute: typeof WishlistRoute
@@ -1130,6 +1142,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/store/$merchantSlug'
       preLoaderRoute: typeof StoreMerchantSlugRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/orders/$categorySlug': {
+      id: '/orders/$categorySlug'
+      path: '/$categorySlug'
+      fullPath: '/orders/$categorySlug'
+      preLoaderRoute: typeof OrdersCategorySlugRouteImport
+      parentRoute: typeof OrdersRoute
     }
     '/merchant/register': {
       id: '/merchant/register'
@@ -1632,6 +1651,17 @@ const AdminRouteChildren: AdminRouteChildren = {
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
+interface OrdersRouteChildren {
+  OrdersCategorySlugRoute: typeof OrdersCategorySlugRoute
+}
+
+const OrdersRouteChildren: OrdersRouteChildren = {
+  OrdersCategorySlugRoute: OrdersCategorySlugRoute,
+}
+
+const OrdersRouteWithChildren =
+  OrdersRoute._addFileChildren(OrdersRouteChildren)
+
 interface MerchantDashboardInventoryRouteChildren {
   MerchantDashboardInventoryFromCargoRoute: typeof MerchantDashboardInventoryFromCargoRoute
   MerchantDashboardInventoryMovementsRoute: typeof MerchantDashboardInventoryMovementsRoute
@@ -1719,7 +1749,7 @@ const rootRouteChildren: RootRouteChildren = {
   DriverRoute: DriverRoute,
   LoginRoute: LoginRoute,
   McpRoute: McpRoute,
-  OrdersRoute: OrdersRoute,
+  OrdersRoute: OrdersRouteWithChildren,
   RegisterRoute: RegisterRoute,
   StoresRoute: StoresRoute,
   WishlistRoute: WishlistRoute,
