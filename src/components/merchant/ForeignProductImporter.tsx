@@ -27,7 +27,9 @@ import {
 import {
   previewForeignImport,
   createForeignProduct,
+  findExistingForeignProduct,
 } from "@/lib/foreign-orders/importer.functions";
+
 import { translateForeignPreview } from "@/lib/foreign-orders/translate.functions";
 import {
   getMerchantForeignSettings,
@@ -164,7 +166,26 @@ export function ForeignProductImporter({ merchantId, source, onClose }: Props) {
   const previewFn = useServerFn(previewForeignImport);
   const createFn = useServerFn(createForeignProduct);
   const translateFn = useServerFn(translateForeignPreview);
+  const findDupFn = useServerFn(findExistingForeignProduct);
   const [isTranslating, setIsTranslating] = useState(false);
+  const [allowDuplicate, setAllowDuplicate] = useState(false);
+
+  const dupQuery = useQuery({
+    queryKey: ["foreign-dup", merchantId, source, preview?.sourceProductId, preview?.sourceUrl],
+    enabled: !!preview && (!!preview.sourceProductId || !!preview.sourceUrl),
+    queryFn: () =>
+      findDupFn({
+        data: {
+          merchantId,
+          source,
+          sourceProductId: preview?.sourceProductId ?? null,
+          sourceUrl: preview?.sourceUrl ?? null,
+        },
+      }),
+  });
+  const duplicates = (dupQuery.data?.items ?? []) as Array<{ id: string; name: string; slug: string | null; image_url: string | null; is_active: boolean; created_at: string }>;
+  const hasDuplicate = duplicates.length > 0;
+
 
   const previewMutation = useMutation({
     mutationFn: async () => {
@@ -216,7 +237,9 @@ export function ForeignProductImporter({ merchantId, source, onClose }: Props) {
         });
       }
       setVariants(seeded);
+      setAllowDuplicate(false);
       setStep("preview");
+
       toast.success(
         res.status === "SUCCESS"
           ? "Бүх мэдээлэл амжилттай татагдлаа"
@@ -315,16 +338,26 @@ export function ForeignProductImporter({ merchantId, source, onClose }: Props) {
               sourcePrice: Number(v.sourcePrice),
               isPurchasable: v.isPurchasable,
             })),
+          allowDuplicate,
         },
       });
     },
+
     onSuccess: (res) => {
       toast.success("Бараа үүсгэлээ");
       qc.invalidateQueries({ queryKey: ["products", merchantId] });
       onClose();
       navigate({ to: "/merchant/dashboard/products" }).catch(() => {});
     },
-    onError: (e: any) => toast.error(e.message ?? "Үүсгэхэд алдаа"),
+    onError: (e: any) => {
+      if (e?.code === "DUPLICATE_FOREIGN_PRODUCT" || /аль хэдийн бүртгэгдсэн/.test(e?.message ?? "")) {
+        dupQuery.refetch();
+        toast.warning("Энэ бараа аль хэдийн бүртгэгдсэн байна. Доорх сануулгыг уншаад дахин үүсгэхийг зөвшөөрнө үү.");
+        return;
+      }
+      toast.error(e.message ?? "Үүсгэхэд алдаа");
+    },
+
   });
 
   return (
@@ -422,6 +455,15 @@ export function ForeignProductImporter({ merchantId, source, onClose }: Props) {
               </Badge>
             )}
           </div>
+          {hasDuplicate && (
+            <DuplicateWarning
+              duplicates={duplicates}
+              allowDuplicate={allowDuplicate}
+              onToggle={setAllowDuplicate}
+              onCancel={onClose}
+            />
+          )}
+
           {warnings.length > 0 && (
             <Alert className="border-amber-300 bg-amber-50 py-2">
               <AlertCircle className="h-4 w-4 text-amber-600" />
@@ -699,7 +741,7 @@ export function ForeignProductImporter({ merchantId, source, onClose }: Props) {
             <Button
               size="sm"
               onClick={() => createMutation.mutate()}
-              disabled={!hasSettings || createMutation.isPending || !preview.title.trim()}
+              disabled={!hasSettings || createMutation.isPending || !preview.title.trim() || (hasDuplicate && !allowDuplicate)}
             >
               {createMutation.isPending ? <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> : null}
               Бараа үүсгэх
@@ -921,3 +963,68 @@ function SettingsQuickForm({
   );
 }
 
+
+function DuplicateWarning({
+  duplicates,
+  allowDuplicate,
+  onToggle,
+  onCancel,
+}: {
+  duplicates: Array<{ id: string; name: string; slug: string | null; image_url: string | null; is_active: boolean; created_at: string }>;
+  allowDuplicate: boolean;
+  onToggle: (v: boolean) => void;
+  onCancel: () => void;
+}) {
+  return (
+    <Alert className="border-amber-400 bg-amber-50 py-3">
+      <AlertCircle className="h-4 w-4 text-amber-600" />
+      <AlertTitle className="text-sm font-semibold text-amber-900">
+        Энэ бараа өмнө нь оруулагдсан байна
+      </AlertTitle>
+      <AlertDescription className="space-y-2 text-xs text-amber-900">
+        <p>
+          Ижил эх сурвалжийн линк/ID-тай {duplicates.length} бараа таны дэлгүүрт олдлоо.
+          Давхардаж оруулахаас сэргийлж дараах зүйлсийг шалгана уу:
+        </p>
+        <ul className="space-y-1">
+          {duplicates.map((d) => (
+            <li key={d.id} className="flex items-center gap-2 rounded border border-amber-200 bg-white/60 px-2 py-1">
+              {d.image_url ? (
+                <img src={d.image_url} alt="" className="h-8 w-8 rounded object-cover" />
+              ) : (
+                <div className="h-8 w-8 rounded bg-amber-100" />
+              )}
+              <div className="min-w-0 flex-1">
+                <div className="truncate font-medium">{d.name}</div>
+                <div className="text-[10px] text-amber-700">
+                  {new Date(d.created_at).toLocaleDateString("mn-MN")} · {d.is_active ? "Идэвхтэй" : "Идэвхгүй"}
+                </div>
+              </div>
+              {d.slug && (
+                <a
+                  href={`/merchant/dashboard/products?edit=${d.id}`}
+                  className="shrink-0 rounded border border-amber-300 bg-white px-2 py-0.5 text-[10px] font-medium text-amber-800 hover:bg-amber-100"
+                >
+                  Нээх
+                </a>
+              )}
+            </li>
+          ))}
+        </ul>
+        <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
+          <label className="flex items-center gap-2 text-xs font-medium">
+            <input
+              type="checkbox"
+              checked={allowDuplicate}
+              onChange={(e) => onToggle(e.target.checked)}
+            />
+            Мэдсэн, дахин үүсгэхийг зөвшөөрч байна
+          </label>
+          <Button variant="outline" size="sm" onClick={onCancel} className="h-7 text-xs">
+            Оруулахыг болих
+          </Button>
+        </div>
+      </AlertDescription>
+    </Alert>
+  );
+}

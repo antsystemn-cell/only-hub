@@ -72,6 +72,50 @@ async function loadOrDefaultSettings(
 }
 
 // ============================================================
+// DUPLICATE CHECK: look up an existing foreign product for this merchant
+// by (source, source_product_id) or matching source_url. Used by the
+// importer UI to warn merchants before they re-create the same product.
+// ============================================================
+const duplicateSchema = z.object({
+  merchantId: z.string().uuid(),
+  source: sourceEnum,
+  sourceProductId: z.string().optional().nullable(),
+  sourceUrl: z.string().optional().nullable(),
+});
+
+export const findExistingForeignProduct = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => duplicateSchema.parse(d))
+  .handler(async ({ data, context }) => {
+    const { supabase } = context;
+    const { data: hasAccess } = await supabase.rpc("has_merchant_access", {
+      _user_id: context.userId,
+      _merchant_id: data.merchantId,
+    });
+    if (!hasAccess) throw new Error("Forbidden: no merchant access");
+
+    const pid = (data.sourceProductId ?? "").trim();
+    const url = (data.sourceUrl ?? "").trim();
+    if (!pid && !url) return { items: [] as any[] };
+
+    const filters: string[] = [];
+    if (pid) filters.push(`source_product_id.eq.${pid}`);
+    if (url) filters.push(`source_url.eq.${url}`);
+
+    const { data: rows, error } = await supabase
+      .from("products")
+      .select("id, name, slug, image_url, thumbnail_url, is_active, created_at, source_url, source_product_id, foreign_source, product_type")
+      .eq("merchant_id", data.merchantId)
+      .eq("foreign_source", data.source)
+      .or(filters.join(","))
+      .order("created_at", { ascending: false })
+      .limit(5);
+    if (error) throw new Error(error.message);
+    return { items: rows ?? [] };
+  });
+
+
+// ============================================================
 // PREVIEW: resolve URL → fetch → parse → compute prices.
 // ============================================================
 const previewSchema = z.object({
@@ -151,7 +195,9 @@ const createSchema = z.object({
     .array(z.object({ title: z.string(), content: z.string() }))
     .default([]),
   variants: z.array(variantInputSchema).min(1, "Хамгийн багадаа 1 хувилбар оруулна."),
+  allowDuplicate: z.boolean().optional().default(false),
 });
+
 
 export const createForeignProduct = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -159,11 +205,38 @@ export const createForeignProduct = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertPermission(context, data.merchantId, data.source);
     const { supabase } = context;
+
+    // Duplicate guard: block re-import of the same source_product_id / source_url
+    // unless the merchant explicitly acknowledged the warning in the UI.
+    if (!data.allowDuplicate) {
+      const filters: string[] = [];
+      if (data.sourceProductId) filters.push(`source_product_id.eq.${data.sourceProductId}`);
+      if (data.sourceUrl) filters.push(`source_url.eq.${data.sourceUrl}`);
+      if (filters.length > 0) {
+        const { data: dupes } = await supabase
+          .from("products")
+          .select("id, name, slug")
+          .eq("merchant_id", data.merchantId)
+          .eq("foreign_source", data.source)
+          .or(filters.join(","))
+          .limit(3);
+        if (dupes && dupes.length > 0) {
+          const err: any = new Error(
+            `Энэ бараа ("${dupes[0].name}") аль хэдийн бүртгэгдсэн байна. Дахин үүсгэхийг зөвшөөрвөл дахин оруулна уу.`,
+          );
+          err.code = "DUPLICATE_FOREIGN_PRODUCT";
+          err.duplicates = dupes;
+          throw err;
+        }
+      }
+    }
+
     const settings = await loadOrDefaultSettings(supabase, data.merchantId, data.source);
     const src = FOREIGN_SOURCES[data.source as keyof typeof FOREIGN_SOURCES];
     if (settings.exchangeRate <= 0) {
       throw new Error(`Валютын ханш тохируулагдаагүй байна. Тохиргоо хэсгээс ${src.currency}→MNT ханш оруулна уу.`);
     }
+
 
     // Compute final prices first; need product.price (lowest variant) for listing.
     const priced = data.variants.map((v) => {
