@@ -1,11 +1,11 @@
-import { createFileRoute, redirect } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
+import { StoreView } from "@/components/store/StoreView";
 
 export const Route = createFileRoute("/orders/$categorySlug")({
-  beforeLoad: ({ params }) => {
-    throw redirect({
-      to: "/store/$merchantSlug",
-      params: { merchantSlug: "orders" },
-      search: { category: params.categorySlug },
-    });
-  },
+  component: OrdersCategoryPage,
 });
+
+function OrdersCategoryPage() {
+  const { categorySlug } = Route.useParams();
+  return <StoreView merchantSlug="orders" initialCategory={categorySlug} forceIndex />;
+}
