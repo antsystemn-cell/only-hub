@@ -57,8 +57,19 @@ function StorePage() {
     return () => clearInterval(t);
   }, [banners.length]);
 
+  // Resolve activeCategory which may be a slug (from URL) or a name.
+  const resolvedCategoryName = useMemo(() => {
+    if (activeCategory === "all") return "all";
+    const match = (categories as any[]).find(
+      (c) => c.slug === activeCategory || c.name === activeCategory,
+    );
+    return match?.name ?? activeCategory;
+  }, [activeCategory, categories]);
+
   const filteredProducts = useMemo(() => {
-    let list = activeCategory === "all" ? products : (products as any[]).filter((p: any) => p.category === activeCategory);
+    let list = resolvedCategoryName === "all"
+      ? products
+      : (products as any[]).filter((p: any) => p.category === resolvedCategoryName);
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       list = (list as any[]).filter((p: any) =>
@@ -68,7 +79,7 @@ function StorePage() {
       );
     }
     return list;
-  }, [products, activeCategory, searchQuery]);
+  }, [products, resolvedCategoryName, searchQuery]);
 
   if (!isStoreIndex) return <Outlet />;
 
@@ -152,13 +163,16 @@ function StorePage() {
               onClick={() => setActiveCategory("all")}>
               Бүгд ({products.length})
             </Button>
-            {(categories as any[]).map((cat) => (
-              <Button key={cat.id} size="sm" variant={activeCategory === cat.name ? "default" : "outline"}
-                className={`whitespace-nowrap rounded-full ${activeCategory === cat.name ? "bg-orange-500 hover:bg-orange-600" : ""}`}
-                onClick={() => setActiveCategory(cat.name)}>
-                {cat.icon} {cat.name}
-              </Button>
-            ))}
+            {(categories as any[]).map((cat) => {
+              const isActive = activeCategory === cat.name || activeCategory === cat.slug;
+              return (
+                <Button key={cat.id} size="sm" variant={isActive ? "default" : "outline"}
+                  className={`whitespace-nowrap rounded-full ${isActive ? "bg-orange-500 hover:bg-orange-600" : ""}`}
+                  onClick={() => setActiveCategory(cat.name)}>
+                  {cat.icon} {cat.name}
+                </Button>
+              );
+            })}
           </div>
         )}
 
