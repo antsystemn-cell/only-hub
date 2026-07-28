@@ -1,0 +1,1 @@
+REVOKE SELECT (contact_phone, contact_name, register_number, delivery_api_key, delivery_endpoint) ON public.merchants FROM anon, authenticated;
