@@ -38,7 +38,7 @@ function SettingsPage() {
           <TabsTrigger value="import">📥 Импорт</TabsTrigger>
         </TabsList>
         <TabsContent value="store"><StoreProfileTab /></TabsContent>
-        <TabsContent value="categories"><CrudList table="categories" fields={[{ k: "name", l: "Нэр" }, { k: "icon", l: "Icon (emoji)" }]} /></TabsContent>
+        <TabsContent value="categories"><CategoriesTab /></TabsContent>
 
         <TabsContent value="brands"><CrudList table="brands" fields={[{ k: "name", l: "Нэр" }, { k: "logo_url", l: "Лого URL" }]} /></TabsContent>
         <TabsContent value="delivery">
@@ -295,6 +295,158 @@ function ImportTab() {
           {loading ? "Импортлож байна..." : "Импортлох"}
         </Button>
         <Button variant="outline" onClick={() => { setJsonInput(""); setResult(null); }}>Цэвэрлэх</Button>
+      </div>
+    </Card>
+  );
+}
+
+function CategoriesTab() {
+  const { primaryMerchantId } = useAuth();
+  const merchantId = primaryMerchantId!;
+  const qc = useQueryClient();
+  const emptyForm = { name: "", icon: "", slug: "", position: 0 };
+  const [form, setForm] = useState<any>(emptyForm);
+  const [editId, setEditId] = useState<string | null>(null);
+  const [slugTouched, setSlugTouched] = useState(false);
+
+  const { data: merchant } = useQuery({
+    queryKey: ["merchant-slug-for-categories", merchantId],
+    queryFn: async () => (await supabase.from("merchants").select("slug").eq("id", merchantId).maybeSingle()).data,
+  });
+  const merchantSlug = merchant?.slug ?? "";
+  const isOrdersMerchant = merchantSlug === "orders";
+
+  const { data: items = [] } = useQuery({
+    queryKey: ["categories", merchantId],
+    queryFn: async () => (await supabase.from("categories").select("*").eq("merchant_id", merchantId).order("position")).data ?? [],
+  });
+
+  const buildUrl = (slug: string) => {
+    if (!slug) return "";
+    if (isOrdersMerchant) return `/orders/${slug}`;
+    return `/store/${merchantSlug}?category=${encodeURIComponent(slug)}`;
+  };
+
+  const save = useMutation({
+    mutationFn: async () => {
+      const name = (form.name ?? "").trim();
+      if (!name) throw new Error("Ангиллын нэр оруулна уу");
+      const rawSlug = (form.slug ?? "").trim() || slugify(name);
+      const cleanSlug = rawSlug.toLowerCase().replace(/[^a-z0-9-]+/g, "-").replace(/^-+|-+$/g, "");
+      if (!cleanSlug) throw new Error("URL хаяг буруу байна");
+      const payload: any = {
+        merchant_id: merchantId,
+        name,
+        icon: form.icon ?? null,
+        slug: cleanSlug,
+        position: Number(form.position ?? 0) || 0,
+      };
+      if (editId) {
+        const { error } = await supabase.from("categories").update(payload).eq("id", editId);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from("categories").insert(payload);
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      toast.success(editId ? "Шинэчиллээ" : "Нэмэгдлээ");
+      qc.invalidateQueries({ queryKey: ["categories", merchantId] });
+      setForm(emptyForm); setEditId(null); setSlugTouched(false);
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const del = async (id: string) => {
+    if (!confirm("Ангилал устгах уу?")) return;
+    const { error } = await supabase.from("categories").delete().eq("id", id);
+    if (error) toast.error(error.message);
+    else { toast.success("Устгалаа"); qc.invalidateQueries({ queryKey: ["categories", merchantId] }); }
+  };
+
+  const startEdit = (it: any) => {
+    setEditId(it.id);
+    setForm({ name: it.name ?? "", icon: it.icon ?? "", slug: it.slug ?? "", position: it.position ?? 0 });
+    setSlugTouched(true);
+  };
+
+  const previewSlug = (form.slug?.trim() || slugify(form.name ?? ""));
+
+  return (
+    <Card className="rounded-2xl p-5">
+      <div className="mb-4">
+        <h3 className="text-base font-semibold">{editId ? "Ангилал засах" : "Шинэ ангилал"}</h3>
+        <p className="text-sm text-muted-foreground">Ангилал бүрд өөрийн URL (slug) тохируулж болно.</p>
+      </div>
+      <div className="grid gap-4 md:grid-cols-2">
+        <div>
+          <Label>Нэр</Label>
+          <Input
+            value={form.name ?? ""}
+            onChange={(e) => {
+              const v = e.target.value;
+              setForm((f: any) => ({ ...f, name: v, slug: slugTouched ? f.slug : slugify(v) }));
+            }}
+            placeholder="Жишээ: Оригинал пүүз, гутал"
+          />
+        </div>
+        <div>
+          <Label>Icon (emoji)</Label>
+          <Input value={form.icon ?? ""} onChange={(e) => setForm({ ...form, icon: e.target.value })} placeholder="👟" />
+        </div>
+        <div className="md:col-span-2">
+          <Label>URL хаяг (slug)</Label>
+          <Input
+            value={form.slug ?? ""}
+            onChange={(e) => { setSlugTouched(true); setForm({ ...form, slug: e.target.value }); }}
+            placeholder="original-sneakers"
+          />
+          <p className="mt-1 text-xs text-muted-foreground">
+            Зөвхөн жижиг үсэг, тоо, зураас (-). Хоосон орхивол нэрнээс автоматаар үүснэ.
+          </p>
+          {previewSlug && (
+            <div className="mt-2 rounded-lg border border-dashed bg-muted/40 p-2 text-xs">
+              <span className="text-muted-foreground">Урьдчилан харах: </span>
+              <code className="break-all font-mono text-foreground">only.mn{buildUrl(previewSlug)}</code>
+            </div>
+          )}
+        </div>
+        <div>
+          <Label>Байрлал (position)</Label>
+          <Input type="number" value={form.position ?? 0} onChange={(e) => setForm({ ...form, position: e.target.value })} />
+        </div>
+        <div className="flex items-end gap-2">
+          <Button onClick={() => save.mutate()} disabled={save.isPending}>
+            {editId ? <><Pencil className="mr-1 h-4 w-4" /> Шинэчлэх</> : <><Plus className="mr-1 h-4 w-4" /> Нэмэх</>}
+          </Button>
+          {editId && (
+            <Button variant="outline" onClick={() => { setForm(emptyForm); setEditId(null); setSlugTouched(false); }}>
+              <X className="h-4 w-4" />
+            </Button>
+          )}
+        </div>
+      </div>
+
+      <div className="mt-6 space-y-2">
+        <h4 className="text-sm font-semibold text-muted-foreground">Ангиллууд ({items.length})</h4>
+        {(items as any[]).map((it) => (
+          <div key={it.id} className="flex flex-wrap items-center gap-3 rounded-xl border border-border p-3 text-sm">
+            <span className="text-lg">{it.icon || "📁"}</span>
+            <div className="min-w-0 flex-1">
+              <div className="font-medium">{it.name}</div>
+              <div className="truncate text-xs text-muted-foreground">
+                <code className="font-mono">only.mn{buildUrl(it.slug || slugify(it.name))}</code>
+              </div>
+            </div>
+            <Button size="icon" variant="ghost" onClick={() => startEdit(it)}><Pencil className="h-4 w-4" /></Button>
+            <Button size="icon" variant="ghost" onClick={() => del(it.id)}><Trash2 className="h-4 w-4" /></Button>
+          </div>
+        ))}
+        {items.length === 0 && (
+          <div className="rounded-xl border border-dashed p-6 text-center text-sm text-muted-foreground">
+            Одоогоор ангилал алга. Дээрх хэсгээс нэмнэ үү.
+          </div>
+        )}
       </div>
     </Card>
   );
