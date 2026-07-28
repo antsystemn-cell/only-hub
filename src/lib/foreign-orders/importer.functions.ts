@@ -205,11 +205,38 @@ export const createForeignProduct = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertPermission(context, data.merchantId, data.source);
     const { supabase } = context;
+
+    // Duplicate guard: block re-import of the same source_product_id / source_url
+    // unless the merchant explicitly acknowledged the warning in the UI.
+    if (!data.allowDuplicate) {
+      const filters: string[] = [];
+      if (data.sourceProductId) filters.push(`source_product_id.eq.${data.sourceProductId}`);
+      if (data.sourceUrl) filters.push(`source_url.eq.${data.sourceUrl}`);
+      if (filters.length > 0) {
+        const { data: dupes } = await supabase
+          .from("products")
+          .select("id, name, slug")
+          .eq("merchant_id", data.merchantId)
+          .eq("foreign_source", data.source)
+          .or(filters.join(","))
+          .limit(3);
+        if (dupes && dupes.length > 0) {
+          const err: any = new Error(
+            `Энэ бараа ("${dupes[0].name}") аль хэдийн бүртгэгдсэн байна. Дахин үүсгэхийг зөвшөөрвөл дахин оруулна уу.`,
+          );
+          err.code = "DUPLICATE_FOREIGN_PRODUCT";
+          err.duplicates = dupes;
+          throw err;
+        }
+      }
+    }
+
     const settings = await loadOrDefaultSettings(supabase, data.merchantId, data.source);
     const src = FOREIGN_SOURCES[data.source as keyof typeof FOREIGN_SOURCES];
     if (settings.exchangeRate <= 0) {
       throw new Error(`Валютын ханш тохируулагдаагүй байна. Тохиргоо хэсгээс ${src.currency}→MNT ханш оруулна уу.`);
     }
+
 
     // Compute final prices first; need product.price (lowest variant) for listing.
     const priced = data.variants.map((v) => {
