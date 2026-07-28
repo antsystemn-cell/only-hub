@@ -57,8 +57,19 @@ function StorePage() {
     return () => clearInterval(t);
   }, [banners.length]);
 
+  // Resolve activeCategory which may be a slug (from URL) or a name.
+  const resolvedCategoryName = useMemo(() => {
+    if (activeCategory === "all") return "all";
+    const match = (categories as any[]).find(
+      (c) => c.slug === activeCategory || c.name === activeCategory,
+    );
+    return match?.name ?? activeCategory;
+  }, [activeCategory, categories]);
+
   const filteredProducts = useMemo(() => {
-    let list = activeCategory === "all" ? products : (products as any[]).filter((p: any) => p.category === activeCategory);
+    let list = resolvedCategoryName === "all"
+      ? products
+      : (products as any[]).filter((p: any) => p.category === resolvedCategoryName);
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       list = (list as any[]).filter((p: any) =>
@@ -68,7 +79,7 @@ function StorePage() {
       );
     }
     return list;
-  }, [products, activeCategory, searchQuery]);
+  }, [products, resolvedCategoryName, searchQuery]);
 
   if (!isStoreIndex) return <Outlet />;
 
