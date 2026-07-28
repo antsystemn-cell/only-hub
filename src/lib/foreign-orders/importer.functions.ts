@@ -195,7 +195,9 @@ const createSchema = z.object({
     .array(z.object({ title: z.string(), content: z.string() }))
     .default([]),
   variants: z.array(variantInputSchema).min(1, "Хамгийн багадаа 1 хувилбар оруулна."),
+  allowDuplicate: z.boolean().optional().default(false),
 });
+
 
 export const createForeignProduct = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
