@@ -166,7 +166,26 @@ export function ForeignProductImporter({ merchantId, source, onClose }: Props) {
   const previewFn = useServerFn(previewForeignImport);
   const createFn = useServerFn(createForeignProduct);
   const translateFn = useServerFn(translateForeignPreview);
+  const findDupFn = useServerFn(findExistingForeignProduct);
   const [isTranslating, setIsTranslating] = useState(false);
+  const [allowDuplicate, setAllowDuplicate] = useState(false);
+
+  const dupQuery = useQuery({
+    queryKey: ["foreign-dup", merchantId, source, preview?.sourceProductId, preview?.sourceUrl],
+    enabled: !!preview && (!!preview.sourceProductId || !!preview.sourceUrl),
+    queryFn: () =>
+      findDupFn({
+        data: {
+          merchantId,
+          source,
+          sourceProductId: preview?.sourceProductId ?? null,
+          sourceUrl: preview?.sourceUrl ?? null,
+        },
+      }),
+  });
+  const duplicates = (dupQuery.data?.items ?? []) as Array<{ id: string; name: string; slug: string | null; image_url: string | null; is_active: boolean; created_at: string }>;
+  const hasDuplicate = duplicates.length > 0;
+
 
   const previewMutation = useMutation({
     mutationFn: async () => {
