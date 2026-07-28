@@ -237,7 +237,9 @@ export function ForeignProductImporter({ merchantId, source, onClose }: Props) {
         });
       }
       setVariants(seeded);
+      setAllowDuplicate(false);
       setStep("preview");
+
       toast.success(
         res.status === "SUCCESS"
           ? "Бүх мэдээлэл амжилттай татагдлаа"
