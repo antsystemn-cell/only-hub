@@ -563,3 +563,60 @@ function QuickSettingsForm({ merchantId, source }: { merchantId: string; source:
     </div>
   );
 }
+
+function DuplicateWarning({
+  duplicates,
+  allowDuplicate,
+  onToggle,
+  onCancel,
+}: {
+  duplicates: Array<{ id: string; name: string; slug: string | null; image_url: string | null; is_active: boolean; created_at: string }>;
+  allowDuplicate: boolean;
+  onToggle: (v: boolean) => void;
+  onCancel: () => void;
+}) {
+  return (
+    <Alert className="border-amber-400 bg-amber-50 py-3">
+      <AlertCircle className="h-4 w-4 text-amber-600" />
+      <AlertTitle className="text-sm font-semibold text-amber-900">
+        Энэ бараа өмнө нь оруулагдсан байна
+      </AlertTitle>
+      <AlertDescription className="space-y-2 text-xs text-amber-900">
+        <p>
+          Ижил эх сурвалжийн линк/ID-тай {duplicates.length} бараа таны дэлгүүрт олдлоо.
+          Давхардаж оруулахаас сэргийлж дараах зүйлсийг шалгана уу:
+        </p>
+        <ul className="space-y-1">
+          {duplicates.map((d) => (
+            <li key={d.id} className="flex items-center gap-2 rounded border border-amber-200 bg-white/60 px-2 py-1">
+              {d.image_url ? (
+                <img src={d.image_url} alt="" className="h-8 w-8 rounded object-cover" />
+              ) : (
+                <div className="h-8 w-8 rounded bg-amber-100" />
+              )}
+              <div className="min-w-0 flex-1">
+                <div className="truncate font-medium">{d.name}</div>
+                <div className="text-[10px] text-amber-700">
+                  {new Date(d.created_at).toLocaleDateString("mn-MN")} · {d.is_active ? "Идэвхтэй" : "Идэвхгүй"}
+                </div>
+              </div>
+            </li>
+          ))}
+        </ul>
+        <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
+          <label className="flex items-center gap-2 text-xs font-medium">
+            <input
+              type="checkbox"
+              checked={allowDuplicate}
+              onChange={(e) => onToggle(e.target.checked)}
+            />
+            Мэдсэн, дахин үүсгэхийг зөвшөөрч байна
+          </label>
+          <Button variant="outline" size="sm" onClick={onCancel} className="h-7 text-xs">
+            Оруулахыг болих
+          </Button>
+        </div>
+      </AlertDescription>
+    </Alert>
+  );
+}
