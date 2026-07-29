@@ -802,7 +802,7 @@ function ProductDetailPage() {
         {/* === Detail tabs + Reviews summary === */}
         <div className="mt-8 grid gap-5 lg:mt-12 lg:grid-cols-2 lg:gap-6">
           {/* Tabs */}
-          <Card className="min-w-0 overflow-hidden rounded-2xl border-border/60 bg-white p-4 sm:p-5">
+          <Card className="min-w-0 max-w-full overflow-hidden rounded-2xl border-border/60 bg-white p-4 sm:p-5">
             <Tabs defaultValue="desc" className="w-full">
               <div className="scrollbar-none -mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
                 <TabsList className="flex w-max min-w-full justify-start border-b border-border/40 bg-transparent p-0">
