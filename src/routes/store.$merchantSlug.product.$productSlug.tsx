@@ -648,17 +648,26 @@ function ProductDetailPage() {
                 <div className="flex flex-wrap gap-2">
                   {colors.map((c) => {
                     const disabled = unavailableColors.has(c);
+                    const p = colorPrices.get(c);
                     return (
                       <button key={c} disabled={disabled} onClick={() => !disabled && setColor(c)}
                         title={disabled ? "Энэ өнгө одоогоор боломжгүй" : undefined}
-                        className={`relative rounded-lg border px-3.5 py-1.5 text-sm transition ${
+                        className={`relative flex flex-col items-center justify-center rounded-lg border px-3 py-1.5 transition ${
                           disabled
                             ? "cursor-not-allowed border-dashed border-border bg-muted text-muted-foreground line-through opacity-60"
                             : color === c
                             ? "border-orange-500 bg-orange-50 text-orange-600"
                             : "border-border bg-white hover:border-orange-300"
                         }`}>
-                        {color === c && !disabled && <Check className="mr-1 inline h-3 w-3" />}{c}
+                        <div className="flex items-center gap-1 text-sm font-medium">
+                          {color === c && !disabled && <Check className="h-3.5 w-3.5" />}
+                          {c}
+                        </div>
+                        {p && (
+                          <div className={`mt-0.5 text-[10px] sm:text-xs ${color === c ? "text-orange-500" : "text-muted-foreground"}`}>
+                            {p.min === p.max ? fmtMnt(p.min) : `${fmtMnt(p.min)}+`}
+                          </div>
+                        )}
                       </button>
                     );
                   })}
