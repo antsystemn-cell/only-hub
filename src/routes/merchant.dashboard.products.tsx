@@ -17,7 +17,7 @@ import {
 import { toast } from "sonner";
 import { Plus, Edit, Copy, Trash2, Search, ImageIcon, X, Upload, History, ExternalLink, Layers } from "lucide-react";
 import { PurchaseHistoryDialog } from "@/components/inventory/PurchaseHistoryDialog";
-import { ForeignVariantsDialog } from "@/components/merchant/ForeignVariantsDialog";
+import { ForeignVariantsDialog, ForeignVariantsManager } from "@/components/merchant/ForeignVariantsDialog";
 import { fmtMnt, slugify } from "@/lib/format";
 import { uploadOptimized } from "@/lib/image";
 import { AddProductTypeDialog } from "@/components/merchant/AddProductTypeDialog";
@@ -58,6 +58,8 @@ type Product = {
   colors: ColorVariant[];
   sizes: string[];
   variant_stock: Record<string, number>;
+  product_type?: string | null;
+  source_currency?: string | null;
 };
 
 const blank: Product = {
@@ -137,6 +139,11 @@ function ProductsPage() {
         merchant_id: merchantId,
         slug: p.slug || slugify(p.name),
       };
+      if (p.product_type === "FOREIGN_ORDER") {
+        delete payload.colors;
+        delete payload.sizes;
+        delete payload.variant_stock;
+      }
       if (editId) {
         const { error } = await supabase.from("products").update(payload).eq("id", editId);
         if (error) throw error;
@@ -443,6 +450,15 @@ function ProductsPage() {
             </div>
 
             {/* Colors */}
+            {editing.product_type === "FOREIGN_ORDER" && editId ? (
+              <div className="md:col-span-2 rounded-xl border border-border bg-muted/30 p-4">
+                <div className="mb-3 flex items-center gap-2">
+                  <Layers className="h-4 w-4 text-primary" />
+                  <Label>Гадаад захиалгын сонголт ба үнэ</Label>
+                </div>
+                <ForeignVariantsManager productId={editId} sourceCurrency={editing.source_currency} />
+              </div>
+            ) : (
             <div className="md:col-span-2">
               <div className="mb-2 flex items-center justify-between">
                 <Label>Өнгөний сонголт</Label>
@@ -472,8 +488,10 @@ function ProductsPage() {
                 ))}
               </div>
             </div>
+            )}
 
             {/* Sizes */}
+            {editing.product_type !== "FOREIGN_ORDER" && (
             <div className="md:col-span-2">
               <Label>Хэмжээний сонголт</Label>
               <div className="mt-2 flex flex-wrap items-center gap-2">
@@ -495,9 +513,10 @@ function ProductsPage() {
                   }} />
               </div>
             </div>
+            )}
 
             {/* Variant stock grid */}
-            {editing.colors?.length > 0 && editing.sizes?.length > 0 && (
+            {editing.product_type !== "FOREIGN_ORDER" && editing.colors?.length > 0 && editing.sizes?.length > 0 && (
               <div className="md:col-span-2 overflow-x-auto">
                 <Label>Нөөц (өнгө × хэмжээ)</Label>
                 <table className="mt-2 border-collapse text-sm">
