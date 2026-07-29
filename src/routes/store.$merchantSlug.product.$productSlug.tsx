@@ -837,9 +837,9 @@ function ProductDetailPage() {
                 <TabsContent value="specs" className="mt-4">
                   <dl className="divide-y divide-border">
                     {specs.map((s, i) => (
-                      <div key={i} className="grid grid-cols-[120px_1fr] gap-3 py-2.5 sm:grid-cols-[180px_1fr]">
-                        <dt className="text-sm text-muted-foreground">{s.label}</dt>
-                        <dd className="text-sm font-medium">{s.value}</dd>
+                      <div key={i} className="flex flex-col py-2.5 sm:flex-row sm:items-start sm:gap-3">
+                        <dt className="text-xs text-muted-foreground sm:w-40 sm:shrink-0 sm:text-sm">{s.label}</dt>
+                        <dd className="mt-1 text-sm font-medium sm:mt-0">{s.value}</dd>
                       </div>
                     ))}
                   </dl>
