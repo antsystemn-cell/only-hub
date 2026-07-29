@@ -69,13 +69,6 @@ async function loadPricingSettings(
   };
 }
 
-async function syncProductFromVariants(productId: string) {
-  const { error } = await (supabaseAdmin as any).rpc("sync_product_from_variants", {
-    _product_id: productId,
-  });
-  if (error) throw new Error(error.message);
-}
-
 export async function listProductVariantsService(context: AuthContext, productId: string) {
   await assertProductAccess(context, productId);
   const { data: rows, error } = await supabaseAdmin
@@ -147,7 +140,6 @@ export async function upsertProductVariantService(context: AuthContext, data: Va
     if (error) throw new Error(error.message);
   }
 
-  await syncProductFromVariants(data.productId);
   return { ok: true };
 }
 
@@ -192,7 +184,6 @@ export async function revertVariantToSourcePriceService(context: AuthContext, va
     .eq("id", variantId);
   if (error) throw new Error(error.message);
 
-  await syncProductFromVariants(variant.product_id);
   return { ok: true };
 }
 
@@ -212,6 +203,5 @@ export async function deleteProductVariantService(context: AuthContext, variantI
     .eq("id", variantId);
   if (dErr) throw new Error(dErr.message);
 
-  await syncProductFromVariants(variant.product_id);
   return { ok: true };
 }
