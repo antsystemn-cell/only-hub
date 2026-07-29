@@ -802,19 +802,19 @@ function ProductDetailPage() {
         {/* === Detail tabs + Reviews summary === */}
         <div className="mt-8 grid gap-5 lg:mt-12 lg:grid-cols-2 lg:gap-6">
           {/* Tabs */}
-          <Card className="min-w-0 rounded-2xl border-border/60 bg-white p-4 sm:p-5">
-            <Tabs defaultValue="desc">
+          <Card className="min-w-0 max-w-full overflow-hidden rounded-2xl border-border/60 bg-white p-4 sm:p-5">
+            <Tabs defaultValue="desc" className="w-full">
               <div className="scrollbar-none -mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
                 <TabsList className="flex w-max min-w-full justify-start border-b border-border/40 bg-transparent p-0">
-                  <TabsTrigger value="desc" className="data-[state=active]:border-orange-500 data-[state=active]:text-orange-600 shrink-0 rounded-none border-b-2 border-transparent px-3 py-2 text-sm">
+                  <TabsTrigger value="desc" className="data-[state=active]:border-orange-500 data-[state=active]:text-orange-600 shrink-0 rounded-none border-b-2 border-transparent px-3 py-2 text-sm font-semibold">
                     Бүтээгдэхүүний мэдээлэл
                   </TabsTrigger>
                   {specs.length > 0 && (
-                    <TabsTrigger value="specs" className="data-[state=active]:border-orange-500 data-[state=active]:text-orange-600 shrink-0 rounded-none border-b-2 border-transparent px-3 py-2 text-sm">
+                    <TabsTrigger value="specs" className="data-[state=active]:border-orange-500 data-[state=active]:text-orange-600 shrink-0 rounded-none border-b-2 border-transparent px-3 py-2 text-sm font-semibold">
                       Техникийн үзүүлэлт
                     </TabsTrigger>
                   )}
-                  <TabsTrigger value="delivery" className="data-[state=active]:border-orange-500 data-[state=active]:text-orange-600 shrink-0 rounded-none border-b-2 border-transparent px-3 py-2 text-sm">
+                  <TabsTrigger value="delivery" className="data-[state=active]:border-orange-500 data-[state=active]:text-orange-600 shrink-0 rounded-none border-b-2 border-transparent px-3 py-2 text-sm font-semibold">
                     Хүргэлт & Буцаалт
                   </TabsTrigger>
                 </TabsList>
@@ -837,9 +837,9 @@ function ProductDetailPage() {
                 <TabsContent value="specs" className="mt-4">
                   <dl className="divide-y divide-border">
                     {specs.map((s, i) => (
-                      <div key={i} className="grid grid-cols-[120px_1fr] gap-3 py-2.5 sm:grid-cols-[180px_1fr]">
-                        <dt className="text-sm text-muted-foreground">{s.label}</dt>
-                        <dd className="text-sm font-medium">{s.value}</dd>
+                      <div key={i} className="flex flex-col py-2.5 sm:flex-row sm:items-start sm:gap-3">
+                        <dt className="text-xs text-muted-foreground sm:w-40 sm:shrink-0 sm:text-sm">{s.label}</dt>
+                        <dd className="mt-1 text-sm font-medium sm:mt-0">{s.value}</dd>
                       </div>
                     ))}
                   </dl>
