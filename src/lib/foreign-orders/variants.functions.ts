@@ -137,7 +137,7 @@ export const upsertProductVariant = createServerFn({ method: "POST" })
       color_label: data.colorLabel ?? null,
       source_price: sourcePrice,
       source_currency: product.foreign_source
-        ? (await import("./sources")).FOREIGN_SOURCES[product.foreign_source as any]?.currency ?? "KRW"
+        ? ((await import("./sources")).FOREIGN_SOURCES as any)[product.foreign_source]?.currency ?? "KRW"
         : null,
       exchange_rate: pricing?.exchangeRate ?? settings.exchangeRate ?? null,
       source_price_mnt: pricing?.sourcePriceMnt ?? null,
