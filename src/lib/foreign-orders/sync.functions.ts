@@ -171,7 +171,13 @@ export async function runForeignSourceSync(
         patch.last_price_sync_at = startedAt;
 
         if (pricing) {
-          if (priceSyncMode === "AUTO_UPDATE_CUSTOMER_PRICE") {
+          // Merchant manually locked the customer price for this variant —
+          // never overwrite it from the source. Still update source-side fields.
+          if (existing.manual_price_override) {
+            patch.source_price_mnt = pricing.sourcePriceMnt;
+            patch.exchange_rate = pricing.exchangeRate;
+            // rounded_customer_price_mnt / final_customer_price_mnt untouched
+          } else if (priceSyncMode === "AUTO_UPDATE_CUSTOMER_PRICE") {
             patch.source_price_mnt = pricing.sourcePriceMnt;
             patch.exchange_rate = pricing.exchangeRate;
             patch.final_customer_price_mnt = pricing.finalCustomerPriceMnt;
