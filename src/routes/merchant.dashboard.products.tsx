@@ -26,7 +26,12 @@ import type { Database } from "@/integrations/supabase/types";
 type ForeignSource = Database["public"]["Enums"]["foreign_source"];
 
 export const Route = createFileRoute("/merchant/dashboard/products")({
-  component: ProductsPage,
+  component: () => (
+    <>
+      <Outlet />
+      <ProductsPage />
+    </>
+  ),
 });
 
 function ProductsPage() {
