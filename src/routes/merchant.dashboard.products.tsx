@@ -117,12 +117,10 @@ function ProductsPage() {
         onOpenChange={setShowTypePicker}
         merchantId={merchantId}
         onPickReadyStock={() => {
-          setEditing(blank);
-          setEditId(null);
-          setShowForm(true);
+          setShowNewForm(true);
         }}
         onPickForeignSource={(source) => {
-          setShowForm(false);
+          setShowNewForm(false);
           setForeignImporterSource(source);
         }}
       />
