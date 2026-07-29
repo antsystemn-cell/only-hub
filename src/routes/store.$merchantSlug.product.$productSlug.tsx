@@ -802,21 +802,23 @@ function ProductDetailPage() {
         {/* === Detail tabs + Reviews summary === */}
         <div className="mt-8 grid gap-5 lg:mt-12 lg:grid-cols-2 lg:gap-6">
           {/* Tabs */}
-          <Card className="rounded-2xl border-border/60 bg-white p-4 sm:p-5">
+          <Card className="min-w-0 rounded-2xl border-border/60 bg-white p-4 sm:p-5">
             <Tabs defaultValue="desc">
-              <TabsList className="w-full justify-start overflow-x-auto bg-transparent p-0">
-                <TabsTrigger value="desc" className="data-[state=active]:border-orange-500 data-[state=active]:text-orange-600 rounded-none border-b-2 border-transparent px-3 py-2">
-                  Бүтээгдэхүүний мэдээлэл
-                </TabsTrigger>
-                {specs.length > 0 && (
-                  <TabsTrigger value="specs" className="data-[state=active]:border-orange-500 data-[state=active]:text-orange-600 rounded-none border-b-2 border-transparent px-3 py-2">
-                    Техникийн үзүүлэлт
+              <div className="scrollbar-none -mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
+                <TabsList className="flex w-max min-w-full justify-start border-b border-border/40 bg-transparent p-0">
+                  <TabsTrigger value="desc" className="data-[state=active]:border-orange-500 data-[state=active]:text-orange-600 shrink-0 rounded-none border-b-2 border-transparent px-3 py-2 text-sm">
+                    Бүтээгдэхүүний мэдээлэл
                   </TabsTrigger>
-                )}
-                <TabsTrigger value="delivery" className="data-[state=active]:border-orange-500 data-[state=active]:text-orange-600 rounded-none border-b-2 border-transparent px-3 py-2">
-                  Хүргэлт & Буцаалт
-                </TabsTrigger>
-              </TabsList>
+                  {specs.length > 0 && (
+                    <TabsTrigger value="specs" className="data-[state=active]:border-orange-500 data-[state=active]:text-orange-600 shrink-0 rounded-none border-b-2 border-transparent px-3 py-2 text-sm">
+                      Техникийн үзүүлэлт
+                    </TabsTrigger>
+                  )}
+                  <TabsTrigger value="delivery" className="data-[state=active]:border-orange-500 data-[state=active]:text-orange-600 shrink-0 rounded-none border-b-2 border-transparent px-3 py-2 text-sm">
+                    Хүргэлт & Буцаалт
+                  </TabsTrigger>
+                </TabsList>
+              </div>
               <TabsContent value="desc" className="mt-4">
                 {product.description ? (
                   /<[a-z][\s\S]*>/i.test(product.description) ? (
