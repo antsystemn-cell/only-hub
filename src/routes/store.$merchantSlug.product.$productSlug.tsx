@@ -42,6 +42,8 @@ function ProductDetailPage() {
       (await supabase.from("merchants").select("id,name,slug,logo_url,description,shipping_config,policy_shipping,policy_return,followers_count,can_create_foreign_order_products").eq("slug", merchantSlug).maybeSingle()).data,
   });
 
+  const queryClient = useQueryClient();
+
   const { data: product, isLoading } = useQuery({
     queryKey: ["product", merchant?.id, productSlug],
     enabled: !!merchant?.id,
@@ -51,6 +53,9 @@ function ProductDetailPage() {
       const byId = await supabase.from("products").select("*").eq("merchant_id", merchant!.id).eq("id", productSlug).maybeSingle();
       return byId.data;
     },
+    staleTime: 0,
+    refetchOnWindowFocus: true,
+    refetchOnMount: "always",
   });
 
   // Platform default policies (public read whitelist)
