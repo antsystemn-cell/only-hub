@@ -93,7 +93,7 @@ function ProductsPage() {
     queryFn: async () => {
       const { data } = await supabase
         .from("merchants")
-        .select("can_create_foreign_order_products")
+        .select("can_create_foreign_order_products, slug")
         .eq("id", merchantId)
         .maybeSingle();
       return data;
