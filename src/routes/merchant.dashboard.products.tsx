@@ -26,15 +26,10 @@ import type { Database } from "@/integrations/supabase/types";
 type ForeignSource = Database["public"]["Enums"]["foreign_source"];
 
 export const Route = createFileRoute("/merchant/dashboard/products")({
-  component: () => (
-    <>
-      <Outlet />
-      <ProductsPage />
-    </>
-  ),
+  component: () => <Outlet />,
 });
 
-function ProductsPage() {
+export default function ProductsPage() {
   const { primaryMerchantId } = useAuth();
   const merchantId = primaryMerchantId!;
   const qc = useQueryClient();
