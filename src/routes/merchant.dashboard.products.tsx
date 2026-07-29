@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, Outlet } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -26,10 +26,10 @@ import type { Database } from "@/integrations/supabase/types";
 type ForeignSource = Database["public"]["Enums"]["foreign_source"];
 
 export const Route = createFileRoute("/merchant/dashboard/products")({
-  component: ProductsPage,
+  component: () => <Outlet />,
 });
 
-function ProductsPage() {
+export default function ProductsPage() {
   const { primaryMerchantId } = useAuth();
   const merchantId = primaryMerchantId!;
   const qc = useQueryClient();

@@ -70,6 +70,7 @@ import { Route as AuthTokiCallbackRouteImport } from './routes/auth.toki.callbac
 import { Route as AdminBlogNewRouteImport } from './routes/admin.blog.new'
 import { Route as AdminBlogIdRouteImport } from './routes/admin.blog.$id'
 import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[.mcp]/invoke-tool/$tool'
+import { Route as MerchantDashboardProductsIndexRouteImport } from './routes/merchant.dashboard.products.index'
 import { Route as MerchantDashboardInventoryIndexRouteImport } from './routes/merchant.dashboard.inventory.index'
 import { Route as StoreMerchantSlugProductProductSlugRouteImport } from './routes/store.$merchantSlug.product.$productSlug'
 import { Route as StoreMerchantSlugOrderOrderIdRouteImport } from './routes/store.$merchantSlug.order.$orderId'
@@ -409,6 +410,12 @@ const Char91DotmcpChar93InvokeToolToolRoute =
     path: '/.mcp/invoke-tool/$tool',
     getParentRoute: () => rootRouteImport,
   } as any)
+const MerchantDashboardProductsIndexRoute =
+  MerchantDashboardProductsIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => MerchantDashboardProductsRoute,
+  } as any)
 const MerchantDashboardInventoryIndexRoute =
   MerchantDashboardInventoryIndexRouteImport.update({
     id: '/',
@@ -604,6 +611,7 @@ export interface FileRoutesByFullPath {
   '/store/$merchantSlug/order/$orderId': typeof StoreMerchantSlugOrderOrderIdRoute
   '/store/$merchantSlug/product/$productSlug': typeof StoreMerchantSlugProductProductSlugRoute
   '/merchant/dashboard/inventory/': typeof MerchantDashboardInventoryIndexRoute
+  '/merchant/dashboard/products/': typeof MerchantDashboardProductsIndexRoute
   '/api/public/payments/omniway/webhook': typeof ApiPublicPaymentsOmniwayWebhookRoute
   '/api/public/payments/pocket/webhook': typeof ApiPublicPaymentsPocketWebhookRoute
   '/api/public/payments/storepay/webhook': typeof ApiPublicPaymentsStorepayWebhookRoute
@@ -659,7 +667,6 @@ export interface FileRoutesByTo {
   '/merchant/dashboard/foreign-sync': typeof MerchantDashboardForeignSyncRoute
   '/merchant/dashboard/orders': typeof MerchantDashboardOrdersRoute
   '/merchant/dashboard/payments': typeof MerchantDashboardPaymentsRoute
-  '/merchant/dashboard/products': typeof MerchantDashboardProductsRouteWithChildren
   '/merchant/dashboard/settings': typeof MerchantDashboardSettingsRoute
   '/merchant/dashboard/staff': typeof MerchantDashboardStaffRoute
   '/merchant/dashboard/users': typeof MerchantDashboardUsersRoute
@@ -683,6 +690,7 @@ export interface FileRoutesByTo {
   '/store/$merchantSlug/order/$orderId': typeof StoreMerchantSlugOrderOrderIdRoute
   '/store/$merchantSlug/product/$productSlug': typeof StoreMerchantSlugProductProductSlugRoute
   '/merchant/dashboard/inventory': typeof MerchantDashboardInventoryIndexRoute
+  '/merchant/dashboard/products': typeof MerchantDashboardProductsIndexRoute
   '/api/public/payments/omniway/webhook': typeof ApiPublicPaymentsOmniwayWebhookRoute
   '/api/public/payments/pocket/webhook': typeof ApiPublicPaymentsPocketWebhookRoute
   '/api/public/payments/storepay/webhook': typeof ApiPublicPaymentsStorepayWebhookRoute
@@ -767,6 +775,7 @@ export interface FileRoutesById {
   '/store/$merchantSlug/order/$orderId': typeof StoreMerchantSlugOrderOrderIdRoute
   '/store/$merchantSlug/product/$productSlug': typeof StoreMerchantSlugProductProductSlugRoute
   '/merchant/dashboard/inventory/': typeof MerchantDashboardInventoryIndexRoute
+  '/merchant/dashboard/products/': typeof MerchantDashboardProductsIndexRoute
   '/api/public/payments/omniway/webhook': typeof ApiPublicPaymentsOmniwayWebhookRoute
   '/api/public/payments/pocket/webhook': typeof ApiPublicPaymentsPocketWebhookRoute
   '/api/public/payments/storepay/webhook': typeof ApiPublicPaymentsStorepayWebhookRoute
@@ -852,6 +861,7 @@ export interface FileRouteTypes {
     | '/store/$merchantSlug/order/$orderId'
     | '/store/$merchantSlug/product/$productSlug'
     | '/merchant/dashboard/inventory/'
+    | '/merchant/dashboard/products/'
     | '/api/public/payments/omniway/webhook'
     | '/api/public/payments/pocket/webhook'
     | '/api/public/payments/storepay/webhook'
@@ -907,7 +917,6 @@ export interface FileRouteTypes {
     | '/merchant/dashboard/foreign-sync'
     | '/merchant/dashboard/orders'
     | '/merchant/dashboard/payments'
-    | '/merchant/dashboard/products'
     | '/merchant/dashboard/settings'
     | '/merchant/dashboard/staff'
     | '/merchant/dashboard/users'
@@ -931,6 +940,7 @@ export interface FileRouteTypes {
     | '/store/$merchantSlug/order/$orderId'
     | '/store/$merchantSlug/product/$productSlug'
     | '/merchant/dashboard/inventory'
+    | '/merchant/dashboard/products'
     | '/api/public/payments/omniway/webhook'
     | '/api/public/payments/pocket/webhook'
     | '/api/public/payments/storepay/webhook'
@@ -1014,6 +1024,7 @@ export interface FileRouteTypes {
     | '/store/$merchantSlug/order/$orderId'
     | '/store/$merchantSlug/product/$productSlug'
     | '/merchant/dashboard/inventory/'
+    | '/merchant/dashboard/products/'
     | '/api/public/payments/omniway/webhook'
     | '/api/public/payments/pocket/webhook'
     | '/api/public/payments/storepay/webhook'
@@ -1488,6 +1499,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof Char91DotmcpChar93InvokeToolToolRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/merchant/dashboard/products/': {
+      id: '/merchant/dashboard/products/'
+      path: '/'
+      fullPath: '/merchant/dashboard/products/'
+      preLoaderRoute: typeof MerchantDashboardProductsIndexRouteImport
+      parentRoute: typeof MerchantDashboardProductsRoute
+    }
     '/merchant/dashboard/inventory/': {
       id: '/merchant/dashboard/inventory/'
       path: '/'
@@ -1725,11 +1743,13 @@ const MerchantDashboardInventoryRouteWithChildren =
   )
 
 interface MerchantDashboardProductsRouteChildren {
+  MerchantDashboardProductsIndexRoute: typeof MerchantDashboardProductsIndexRoute
   MerchantDashboardProductsEditIdRoute: typeof MerchantDashboardProductsEditIdRoute
 }
 
 const MerchantDashboardProductsRouteChildren: MerchantDashboardProductsRouteChildren =
   {
+    MerchantDashboardProductsIndexRoute: MerchantDashboardProductsIndexRoute,
     MerchantDashboardProductsEditIdRoute: MerchantDashboardProductsEditIdRoute,
   }
 

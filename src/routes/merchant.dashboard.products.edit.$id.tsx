@@ -1,5 +1,4 @@
-// Dedicated edit page for a single product. Loads the product by id and hands
-// it to the shared ProductEditForm. Save/cancel navigates back to the list.
+// src/routes/merchant.dashboard.products.edit.$id.tsx
 import { createFileRoute, useNavigate, useParams, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft } from "lucide-react";
@@ -15,10 +14,12 @@ export const Route = createFileRoute("/merchant/dashboard/products/edit/$id")({
 function ProductEditPage() {
   const { id } = useParams({ from: "/merchant/dashboard/products/edit/$id" });
   const navigate = useNavigate();
-  const { primaryMerchantId } = useAuth();
-  const merchantId = primaryMerchantId!;
+  const { primaryMerchantId, loading: authLoading } = useAuth();
+  
+  // We need to wait for auth to load to get the primaryMerchantId
+  const merchantId = primaryMerchantId;
 
-  const { data: product, isLoading, error } = useQuery({
+  const { data: product, isLoading: productLoading, error } = useQuery({
     queryKey: ["product-edit", id],
     enabled: !!id,
     queryFn: async () => {
@@ -30,32 +31,55 @@ function ProductEditPage() {
 
   const goBack = () => navigate({ to: "/merchant/dashboard/products" });
 
+  if (authLoading || productLoading) {
+    return (
+      <div className="flex min-h-[400px] items-center justify-center text-muted-foreground">
+        Уншиж байна…
+      </div>
+    );
+  }
+
+  if (error || !product) {
+    return (
+      <div className="flex min-h-[400px] flex-col items-center justify-center gap-4">
+        <p className="text-destructive font-medium">Бүтээгдэхүүн олдсонгүй эсвэл алдаа гарлаа</p>
+        <Button variant="outline" asChild>
+          <Link to="/merchant/dashboard/products">Буцах</Link>
+        </Button>
+      </div>
+    );
+  }
+
+  // Check if current user is admin of this merchant
+  if (merchantId && product.merchant_id !== merchantId) {
+    return (
+      <div className="flex min-h-[400px] flex-col items-center justify-center gap-4">
+        <p className="text-destructive font-medium">Энэ бүтээгдэхүүнд хандах эрхгүй байна</p>
+        <Button variant="outline" asChild>
+          <Link to="/merchant/dashboard/products">Буцах</Link>
+        </Button>
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-4">
+    <div className="space-y-6 pb-20">
       <div className="flex items-center gap-3">
         <Button variant="ghost" size="sm" asChild>
           <Link to="/merchant/dashboard/products">
             <ArrowLeft className="mr-1 h-4 w-4" /> Буцах
           </Link>
         </Button>
-        <h1 className="text-2xl font-bold truncate">{product?.name ?? "Бүтээгдэхүүн засварлах"}</h1>
+        <h1 className="text-2xl font-bold truncate">"{product.name}" засварлах</h1>
       </div>
 
-      {isLoading ? (
-        <p className="py-10 text-center text-muted-foreground">Уншиж байна…</p>
-      ) : error || !product ? (
-        <p className="py-10 text-center text-destructive">Бүтээгдэхүүн олдсонгүй</p>
-      ) : merchantId && product.merchant_id !== merchantId ? (
-        <p className="py-10 text-center text-destructive">Энэ бүтээгдэхүүнд хандах эрхгүй байна</p>
-      ) : (
-        <ProductEditForm
-          merchantId={merchantId}
-          editId={id}
-          initial={{ ...blankProduct, ...(product as unknown as ProductFormValue) }}
-          onSaved={goBack}
-          onCancel={goBack}
-        />
-      )}
+      <ProductEditForm
+        merchantId={product.merchant_id}
+        editId={id}
+        initial={{ ...blankProduct, ...(product as unknown as ProductFormValue) }}
+        onSaved={goBack}
+        onCancel={goBack}
+      />
     </div>
   );
 }
