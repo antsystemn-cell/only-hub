@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -42,6 +42,8 @@ function ProductDetailPage() {
       (await supabase.from("merchants").select("id,name,slug,logo_url,description,shipping_config,policy_shipping,policy_return,followers_count,can_create_foreign_order_products").eq("slug", merchantSlug).maybeSingle()).data,
   });
 
+  const queryClient = useQueryClient();
+
   const { data: product, isLoading } = useQuery({
     queryKey: ["product", merchant?.id, productSlug],
     enabled: !!merchant?.id,
@@ -51,6 +53,9 @@ function ProductDetailPage() {
       const byId = await supabase.from("products").select("*").eq("merchant_id", merchant!.id).eq("id", productSlug).maybeSingle();
       return byId.data;
     },
+    staleTime: 0,
+    refetchOnWindowFocus: true,
+    refetchOnMount: "always",
   });
 
   // Platform default policies (public read whitelist)
@@ -196,7 +201,39 @@ function ProductDetailPage() {
         .eq("product_id", product!.id);
       return data ?? [];
     },
+    staleTime: 0,
+    refetchOnWindowFocus: true,
+    refetchOnMount: "always",
   });
+
+  // Live refresh: when the product row or its variants change (e.g. merchant
+  // edits variants/prices/colors in the dashboard), invalidate caches so the
+  // detail page reflects the change without a hard reload.
+  useEffect(() => {
+    if (!product?.id) return;
+    const channel = supabase
+      .channel(`pdp-live-${product.id}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "product_variants", filter: `product_id=eq.${product.id}` },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["pdp-foreign-variants", product.id] });
+          queryClient.invalidateQueries({ queryKey: ["product", merchant?.id, productSlug] });
+        },
+      )
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "products", filter: `id=eq.${product.id}` },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["product", merchant?.id, productSlug] });
+          queryClient.invalidateQueries({ queryKey: ["pdp-foreign-variants", product.id] });
+        },
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [product?.id, merchant?.id, productSlug, queryClient]);
 
   const unavailableColors = useMemo(() => {
     if (!isForeign) return new Set<string>();
