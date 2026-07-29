@@ -79,6 +79,7 @@ function ProductsPage() {
   const [filterSource, setFilterSource] = useState<"all" | "POIZON_KR" | "TAOBAO">("all");
   const [uploading, setUploading] = useState(false);
   const [historyProduct, setHistoryProduct] = useState<{ id: string; name: string } | null>(null);
+  const [variantsProduct, setVariantsProduct] = useState<{ id: string; name: string; sourceCurrency?: string | null } | null>(null);
 
   const { data: products = [] } = useQuery({
     queryKey: ["products", merchantId],
