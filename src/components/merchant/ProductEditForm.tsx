@@ -1,0 +1,441 @@
+// Reusable product create/edit form. Used inline for "new" flow in the products
+// list, and as the body of the dedicated edit page.
+import { useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Plus, ImageIcon, X, Upload, Layers } from "lucide-react";
+import { toast } from "sonner";
+import { slugify } from "@/lib/format";
+import { uploadOptimized } from "@/lib/image";
+import { ForeignVariantsManager } from "@/components/merchant/ForeignVariantsDialog";
+
+export type ColorVariant = { name: string; sku?: string; image?: string };
+export type ProductFormValue = {
+  id?: string;
+  name: string;
+  slug?: string | null;
+  description?: string | null;
+  price: number;
+  original_price?: number | null;
+  discount: number;
+  image_url?: string | null;
+  thumbnail_url?: string | null;
+  product_code?: string | null;
+  category?: string | null;
+  brand_id?: string | null;
+  is_new: boolean;
+  is_on_sale: boolean;
+  is_bogo: boolean;
+  is_active: boolean;
+  stock_quantity: number;
+  detail_media: Array<{ url: string; type?: "image" | "video"; caption?: string }>;
+  gallery_images: string[];
+  specifications: Array<{ key: string; value: string }>;
+  colors: ColorVariant[];
+  sizes: string[];
+  variant_stock: Record<string, number>;
+  product_type?: string | null;
+  source_currency?: string | null;
+};
+
+export const blankProduct: ProductFormValue = {
+  name: "", price: 0, discount: 0, is_new: false, is_on_sale: false, is_bogo: false, is_active: true,
+  stock_quantity: 0, detail_media: [], gallery_images: [], specifications: [], colors: [], sizes: [], variant_stock: {},
+};
+
+export function ProductEditForm({
+  merchantId,
+  initial,
+  editId,
+  onSaved,
+  onCancel,
+  title,
+}: {
+  merchantId: string;
+  initial: ProductFormValue;
+  editId: string | null;
+  onSaved: () => void;
+  onCancel: () => void;
+  title?: string;
+}) {
+  const qc = useQueryClient();
+  const [editing, setEditing] = useState<ProductFormValue>(initial);
+  const [uploading, setUploading] = useState(false);
+
+  const { data: categories = [] } = useQuery({
+    queryKey: ["categories", merchantId],
+    queryFn: async () => {
+      const { data } = await supabase.from("categories").select("*").eq("merchant_id", merchantId).order("position");
+      return data ?? [];
+    },
+  });
+  const { data: brands = [] } = useQuery({
+    queryKey: ["brands", merchantId],
+    queryFn: async () => {
+      const { data } = await supabase.from("brands").select("*").eq("merchant_id", merchantId);
+      return data ?? [];
+    },
+  });
+
+  const save = useMutation({
+    mutationFn: async (p: ProductFormValue) => {
+      const payload: any = {
+        ...p,
+        merchant_id: merchantId,
+        slug: p.slug || slugify(p.name),
+      };
+      if (p.product_type === "FOREIGN_ORDER") {
+        delete payload.colors;
+        delete payload.sizes;
+        delete payload.variant_stock;
+      }
+      if (editId) {
+        const { error } = await supabase.from("products").update(payload).eq("id", editId);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from("products").insert(payload);
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      toast.success(editId ? "Хадгаллаа" : "Бүтээгдэхүүн нэмэгдлээ");
+      qc.invalidateQueries({ queryKey: ["products", merchantId] });
+      onSaved();
+    },
+    onError: (e: any) => toast.error(e.message ?? "Алдаа"),
+  });
+
+  const onUpload = async (file: File) => {
+    setUploading(true);
+    try {
+      const { url, thumbnailUrl } = await uploadOptimized(file, "product-images", merchantId);
+      setEditing({ ...editing, image_url: url, thumbnail_url: thumbnailUrl });
+      toast.success("Зураг ачаалагдлаа");
+    } catch (e: any) { toast.error(e.message); } finally { setUploading(false); }
+  };
+
+  return (
+    <Card className="rounded-2xl p-6">
+      <h2 className="mb-4 text-lg font-semibold">{title ?? (editId ? "Засварлах" : "Шинэ бүтээгдэхүүн")}</h2>
+      <div className="grid gap-4 md:grid-cols-2">
+        <div className="md:col-span-2">
+          <Label>Үндсэн зураг</Label>
+          <div className="mt-2 flex items-center gap-3">
+            {editing.image_url ? (
+              <div className="relative">
+                <img src={editing.image_url} className="h-24 w-24 rounded-lg object-cover" />
+                <button onClick={() => setEditing({ ...editing, image_url: null, thumbnail_url: null })} className="absolute -right-2 -top-2 rounded-full bg-destructive p-1 text-destructive-foreground">
+                  <X className="h-3 w-3" />
+                </button>
+              </div>
+            ) : (
+              <div className="flex h-24 w-24 items-center justify-center rounded-lg border-2 border-dashed border-border bg-muted">
+                <ImageIcon className="h-6 w-6 text-muted-foreground" />
+              </div>
+            )}
+            <Input type="file" accept="image/*" disabled={uploading} onChange={(e) => e.target.files?.[0] && onUpload(e.target.files[0])} />
+          </div>
+        </div>
+
+        <div className="md:col-span-2">
+          <Label>Нэмэлт зурагнууд (галерей)</Label>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {(editing.gallery_images ?? []).map((url, i) => (
+              <div key={i} className="relative">
+                <img src={url} className="h-16 w-16 rounded-lg object-cover" />
+                <button type="button"
+                  onClick={() => setEditing({ ...editing, gallery_images: (editing.gallery_images ?? []).filter((_, j) => j !== i) })}
+                  className="absolute -right-1 -top-1 rounded-full bg-destructive p-0.5 text-destructive-foreground">
+                  <X className="h-2.5 w-2.5" />
+                </button>
+              </div>
+            ))}
+            <label className="flex h-16 w-16 cursor-pointer items-center justify-center rounded-lg border-2 border-dashed border-border hover:border-primary">
+              <input type="file" accept="image/*" multiple className="hidden"
+                onChange={async (e) => {
+                  const files = Array.from(e.target.files ?? []);
+                  for (const file of files) {
+                    try {
+                      const { url } = await uploadOptimized(file, "product-images", merchantId);
+                      setEditing((prev) => ({ ...prev, gallery_images: [...(prev.gallery_images ?? []), url] }));
+                    } catch (err: any) { toast.error(err.message); }
+                  }
+                }} />
+              <Plus className="h-5 w-5 text-muted-foreground" />
+            </label>
+          </div>
+        </div>
+
+        <div>
+          <Label>Нэр *</Label>
+          <Input value={editing.name} onChange={(e) => setEditing({ ...editing, name: e.target.value })} />
+        </div>
+        <div>
+          <Label>SKU/Бараа код</Label>
+          <Input value={editing.product_code ?? ""} onChange={(e) => setEditing({ ...editing, product_code: e.target.value })} />
+        </div>
+        <div className="md:col-span-2">
+          <Label>URL slug</Label>
+          <div className="flex items-center gap-2">
+            <Input value={editing.slug ?? ""} placeholder="auto-үүснэ"
+              onChange={(e) => setEditing({ ...editing, slug: e.target.value })} />
+            <Button type="button" variant="outline" size="sm"
+              onClick={() => setEditing({ ...editing, slug: slugify(editing.name) })}>Авто</Button>
+          </div>
+          <p className="mt-1 text-xs text-muted-foreground">/store/.../product/{editing.slug || "..."}</p>
+        </div>
+        <div>
+          <Label>Үнэ</Label>
+          <Input type="number" value={editing.price} onChange={(e) => setEditing({ ...editing, price: Number(e.target.value) })} />
+        </div>
+        <div>
+          <Label>Хямдрахаас өмнөх үнэ</Label>
+          <Input type="number" value={editing.original_price ?? ""} onChange={(e) => setEditing({ ...editing, original_price: e.target.value ? Number(e.target.value) : null })} />
+        </div>
+        <div>
+          <Label>Хямдрал %</Label>
+          <Input type="number" value={editing.discount} onChange={(e) => setEditing({ ...editing, discount: Number(e.target.value) })} />
+        </div>
+        <div>
+          <Label>Үлдэгдэл</Label>
+          <Input type="number" value={editing.stock_quantity} onChange={(e) => setEditing({ ...editing, stock_quantity: Number(e.target.value) })} />
+        </div>
+        <div>
+          <Label>Ангилал</Label>
+          <Select value={editing.category ?? ""} onValueChange={(v) => setEditing({ ...editing, category: v })}>
+            <SelectTrigger><SelectValue placeholder="Сонгох" /></SelectTrigger>
+            <SelectContent>
+              {categories.map((c: any) => <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
+        <div>
+          <Label>Брэнд</Label>
+          <Select value={editing.brand_id ?? ""} onValueChange={(v) => setEditing({ ...editing, brand_id: v })}>
+            <SelectTrigger><SelectValue placeholder="Сонгох" /></SelectTrigger>
+            <SelectContent>
+              {brands.map((b: any) => <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="md:col-span-2">
+          <Label>Тайлбар</Label>
+          <Textarea rows={4} value={editing.description ?? ""} onChange={(e) => setEditing({ ...editing, description: e.target.value })} />
+        </div>
+
+        <div className="md:col-span-2">
+          <div className="mb-2 flex items-center justify-between">
+            <Label>Техникийн үзүүлэлт</Label>
+            <Button type="button" size="sm" variant="outline"
+              onClick={() => setEditing({ ...editing, specifications: [...(editing.specifications ?? []), { key: "", value: "" }] })}>
+              <Plus className="mr-1 h-3 w-3" /> Нэмэх
+            </Button>
+          </div>
+          <div className="space-y-2">
+            {(editing.specifications ?? []).map((spec, i) => (
+              <div key={i} className="flex gap-2">
+                <Input placeholder="Нэр" value={spec.key}
+                  onChange={(e) => {
+                    const s = [...editing.specifications]; s[i] = { ...s[i], key: e.target.value };
+                    setEditing({ ...editing, specifications: s });
+                  }} />
+                <Input placeholder="Утга" value={spec.value}
+                  onChange={(e) => {
+                    const s = [...editing.specifications]; s[i] = { ...s[i], value: e.target.value };
+                    setEditing({ ...editing, specifications: s });
+                  }} />
+                <Button type="button" size="icon" variant="ghost"
+                  onClick={() => setEditing({ ...editing, specifications: editing.specifications.filter((_, j) => j !== i) })}>
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="md:col-span-2">
+          <div className="mb-2 flex items-center justify-between">
+            <Label>Нарийвчилсан медиа (зураг/видео)</Label>
+            <Button type="button" size="sm" variant="outline"
+              onClick={() => setEditing({ ...editing, detail_media: [...(editing.detail_media ?? []), { url: "", type: "image", caption: "" }] })}>
+              <Plus className="mr-1 h-3 w-3" /> Нэмэх
+            </Button>
+          </div>
+          <div className="space-y-2">
+            {(editing.detail_media ?? []).map((media, i) => (
+              <div key={i} className="flex items-start gap-2 rounded-xl border border-border p-3">
+                <div className="grid flex-1 gap-2 md:grid-cols-[120px_1fr_1fr]">
+                  <Select value={media.type ?? "image"}
+                    onValueChange={(v) => {
+                      const m = [...editing.detail_media]; m[i] = { ...m[i], type: v as "image" | "video" };
+                      setEditing({ ...editing, detail_media: m });
+                    }}>
+                    <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="image">🖼 Зураг</SelectItem>
+                      <SelectItem value="video">🎬 Видео URL</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Input placeholder={(media.type ?? "image") === "video" ? "YouTube/Vimeo URL" : "Зургийн URL"}
+                    value={media.url}
+                    onChange={(e) => {
+                      const m = [...editing.detail_media]; m[i] = { ...m[i], url: e.target.value };
+                      setEditing({ ...editing, detail_media: m });
+                    }} />
+                  <Input placeholder="Caption (заавал биш)" value={media.caption ?? ""}
+                    onChange={(e) => {
+                      const m = [...editing.detail_media]; m[i] = { ...m[i], caption: e.target.value };
+                      setEditing({ ...editing, detail_media: m });
+                    }} />
+                </div>
+                {(media.type ?? "image") === "image" && (
+                  <label className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-md border border-border hover:bg-muted">
+                    <input type="file" accept="image/*" className="hidden"
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0]; if (!file) return;
+                        try {
+                          const { url } = await uploadOptimized(file, "product-images", merchantId);
+                          const m = [...editing.detail_media]; m[i] = { ...m[i], url };
+                          setEditing({ ...editing, detail_media: m });
+                          toast.success("Зураг ачаалагдлаа");
+                        } catch (err: any) { toast.error(err.message); }
+                      }} />
+                    <Upload className="h-4 w-4" />
+                  </label>
+                )}
+                {media.url && (media.type ?? "image") === "image" && (
+                  <img src={media.url} className="h-9 w-9 rounded-md object-cover" />
+                )}
+                <Button type="button" size="icon" variant="ghost"
+                  onClick={() => setEditing({ ...editing, detail_media: editing.detail_media.filter((_, j) => j !== i) })}>
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            ))}
+            {(editing.detail_media ?? []).length === 0 && (
+              <p className="py-2 text-xs text-muted-foreground">Нэмэлт зураг/видео байхгүй</p>
+            )}
+          </div>
+        </div>
+
+        {editing.product_type === "FOREIGN_ORDER" && editId ? (
+          <div className="md:col-span-2 rounded-xl border border-border bg-muted/30 p-4">
+            <div className="mb-3 flex items-center gap-2">
+              <Layers className="h-4 w-4 text-primary" />
+              <Label>Гадаад захиалгын сонголт ба үнэ</Label>
+            </div>
+            <ForeignVariantsManager productId={editId} sourceCurrency={editing.source_currency} />
+          </div>
+        ) : (
+          <div className="md:col-span-2">
+            <div className="mb-2 flex items-center justify-between">
+              <Label>Өнгөний сонголт</Label>
+              <Button type="button" size="sm" variant="outline"
+                onClick={() => setEditing({ ...editing, colors: [...(editing.colors ?? []), { name: "" }] })}>
+                <Plus className="mr-1 h-3 w-3" /> Нэмэх
+              </Button>
+            </div>
+            <div className="space-y-2">
+              {(editing.colors ?? []).map((color, i) => (
+                <div key={i} className="flex gap-2">
+                  <Input placeholder="Өнгийн нэр" value={color.name}
+                    onChange={(e) => {
+                      const c = [...editing.colors]; c[i] = { ...c[i], name: e.target.value };
+                      setEditing({ ...editing, colors: c });
+                    }} />
+                  <Input placeholder="SKU (заавал биш)" value={color.sku ?? ""}
+                    onChange={(e) => {
+                      const c = [...editing.colors]; c[i] = { ...c[i], sku: e.target.value };
+                      setEditing({ ...editing, colors: c });
+                    }} />
+                  <Button type="button" size="icon" variant="ghost"
+                    onClick={() => setEditing({ ...editing, colors: editing.colors.filter((_, j) => j !== i) })}>
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {editing.product_type !== "FOREIGN_ORDER" && (
+          <div className="md:col-span-2">
+            <Label>Хэмжээний сонголт</Label>
+            <div className="mt-2 flex flex-wrap items-center gap-2">
+              {(editing.sizes ?? []).map((size, i) => (
+                <span key={i} className="flex items-center gap-1 rounded-full border border-border px-3 py-1 text-sm">
+                  {size}
+                  <button type="button" onClick={() => setEditing({ ...editing, sizes: editing.sizes.filter((_, j) => j !== i) })}>
+                    <X className="h-3 w-3" />
+                  </button>
+                </span>
+              ))}
+              <Input placeholder="Хэмжээ + Enter" className="w-40"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && e.currentTarget.value.trim()) {
+                    e.preventDefault();
+                    setEditing({ ...editing, sizes: [...(editing.sizes ?? []), e.currentTarget.value.trim()] });
+                    e.currentTarget.value = "";
+                  }
+                }} />
+            </div>
+          </div>
+        )}
+
+        {editing.product_type !== "FOREIGN_ORDER" && editing.colors?.length > 0 && editing.sizes?.length > 0 && (
+          <div className="md:col-span-2 overflow-x-auto">
+            <Label>Нөөц (өнгө × хэмжээ)</Label>
+            <table className="mt-2 border-collapse text-sm">
+              <thead>
+                <tr>
+                  <th className="border border-border bg-muted p-2 text-left">Өнгө / Хэмжээ</th>
+                  {editing.sizes.map((size) => (
+                    <th key={size} className="border border-border bg-muted p-2">{size}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {editing.colors.map((color) => (
+                  <tr key={color.name || Math.random()}>
+                    <td className="border border-border p-2 font-medium">{color.name || "—"}</td>
+                    {editing.sizes.map((size) => {
+                      const k = `${color.name}|${size}`;
+                      return (
+                        <td key={size} className="border border-border p-1">
+                          <Input type="number" className="h-8 w-20 text-center"
+                            value={(editing.variant_stock ?? {})[k] ?? ""}
+                            onChange={(e) => setEditing({
+                              ...editing,
+                              variant_stock: { ...(editing.variant_stock ?? {}), [k]: Number(e.target.value) },
+                            })} />
+                        </td>
+                      );
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        <div className="flex items-center gap-6 md:col-span-2">
+          <label className="flex items-center gap-2 text-sm"><Switch checked={editing.is_active} onCheckedChange={(v) => setEditing({ ...editing, is_active: v })} /> Идэвхтэй</label>
+          <label className="flex items-center gap-2 text-sm"><Switch checked={editing.is_new} onCheckedChange={(v) => setEditing({ ...editing, is_new: v })} /> Шинэ</label>
+          <label className="flex items-center gap-2 text-sm"><Switch checked={editing.is_on_sale} onCheckedChange={(v) => setEditing({ ...editing, is_on_sale: v })} /> Хямдралтай</label>
+          <label className="flex items-center gap-2 text-sm"><Switch checked={editing.is_bogo} onCheckedChange={(v) => setEditing({ ...editing, is_bogo: v })} /> 1+1 Үнэгүй</label>
+        </div>
+      </div>
+      <div className="mt-4 flex gap-2">
+        <Button onClick={() => save.mutate(editing)} disabled={save.isPending || !editing.name}>{save.isPending ? "Хадгалж байна..." : "Хадгалах"}</Button>
+        <Button variant="outline" onClick={onCancel}>Болих</Button>
+      </div>
+    </Card>
+  );
+}
