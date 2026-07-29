@@ -335,6 +335,40 @@ function ProductDetailPage() {
     return min === max ? null : max;
   }, [variantPriceCandidates]);
 
+  const colorPrices = useMemo(() => {
+    if (!isForeign) return new Map<string, { min: number; max: number }>();
+    const map = new Map<string, { min: number; max: number }>();
+    for (const c of colors) {
+      const matches = (foreignVariants as any[]).filter((v) =>
+        v.color_label === c && (size ? v.size_label === size : true),
+      );
+      const prices = matches
+        .map((v) => Number(v.rounded_customer_price_mnt ?? v.final_customer_price_mnt ?? 0))
+        .filter((n) => n > 0);
+      if (prices.length > 0) {
+        map.set(c, { min: Math.min(...prices), max: Math.max(...prices) });
+      }
+    }
+    return map;
+  }, [colors, foreignVariants, size, isForeign]);
+
+  const sizePrices = useMemo(() => {
+    if (!isForeign) return new Map<string, { min: number; max: number }>();
+    const map = new Map<string, { min: number; max: number }>();
+    for (const s of sizes) {
+      const matches = (foreignVariants as any[]).filter((v) =>
+        v.size_label === s && (color ? v.color_label === color : true),
+      );
+      const prices = matches
+        .map((v) => Number(v.rounded_customer_price_mnt ?? v.final_customer_price_mnt ?? 0))
+        .filter((n) => n > 0);
+      if (prices.length > 0) {
+        map.set(s, { min: Math.min(...prices), max: Math.max(...prices) });
+      }
+    }
+    return map;
+  }, [sizes, foreignVariants, color, isForeign]);
+
   const variantKey = color && size ? `${color}|${size}` : color || size || "";
   const hasTrackedStock = !!variantKey && typeof variantStock[variantKey] === "number";
   const stockForVariant = hasTrackedStock ? variantStock[variantKey] : Number.MAX_SAFE_INTEGER;
@@ -614,17 +648,26 @@ function ProductDetailPage() {
                 <div className="flex flex-wrap gap-2">
                   {colors.map((c) => {
                     const disabled = unavailableColors.has(c);
+                    const p = colorPrices.get(c);
                     return (
                       <button key={c} disabled={disabled} onClick={() => !disabled && setColor(c)}
                         title={disabled ? "Энэ өнгө одоогоор боломжгүй" : undefined}
-                        className={`relative rounded-lg border px-3.5 py-1.5 text-sm transition ${
+                        className={`relative flex flex-col items-center justify-center rounded-lg border px-3 py-1.5 transition ${
                           disabled
                             ? "cursor-not-allowed border-dashed border-border bg-muted text-muted-foreground line-through opacity-60"
                             : color === c
                             ? "border-orange-500 bg-orange-50 text-orange-600"
                             : "border-border bg-white hover:border-orange-300"
                         }`}>
-                        {color === c && !disabled && <Check className="mr-1 inline h-3 w-3" />}{c}
+                        <div className="flex items-center gap-1 text-sm font-medium">
+                          {color === c && !disabled && <Check className="h-3.5 w-3.5" />}
+                          {c}
+                        </div>
+                        {p && (
+                          <div className={`mt-0.5 text-[10px] sm:text-xs ${color === c ? "text-orange-500" : "text-muted-foreground"}`}>
+                            {p.min === p.max ? fmtMnt(p.min) : `${fmtMnt(p.min)}+`}
+                          </div>
+                        )}
                       </button>
                     );
                   })}
@@ -639,17 +682,23 @@ function ProductDetailPage() {
                 <div className="flex flex-wrap gap-2">
                   {sizes.map((s) => {
                     const disabled = unavailableSizes.has(s);
+                    const p = sizePrices.get(s);
                     return (
                       <button key={s} disabled={disabled} onClick={() => !disabled && setSize(s)}
                         title={disabled ? "Энэ хэмжээ одоогоор боломжгүй" : undefined}
-                        className={`min-w-14 rounded-lg border px-3 py-2 text-sm font-medium transition ${
+                        className={`flex min-w-14 flex-col items-center justify-center rounded-lg border px-3 py-1.5 transition ${
                           disabled
                             ? "cursor-not-allowed border-dashed border-border bg-muted text-muted-foreground line-through opacity-60"
                             : size === s
                             ? "border-orange-500 bg-orange-50 text-orange-600"
                             : "border-border bg-white hover:border-orange-300"
                         }`}>
-                        {s}
+                        <span className="text-sm font-bold">{s}</span>
+                        {p && (
+                          <div className={`mt-0.5 text-[10px] sm:text-xs font-normal ${size === s ? "text-orange-500" : "text-muted-foreground"}`}>
+                            {p.min === p.max ? fmtMnt(p.min) : `${fmtMnt(p.min)}+`}
+                          </div>
+                        )}
                       </button>
                     );
                   })}
