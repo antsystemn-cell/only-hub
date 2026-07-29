@@ -75,6 +75,14 @@ function ProductsPage() {
       return new Set<string>((data ?? []).map((r: any) => r.product_id));
     },
   });
+  const { data: categories = [] } = useQuery({
+    queryKey: ["categories", merchantId],
+    queryFn: async () => {
+      const { data } = await supabase.from("categories").select("*").eq("merchant_id", merchantId).order("position");
+      return data ?? [];
+    },
+  });
+
 
   const remove = useMutation({
     mutationFn: async (id: string) => {
