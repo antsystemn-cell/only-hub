@@ -100,6 +100,7 @@ function ProductsPage() {
     },
   });
   const canForeign = !!merchantCaps?.can_create_foreign_order_products;
+  const merchantSlug = merchantCaps?.slug ?? null;
   const { data: linkedProductIds = new Set<string>() } = useQuery({
     queryKey: ["linked-product-ids", merchantId],
     enabled: !!merchantId,
