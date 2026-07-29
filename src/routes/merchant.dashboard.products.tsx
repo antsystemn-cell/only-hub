@@ -15,7 +15,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { Plus, Edit, Copy, Trash2, Search, ImageIcon, X, Upload, History } from "lucide-react";
+import { Plus, Edit, Copy, Trash2, Search, ImageIcon, X, Upload, History, ExternalLink } from "lucide-react";
 import { PurchaseHistoryDialog } from "@/components/inventory/PurchaseHistoryDialog";
 import { fmtMnt, slugify } from "@/lib/format";
 import { uploadOptimized } from "@/lib/image";
@@ -93,13 +93,14 @@ function ProductsPage() {
     queryFn: async () => {
       const { data } = await supabase
         .from("merchants")
-        .select("can_create_foreign_order_products")
+        .select("can_create_foreign_order_products, slug")
         .eq("id", merchantId)
         .maybeSingle();
       return data;
     },
   });
   const canForeign = !!merchantCaps?.can_create_foreign_order_products;
+  const merchantSlug = merchantCaps?.slug ?? null;
   const { data: linkedProductIds = new Set<string>() } = useQuery({
     queryKey: ["linked-product-ids", merchantId],
     enabled: !!merchantId,
@@ -608,6 +609,22 @@ function ProductsPage() {
               {p.discount > 0 && <span className="hidden sm:inline-block rounded-md bg-red-500/10 px-2 py-0.5 text-xs text-red-600">-{p.discount}%</span>}
               <div className="col-span-3 flex justify-end gap-1 sm:col-span-1 border-t border-border/50 pt-2 sm:border-0 sm:pt-0">
                 <Button size="icon" variant="ghost" title="Худалдан авалтын түүх" onClick={() => setHistoryProduct({ id: p.id, name: p.name })}><History className="h-4 w-4" /></Button>
+                {merchantSlug && p.slug && p.is_active && (
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    title="Сайт дээр харах"
+                    asChild
+                  >
+                    <a
+                      href={`/store/${merchantSlug}/product/${p.slug}`}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      <ExternalLink className="h-4 w-4" />
+                    </a>
+                  </Button>
+                )}
                 <Button size="icon" variant="ghost" onClick={() => { setEditing(p); setEditId(p.id); setShowForm(true); }}><Edit className="h-4 w-4" /></Button>
                 <Button size="icon" variant="ghost" onClick={() => duplicate(p)}><Copy className="h-4 w-4" /></Button>
                 <AlertDialog>
