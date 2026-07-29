@@ -625,6 +625,22 @@ function ProductsPage() {
                     </a>
                   </Button>
                 )}
+                {p.source_url && (
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    title="Эх сурвалж линк"
+                    asChild
+                  >
+                    <a
+                      href={p.source_url}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      <ExternalLink className="h-4 w-4 text-blue-600" />
+                    </a>
+                  </Button>
+                )}
                 <Button size="icon" variant="ghost" onClick={() => { setEditing(p); setEditId(p.id); setShowForm(true); }}><Edit className="h-4 w-4" /></Button>
                 <Button size="icon" variant="ghost" onClick={() => duplicate(p)}><Copy className="h-4 w-4" /></Button>
                 <AlertDialog>
