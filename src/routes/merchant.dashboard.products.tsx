@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -6,20 +6,16 @@ import { useAuth } from "@/hooks/use-auth";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { Plus, Edit, Copy, Trash2, Search, ImageIcon, X, Upload, History, ExternalLink, Layers } from "lucide-react";
+import { Plus, Edit, Copy, Trash2, Search, ImageIcon, History, ExternalLink } from "lucide-react";
 import { PurchaseHistoryDialog } from "@/components/inventory/PurchaseHistoryDialog";
-import { ForeignVariantsDialog, ForeignVariantsManager } from "@/components/merchant/ForeignVariantsDialog";
-import { fmtMnt, slugify } from "@/lib/format";
-import { uploadOptimized } from "@/lib/image";
+import { ProductEditForm, blankProduct } from "@/components/merchant/ProductEditForm";
+import { fmtMnt } from "@/lib/format";
 import { AddProductTypeDialog } from "@/components/merchant/AddProductTypeDialog";
 import { ForeignProductImporter } from "@/components/merchant/ForeignProductImporter";
 import { ManualForeignProductImporter } from "@/components/merchant/ManualForeignProductImporter";
@@ -33,55 +29,17 @@ export const Route = createFileRoute("/merchant/dashboard/products")({
   component: ProductsPage,
 });
 
-type ColorVariant = { name: string; sku?: string; image?: string };
-type Product = {
-  id?: string;
-  name: string;
-  slug?: string | null;
-  description?: string | null;
-  price: number;
-  original_price?: number | null;
-  discount: number;
-  image_url?: string | null;
-  thumbnail_url?: string | null;
-  product_code?: string | null;
-  category?: string | null;
-  brand_id?: string | null;
-  is_new: boolean;
-  is_on_sale: boolean;
-  is_bogo: boolean;
-  is_active: boolean;
-  stock_quantity: number;
-  detail_media: Array<{ url: string; type?: "image" | "video"; caption?: string }>;
-  gallery_images: string[];
-  specifications: Array<{ key: string; value: string }>;
-  colors: ColorVariant[];
-  sizes: string[];
-  variant_stock: Record<string, number>;
-  product_type?: string | null;
-  source_currency?: string | null;
-};
-
-const blank: Product = {
-  name: "", price: 0, discount: 0, is_new: false, is_on_sale: false, is_bogo: false, is_active: true,
-  stock_quantity: 0, detail_media: [], gallery_images: [], specifications: [], colors: [], sizes: [], variant_stock: {},
-};
-
 function ProductsPage() {
   const { primaryMerchantId } = useAuth();
   const merchantId = primaryMerchantId!;
   const qc = useQueryClient();
-  const [showForm, setShowForm] = useState(false);
+  const [showNewForm, setShowNewForm] = useState(false);
   const [showTypePicker, setShowTypePicker] = useState(false);
   const [foreignImporterSource, setForeignImporterSource] = useState<ForeignSource | null>(null);
-  const [editing, setEditing] = useState<Product>(blank);
-  const [editId, setEditId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [filterCat, setFilterCat] = useState<string>("all");
   const [filterSource, setFilterSource] = useState<"all" | "POIZON_KR" | "TAOBAO">("all");
-  const [uploading, setUploading] = useState(false);
   const [historyProduct, setHistoryProduct] = useState<{ id: string; name: string } | null>(null);
-  const [variantsProduct, setVariantsProduct] = useState<{ id: string; name: string; sourceCurrency?: string | null } | null>(null);
 
   const { data: products = [] } = useQuery({
     queryKey: ["products", merchantId],
@@ -117,48 +75,6 @@ function ProductsPage() {
       return new Set<string>((data ?? []).map((r: any) => r.product_id));
     },
   });
-  const { data: categories = [] } = useQuery({
-    queryKey: ["categories", merchantId],
-    queryFn: async () => {
-      const { data } = await supabase.from("categories").select("*").eq("merchant_id", merchantId).order("position");
-      return data ?? [];
-    },
-  });
-  const { data: brands = [] } = useQuery({
-    queryKey: ["brands", merchantId],
-    queryFn: async () => {
-      const { data } = await supabase.from("brands").select("*").eq("merchant_id", merchantId);
-      return data ?? [];
-    },
-  });
-
-  const save = useMutation({
-    mutationFn: async (p: Product) => {
-      const payload: any = {
-        ...p,
-        merchant_id: merchantId,
-        slug: p.slug || slugify(p.name),
-      };
-      if (p.product_type === "FOREIGN_ORDER") {
-        delete payload.colors;
-        delete payload.sizes;
-        delete payload.variant_stock;
-      }
-      if (editId) {
-        const { error } = await supabase.from("products").update(payload).eq("id", editId);
-        if (error) throw error;
-      } else {
-        const { error } = await supabase.from("products").insert(payload);
-        if (error) throw error;
-      }
-    },
-    onSuccess: () => {
-      toast.success(editId ? "Хадгаллаа" : "Бүтээгдэхүүн нэмэгдлээ");
-      qc.invalidateQueries({ queryKey: ["products", merchantId] });
-      setEditing(blank); setEditId(null); setShowForm(false);
-    },
-    onError: (e: any) => toast.error(e.message ?? "Алдаа"),
-  });
 
   const remove = useMutation({
     mutationFn: async (id: string) => {
@@ -173,15 +89,6 @@ function ProductsPage() {
     delete copy.id; delete copy.created_at; delete copy.updated_at;
     const { error } = await supabase.from("products").insert(copy);
     if (error) toast.error(error.message); else { toast.success("Хуулбарлалаа"); qc.invalidateQueries({ queryKey: ["products", merchantId] }); }
-  };
-
-  const onUpload = async (file: File) => {
-    setUploading(true);
-    try {
-      const { url, thumbnailUrl } = await uploadOptimized(file, "product-images", merchantId);
-      setEditing({ ...editing, image_url: url, thumbnail_url: thumbnailUrl });
-      toast.success("Зураг ачаалагдлаа");
-    } catch (e: any) { toast.error(e.message); } finally { setUploading(false); }
   };
 
   const filtered = products.filter((p: any) => {
