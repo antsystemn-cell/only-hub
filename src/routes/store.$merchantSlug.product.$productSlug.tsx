@@ -201,7 +201,39 @@ function ProductDetailPage() {
         .eq("product_id", product!.id);
       return data ?? [];
     },
+    staleTime: 0,
+    refetchOnWindowFocus: true,
+    refetchOnMount: "always",
   });
+
+  // Live refresh: when the product row or its variants change (e.g. merchant
+  // edits variants/prices/colors in the dashboard), invalidate caches so the
+  // detail page reflects the change without a hard reload.
+  useEffect(() => {
+    if (!product?.id) return;
+    const channel = supabase
+      .channel(`pdp-live-${product.id}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "product_variants", filter: `product_id=eq.${product.id}` },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["pdp-foreign-variants", product.id] });
+          queryClient.invalidateQueries({ queryKey: ["product", merchant?.id, productSlug] });
+        },
+      )
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "products", filter: `id=eq.${product.id}` },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["product", merchant?.id, productSlug] });
+          queryClient.invalidateQueries({ queryKey: ["pdp-foreign-variants", product.id] });
+        },
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [product?.id, merchant?.id, productSlug, queryClient]);
 
   const unavailableColors = useMemo(() => {
     if (!isForeign) return new Set<string>();
