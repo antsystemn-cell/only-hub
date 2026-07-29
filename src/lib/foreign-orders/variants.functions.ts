@@ -58,18 +58,37 @@ async function loadPricingSettings(
   };
 }
 
-// Recompute product.price = min customer price across purchasable variants.
+// Recompute product.price (min purchasable variant) and derive color/size arrays
+// from visible variants so the PDP selectors reflect merchant edits immediately.
 async function recomputeProductPrice(supabase: any, productId: string) {
   const { data: vs } = await supabase
     .from("product_variants")
-    .select("rounded_customer_price_mnt, is_purchasable")
+    .select("rounded_customer_price_mnt, is_purchasable, is_visible, size_label, color_label")
     .eq("product_id", productId);
-  const prices = (vs ?? [])
-    .filter((v: any) => v.is_purchasable && v.rounded_customer_price_mnt != null)
-    .map((v: any) => Number(v.rounded_customer_price_mnt));
-  if (prices.length === 0) return;
-  const minPrice = Math.min(...prices);
-  await supabase.from("products").update({ price: minPrice }).eq("id", productId);
+  const rows = (vs ?? []) as any[];
+
+  const colors = Array.from(
+    new Set(
+      rows
+        .filter((v) => v.is_visible !== false && v.color_label)
+        .map((v) => String(v.color_label)),
+    ),
+  );
+  const sizes = Array.from(
+    new Set(
+      rows
+        .filter((v) => v.is_visible !== false && v.size_label)
+        .map((v) => String(v.size_label)),
+    ),
+  );
+
+  const prices = rows
+    .filter((v) => v.is_purchasable && v.rounded_customer_price_mnt != null)
+    .map((v) => Number(v.rounded_customer_price_mnt));
+
+  const update: any = { colors, sizes };
+  if (prices.length > 0) update.price = Math.min(...prices);
+  await supabase.from("products").update(update).eq("id", productId);
 }
 
 // ============================================================
