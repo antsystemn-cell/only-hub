@@ -302,13 +302,6 @@ function ProductsPage() {
         merchantId={merchantId}
         mode={historyProduct ? { kind: "product", productId: historyProduct.id, title: historyProduct.name } : null}
       />
-      <ForeignVariantsDialog
-        open={!!variantsProduct}
-        onOpenChange={(v) => { if (!v) setVariantsProduct(null); }}
-        productId={variantsProduct?.id ?? null}
-        productName={variantsProduct?.name ?? ""}
-        sourceCurrency={variantsProduct?.sourceCurrency}
-      />
     </div>
   );
 }
