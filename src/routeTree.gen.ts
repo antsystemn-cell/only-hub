@@ -86,6 +86,7 @@ import { Route as ApiPublicHooksInventoryReservationsExpireRouteImport } from '.
 import { Route as ApiPublicHooksForeignSourceSyncRouteImport } from './routes/api.public.hooks.foreign-source-sync'
 import { Route as ApiPublicHooksForeignQueueAdvanceRouteImport } from './routes/api.public.hooks.foreign-queue-advance'
 import { Route as ApiPublicDeliveryWebhookRouteImport } from './routes/api.public.delivery.webhook'
+import { Route as MerchantDashboardProductsEditIdRouteImport } from './routes/merchant.dashboard.products.edit.$id'
 import { Route as ApiPublicPaymentsStorepayWebhookRouteImport } from './routes/api.public.payments.storepay.webhook'
 import { Route as ApiPublicPaymentsPocketWebhookRouteImport } from './routes/api.public.payments.pocket.webhook'
 import { Route as ApiPublicPaymentsOmniwayWebhookRouteImport } from './routes/api.public.payments.omniway.webhook'
@@ -500,6 +501,12 @@ const ApiPublicDeliveryWebhookRoute =
     path: '/api/public/delivery/webhook',
     getParentRoute: () => rootRouteImport,
   } as any)
+const MerchantDashboardProductsEditIdRoute =
+  MerchantDashboardProductsEditIdRouteImport.update({
+    id: '/edit/$id',
+    path: '/edit/$id',
+    getParentRoute: () => MerchantDashboardProductsRoute,
+  } as any)
 const ApiPublicPaymentsStorepayWebhookRoute =
   ApiPublicPaymentsStorepayWebhookRouteImport.update({
     id: '/api/public/payments/storepay/webhook',
@@ -573,7 +580,7 @@ export interface FileRoutesByFullPath {
   '/merchant/dashboard/inventory': typeof MerchantDashboardInventoryRouteWithChildren
   '/merchant/dashboard/orders': typeof MerchantDashboardOrdersRoute
   '/merchant/dashboard/payments': typeof MerchantDashboardPaymentsRoute
-  '/merchant/dashboard/products': typeof MerchantDashboardProductsRoute
+  '/merchant/dashboard/products': typeof MerchantDashboardProductsRouteWithChildren
   '/merchant/dashboard/settings': typeof MerchantDashboardSettingsRoute
   '/merchant/dashboard/staff': typeof MerchantDashboardStaffRoute
   '/merchant/dashboard/users': typeof MerchantDashboardUsersRoute
@@ -600,6 +607,7 @@ export interface FileRoutesByFullPath {
   '/api/public/payments/omniway/webhook': typeof ApiPublicPaymentsOmniwayWebhookRoute
   '/api/public/payments/pocket/webhook': typeof ApiPublicPaymentsPocketWebhookRoute
   '/api/public/payments/storepay/webhook': typeof ApiPublicPaymentsStorepayWebhookRoute
+  '/merchant/dashboard/products/edit/$id': typeof MerchantDashboardProductsEditIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -651,7 +659,7 @@ export interface FileRoutesByTo {
   '/merchant/dashboard/foreign-sync': typeof MerchantDashboardForeignSyncRoute
   '/merchant/dashboard/orders': typeof MerchantDashboardOrdersRoute
   '/merchant/dashboard/payments': typeof MerchantDashboardPaymentsRoute
-  '/merchant/dashboard/products': typeof MerchantDashboardProductsRoute
+  '/merchant/dashboard/products': typeof MerchantDashboardProductsRouteWithChildren
   '/merchant/dashboard/settings': typeof MerchantDashboardSettingsRoute
   '/merchant/dashboard/staff': typeof MerchantDashboardStaffRoute
   '/merchant/dashboard/users': typeof MerchantDashboardUsersRoute
@@ -678,6 +686,7 @@ export interface FileRoutesByTo {
   '/api/public/payments/omniway/webhook': typeof ApiPublicPaymentsOmniwayWebhookRoute
   '/api/public/payments/pocket/webhook': typeof ApiPublicPaymentsPocketWebhookRoute
   '/api/public/payments/storepay/webhook': typeof ApiPublicPaymentsStorepayWebhookRoute
+  '/merchant/dashboard/products/edit/$id': typeof MerchantDashboardProductsEditIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -734,7 +743,7 @@ export interface FileRoutesById {
   '/merchant/dashboard/inventory': typeof MerchantDashboardInventoryRouteWithChildren
   '/merchant/dashboard/orders': typeof MerchantDashboardOrdersRoute
   '/merchant/dashboard/payments': typeof MerchantDashboardPaymentsRoute
-  '/merchant/dashboard/products': typeof MerchantDashboardProductsRoute
+  '/merchant/dashboard/products': typeof MerchantDashboardProductsRouteWithChildren
   '/merchant/dashboard/settings': typeof MerchantDashboardSettingsRoute
   '/merchant/dashboard/staff': typeof MerchantDashboardStaffRoute
   '/merchant/dashboard/users': typeof MerchantDashboardUsersRoute
@@ -761,6 +770,7 @@ export interface FileRoutesById {
   '/api/public/payments/omniway/webhook': typeof ApiPublicPaymentsOmniwayWebhookRoute
   '/api/public/payments/pocket/webhook': typeof ApiPublicPaymentsPocketWebhookRoute
   '/api/public/payments/storepay/webhook': typeof ApiPublicPaymentsStorepayWebhookRoute
+  '/merchant/dashboard/products/edit/$id': typeof MerchantDashboardProductsEditIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -845,6 +855,7 @@ export interface FileRouteTypes {
     | '/api/public/payments/omniway/webhook'
     | '/api/public/payments/pocket/webhook'
     | '/api/public/payments/storepay/webhook'
+    | '/merchant/dashboard/products/edit/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -923,6 +934,7 @@ export interface FileRouteTypes {
     | '/api/public/payments/omniway/webhook'
     | '/api/public/payments/pocket/webhook'
     | '/api/public/payments/storepay/webhook'
+    | '/merchant/dashboard/products/edit/$id'
   id:
     | '__root__'
     | '/'
@@ -1005,6 +1017,7 @@ export interface FileRouteTypes {
     | '/api/public/payments/omniway/webhook'
     | '/api/public/payments/pocket/webhook'
     | '/api/public/payments/storepay/webhook'
+    | '/merchant/dashboard/products/edit/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -1587,6 +1600,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicDeliveryWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/merchant/dashboard/products/edit/$id': {
+      id: '/merchant/dashboard/products/edit/$id'
+      path: '/edit/$id'
+      fullPath: '/merchant/dashboard/products/edit/$id'
+      preLoaderRoute: typeof MerchantDashboardProductsEditIdRouteImport
+      parentRoute: typeof MerchantDashboardProductsRoute
+    }
     '/api/public/payments/storepay/webhook': {
       id: '/api/public/payments/storepay/webhook'
       path: '/api/public/payments/storepay/webhook'
@@ -1704,6 +1724,20 @@ const MerchantDashboardInventoryRouteWithChildren =
     MerchantDashboardInventoryRouteChildren,
   )
 
+interface MerchantDashboardProductsRouteChildren {
+  MerchantDashboardProductsEditIdRoute: typeof MerchantDashboardProductsEditIdRoute
+}
+
+const MerchantDashboardProductsRouteChildren: MerchantDashboardProductsRouteChildren =
+  {
+    MerchantDashboardProductsEditIdRoute: MerchantDashboardProductsEditIdRoute,
+  }
+
+const MerchantDashboardProductsRouteWithChildren =
+  MerchantDashboardProductsRoute._addFileChildren(
+    MerchantDashboardProductsRouteChildren,
+  )
+
 interface MerchantDashboardRouteChildren {
   MerchantDashboardBackupOldDeliveryRoute: typeof MerchantDashboardBackupOldDeliveryRoute
   MerchantDashboardCargoRoute: typeof MerchantDashboardCargoRoute
@@ -1714,7 +1748,7 @@ interface MerchantDashboardRouteChildren {
   MerchantDashboardInventoryRoute: typeof MerchantDashboardInventoryRouteWithChildren
   MerchantDashboardOrdersRoute: typeof MerchantDashboardOrdersRoute
   MerchantDashboardPaymentsRoute: typeof MerchantDashboardPaymentsRoute
-  MerchantDashboardProductsRoute: typeof MerchantDashboardProductsRoute
+  MerchantDashboardProductsRoute: typeof MerchantDashboardProductsRouteWithChildren
   MerchantDashboardSettingsRoute: typeof MerchantDashboardSettingsRoute
   MerchantDashboardStaffRoute: typeof MerchantDashboardStaffRoute
   MerchantDashboardUsersRoute: typeof MerchantDashboardUsersRoute
@@ -1732,7 +1766,7 @@ const MerchantDashboardRouteChildren: MerchantDashboardRouteChildren = {
   MerchantDashboardInventoryRoute: MerchantDashboardInventoryRouteWithChildren,
   MerchantDashboardOrdersRoute: MerchantDashboardOrdersRoute,
   MerchantDashboardPaymentsRoute: MerchantDashboardPaymentsRoute,
-  MerchantDashboardProductsRoute: MerchantDashboardProductsRoute,
+  MerchantDashboardProductsRoute: MerchantDashboardProductsRouteWithChildren,
   MerchantDashboardSettingsRoute: MerchantDashboardSettingsRoute,
   MerchantDashboardStaffRoute: MerchantDashboardStaffRoute,
   MerchantDashboardUsersRoute: MerchantDashboardUsersRoute,
