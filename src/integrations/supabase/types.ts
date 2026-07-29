@@ -3294,6 +3294,10 @@ export type Database = {
         Args: { _link_id: string; _trigger?: string }
         Returns: Json
       }
+      sync_product_from_variants: {
+        Args: { _product_id: string }
+        Returns: undefined
+      }
       upsert_shipment_costs: {
         Args: {
           _cargo_fee: number

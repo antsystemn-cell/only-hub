@@ -57,6 +57,25 @@ export function ForeignVariantsDialog({
   productName: string;
   sourceCurrency?: string | null;
 }) {
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-h-[90vh] max-w-4xl overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Хувилбарууд — {productName}</DialogTitle>
+        </DialogHeader>
+        <ForeignVariantsManager productId={productId} sourceCurrency={sourceCurrency} />
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+export function ForeignVariantsManager({
+  productId,
+  sourceCurrency,
+}: {
+  productId: string | null;
+  sourceCurrency?: string | null;
+}) {
   const qc = useQueryClient();
   const listFn = useServerFn(listProductVariants);
   const upsertFn = useServerFn(upsertProductVariant);
@@ -65,7 +84,7 @@ export function ForeignVariantsDialog({
 
   const { data: variants = [], isLoading } = useQuery({
     queryKey: ["product-variants", productId],
-    enabled: !!productId && open,
+    enabled: !!productId,
     queryFn: async () =>
       productId ? ((await listFn({ data: { productId } })) as any[]) : [],
   });
@@ -130,63 +149,53 @@ export function ForeignVariantsDialog({
   });
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90vh] max-w-4xl overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Хувилбарууд — {productName}</DialogTitle>
-        </DialogHeader>
+    <div className="space-y-3">
+      {isLoading ? (
+        <p className="py-6 text-center text-sm text-muted-foreground">Уншиж байна…</p>
+      ) : (
+        <>
+          {variants.length === 0 && (
+            <p className="rounded-md border border-dashed p-4 text-center text-sm text-muted-foreground">
+              Хувилбар алга. Доор "Хувилбар нэмэх" дээр дарж эхлүүлнэ үү.
+            </p>
+          )}
 
-        {isLoading ? (
-          <p className="py-6 text-center text-sm text-muted-foreground">Уншиж байна…</p>
-        ) : (
-          <div className="space-y-3">
-            {variants.length === 0 && (
-              <p className="rounded-md border border-dashed p-4 text-center text-sm text-muted-foreground">
-                Хувилбар алга. Доор "Хувилбар нэмэх" дээр дарж эхлүүлнэ үү.
-              </p>
-            )}
+          {variants.map((v: any) => (
+            <VariantRow
+              key={v.id}
+              v={v}
+              sourceCurrency={sourceCurrency}
+              onSave={(row) => save.mutate({ ...row, id: v.id })}
+              onDelete={() => {
+                if (confirm(`"${v.label ?? "энэ хувилбар"}"-ыг устгах уу?`)) remove.mutate(v.id);
+              }}
+              onRevert={() => revert.mutate(v.id)}
+              pending={save.isPending || remove.isPending || revert.isPending}
+            />
+          ))}
 
-            {variants.map((v: any) => (
-              <VariantRow
-                key={v.id}
-                v={v}
-                sourceCurrency={sourceCurrency}
-                onSave={(row) => save.mutate({ ...row, id: v.id })}
-                onDelete={() => {
-                  if (confirm(`"${v.label ?? "энэ хувилбар"}"-ыг устгах уу?`)) remove.mutate(v.id);
-                }}
-                onRevert={() => revert.mutate(v.id)}
-                pending={save.isPending || remove.isPending || revert.isPending}
-              />
-            ))}
-
-            {showAdd ? (
-              <div className="rounded-xl border border-primary/40 bg-primary/5 p-3">
-                <div className="mb-2 text-sm font-medium">Шинэ хувилбар</div>
-                <VariantEditor
-                  row={draft}
-                  onChange={setDraft}
-                  sourceCurrency={sourceCurrency}
-                />
-                <div className="mt-3 flex gap-2">
-                  <Button size="sm" onClick={() => save.mutate(draft)} disabled={save.isPending}>
-                    <Save className="mr-1 h-3.5 w-3.5" />
-                    {save.isPending ? "Хадгалж байна…" : "Хадгалах"}
-                  </Button>
-                  <Button size="sm" variant="outline" onClick={() => { setShowAdd(false); setDraft(blank); }}>
-                    Болих
-                  </Button>
-                </div>
+          {showAdd ? (
+            <div className="rounded-xl border border-primary/40 bg-primary/5 p-3">
+              <div className="mb-2 text-sm font-medium">Шинэ хувилбар</div>
+              <VariantEditor row={draft} onChange={setDraft} sourceCurrency={sourceCurrency} />
+              <div className="mt-3 flex gap-2">
+                <Button size="sm" onClick={() => save.mutate(draft)} disabled={save.isPending}>
+                  <Save className="mr-1 h-3.5 w-3.5" />
+                  {save.isPending ? "Хадгалж байна…" : "Хадгалах"}
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => { setShowAdd(false); setDraft(blank); }}>
+                  Болих
+                </Button>
               </div>
-            ) : (
-              <Button variant="outline" size="sm" onClick={() => { setDraft(blank); setShowAdd(true); }}>
-                <Plus className="mr-1 h-4 w-4" /> Хувилбар нэмэх
-              </Button>
-            )}
-          </div>
-        )}
-      </DialogContent>
-    </Dialog>
+            </div>
+          ) : (
+            <Button variant="outline" size="sm" onClick={() => { setDraft(blank); setShowAdd(true); }}>
+              <Plus className="mr-1 h-4 w-4" /> Хувилбар нэмэх
+            </Button>
+          )}
+        </>
+      )}
+    </div>
   );
 }
 

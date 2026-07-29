@@ -149,11 +149,11 @@ function ProductDetailPage() {
     },
   });
 
-  const colors: string[] = useMemo(() => {
+  const productColors: string[] = useMemo(() => {
     const c = (product?.colors as any) ?? [];
     return Array.isArray(c) ? c.map((x) => (typeof x === "string" ? x : x?.name ?? x?.value ?? "")).filter(Boolean) : [];
   }, [product]);
-  const sizes: string[] = useMemo(() => {
+  const productSizes: string[] = useMemo(() => {
     const s = (product?.sizes as any) ?? [];
     return Array.isArray(s) ? s.map((x) => (typeof x === "string" ? x : x?.name ?? x?.value ?? "")).filter(Boolean) : [];
   }, [product]);
@@ -205,6 +205,22 @@ function ProductDetailPage() {
     refetchOnWindowFocus: true,
     refetchOnMount: "always",
   });
+
+  const colors: string[] = useMemo(() => {
+    if (!isForeign) return productColors;
+    const values = (foreignVariants as any[])
+      .map((v) => (v.color_label ? String(v.color_label) : ""))
+      .filter(Boolean);
+    return values.length > 0 ? Array.from(new Set(values)) : productColors;
+  }, [foreignVariants, isForeign, productColors]);
+
+  const sizes: string[] = useMemo(() => {
+    if (!isForeign) return productSizes;
+    const values = (foreignVariants as any[])
+      .map((v) => (v.size_label ? String(v.size_label) : ""))
+      .filter(Boolean);
+    return values.length > 0 ? Array.from(new Set(values)) : productSizes;
+  }, [foreignVariants, isForeign, productSizes]);
 
   // Live refresh: when the product row or its variants change (e.g. merchant
   // edits variants/prices/colors in the dashboard), invalidate caches so the
