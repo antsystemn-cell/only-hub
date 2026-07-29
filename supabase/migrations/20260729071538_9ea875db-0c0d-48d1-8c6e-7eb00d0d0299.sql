@@ -1,0 +1,1 @@
+SELECT public.sync_product_from_variants('8eb82b60-51a9-4b7f-97b0-fbfb9419d792'::uuid);
