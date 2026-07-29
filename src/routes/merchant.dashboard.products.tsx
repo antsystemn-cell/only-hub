@@ -264,7 +264,11 @@ function ProductsPage() {
                     </a>
                   </Button>
                 )}
-                <Button size="icon" variant="ghost" onClick={() => { setEditing(p); setEditId(p.id); setShowForm(true); }}><Edit className="h-4 w-4" /></Button>
+                <Button size="icon" variant="ghost" title="Засах" asChild>
+                  <Link to="/merchant/dashboard/products/edit/$id" params={{ id: p.id }}>
+                    <Edit className="h-4 w-4" />
+                  </Link>
+                </Button>
                 <Button size="icon" variant="ghost" onClick={() => duplicate(p)}><Copy className="h-4 w-4" /></Button>
                 <AlertDialog>
                   <AlertDialogTrigger asChild><Button size="icon" variant="ghost"><Trash2 className="h-4 w-4" /></Button></AlertDialogTrigger>
