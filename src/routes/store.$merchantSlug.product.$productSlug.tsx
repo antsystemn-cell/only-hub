@@ -198,7 +198,8 @@ function ProductDetailPage() {
       const { data } = await supabase
         .from("product_variants")
         .select("size_label,color_label,availability_status,is_purchasable,price_review_required,rounded_customer_price_mnt,final_customer_price_mnt")
-        .eq("product_id", product!.id);
+        .eq("product_id", product!.id)
+        .eq("is_visible", true);
       return data ?? [];
     },
     staleTime: 0,

@@ -139,6 +139,11 @@ function ProductsPage() {
         merchant_id: merchantId,
         slug: p.slug || slugify(p.name),
       };
+      if (p.product_type === "FOREIGN_ORDER") {
+        delete payload.colors;
+        delete payload.sizes;
+        delete payload.variant_stock;
+      }
       if (editId) {
         const { error } = await supabase.from("products").update(payload).eq("id", editId);
         if (error) throw error;
@@ -511,7 +516,7 @@ function ProductsPage() {
             )}
 
             {/* Variant stock grid */}
-            {editing.colors?.length > 0 && editing.sizes?.length > 0 && (
+            {editing.product_type !== "FOREIGN_ORDER" && editing.colors?.length > 0 && editing.sizes?.length > 0 && (
               <div className="md:col-span-2 overflow-x-auto">
                 <Label>Нөөц (өнгө × хэмжээ)</Label>
                 <table className="mt-2 border-collapse text-sm">
