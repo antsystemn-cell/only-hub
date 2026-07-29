@@ -335,6 +335,40 @@ function ProductDetailPage() {
     return min === max ? null : max;
   }, [variantPriceCandidates]);
 
+  const colorPrices = useMemo(() => {
+    if (!isForeign) return new Map<string, { min: number; max: number }>();
+    const map = new Map<string, { min: number; max: number }>();
+    for (const c of colors) {
+      const matches = (foreignVariants as any[]).filter((v) =>
+        v.color_label === c && (size ? v.size_label === size : true),
+      );
+      const prices = matches
+        .map((v) => Number(v.rounded_customer_price_mnt ?? v.final_customer_price_mnt ?? 0))
+        .filter((n) => n > 0);
+      if (prices.length > 0) {
+        map.set(c, { min: Math.min(...prices), max: Math.max(...prices) });
+      }
+    }
+    return map;
+  }, [colors, foreignVariants, size, isForeign]);
+
+  const sizePrices = useMemo(() => {
+    if (!isForeign) return new Map<string, { min: number; max: number }>();
+    const map = new Map<string, { min: number; max: number }>();
+    for (const s of sizes) {
+      const matches = (foreignVariants as any[]).filter((v) =>
+        v.size_label === s && (color ? v.color_label === color : true),
+      );
+      const prices = matches
+        .map((v) => Number(v.rounded_customer_price_mnt ?? v.final_customer_price_mnt ?? 0))
+        .filter((n) => n > 0);
+      if (prices.length > 0) {
+        map.set(s, { min: Math.min(...prices), max: Math.max(...prices) });
+      }
+    }
+    return map;
+  }, [sizes, foreignVariants, color, isForeign]);
+
   const variantKey = color && size ? `${color}|${size}` : color || size || "";
   const hasTrackedStock = !!variantKey && typeof variantStock[variantKey] === "number";
   const stockForVariant = hasTrackedStock ? variantStock[variantKey] : Number.MAX_SAFE_INTEGER;
