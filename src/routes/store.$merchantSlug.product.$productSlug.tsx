@@ -682,17 +682,23 @@ function ProductDetailPage() {
                 <div className="flex flex-wrap gap-2">
                   {sizes.map((s) => {
                     const disabled = unavailableSizes.has(s);
+                    const p = sizePrices.get(s);
                     return (
                       <button key={s} disabled={disabled} onClick={() => !disabled && setSize(s)}
                         title={disabled ? "Энэ хэмжээ одоогоор боломжгүй" : undefined}
-                        className={`min-w-14 rounded-lg border px-3 py-2 text-sm font-medium transition ${
+                        className={`flex min-w-14 flex-col items-center justify-center rounded-lg border px-3 py-1.5 transition ${
                           disabled
                             ? "cursor-not-allowed border-dashed border-border bg-muted text-muted-foreground line-through opacity-60"
                             : size === s
                             ? "border-orange-500 bg-orange-50 text-orange-600"
                             : "border-border bg-white hover:border-orange-300"
                         }`}>
-                        {s}
+                        <span className="text-sm font-bold">{s}</span>
+                        {p && (
+                          <div className={`mt-0.5 text-[10px] sm:text-xs font-normal ${size === s ? "text-orange-500" : "text-muted-foreground"}`}>
+                            {p.min === p.max ? fmtMnt(p.min) : `${fmtMnt(p.min)}+`}
+                          </div>
+                        )}
                       </button>
                     );
                   })}
