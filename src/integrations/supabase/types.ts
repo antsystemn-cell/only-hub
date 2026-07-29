@@ -2406,9 +2406,13 @@ export type Database = {
           local_delivery_cost_mnt: number | null
           manual_availability_override: boolean
           manual_availability_status: string | null
+          manual_customer_price_mnt: number | null
           manual_override_at: string | null
           manual_override_by: string | null
           manual_override_reason: string | null
+          manual_price_at: string | null
+          manual_price_by: string | null
+          manual_price_override: boolean
           minimum_profit_mnt: number | null
           option_signature: string | null
           payment_fee_reserve_mnt: number | null
@@ -2446,9 +2450,13 @@ export type Database = {
           local_delivery_cost_mnt?: number | null
           manual_availability_override?: boolean
           manual_availability_status?: string | null
+          manual_customer_price_mnt?: number | null
           manual_override_at?: string | null
           manual_override_by?: string | null
           manual_override_reason?: string | null
+          manual_price_at?: string | null
+          manual_price_by?: string | null
+          manual_price_override?: boolean
           minimum_profit_mnt?: number | null
           option_signature?: string | null
           payment_fee_reserve_mnt?: number | null
@@ -2486,9 +2494,13 @@ export type Database = {
           local_delivery_cost_mnt?: number | null
           manual_availability_override?: boolean
           manual_availability_status?: string | null
+          manual_customer_price_mnt?: number | null
           manual_override_at?: string | null
           manual_override_by?: string | null
           manual_override_reason?: string | null
+          manual_price_at?: string | null
+          manual_price_by?: string | null
+          manual_price_override?: boolean
           minimum_profit_mnt?: number | null
           option_signature?: string | null
           payment_fee_reserve_mnt?: number | null
