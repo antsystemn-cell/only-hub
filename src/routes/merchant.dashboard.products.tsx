@@ -15,7 +15,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { Plus, Edit, Copy, Trash2, Search, ImageIcon, X, Upload, History } from "lucide-react";
+import { Plus, Edit, Copy, Trash2, Search, ImageIcon, X, Upload, History, ExternalLink } from "lucide-react";
 import { PurchaseHistoryDialog } from "@/components/inventory/PurchaseHistoryDialog";
 import { fmtMnt, slugify } from "@/lib/format";
 import { uploadOptimized } from "@/lib/image";
