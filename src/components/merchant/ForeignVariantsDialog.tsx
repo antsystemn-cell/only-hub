@@ -36,9 +36,6 @@ type Row = {
   yuan_exchange_rate?: number;
   profit_margin_percent?: number;
   extra_fixed_fee_mnt?: number;
-  // Local state for persistence during "Add" mode
-  is_purchasable: boolean;
-  is_visible: boolean;
 };
 
 const blank: Row = {
