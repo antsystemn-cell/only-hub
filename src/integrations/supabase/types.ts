@@ -2432,6 +2432,11 @@ export type Database = {
           source_variant_id: string | null
           unavailable_reason: string | null
           updated_at: string
+          use_yuan_pricing: boolean | null
+          yuan_exchange_rate: number | null
+          yuan_extra_fixed_fee_mnt: number | null
+          yuan_price: number | null
+          yuan_profit_margin_percent: number | null
         }
         Insert: {
           availability_status?: Database["public"]["Enums"]["variant_availability"]
@@ -2476,6 +2481,11 @@ export type Database = {
           source_variant_id?: string | null
           unavailable_reason?: string | null
           updated_at?: string
+          use_yuan_pricing?: boolean | null
+          yuan_exchange_rate?: number | null
+          yuan_extra_fixed_fee_mnt?: number | null
+          yuan_price?: number | null
+          yuan_profit_margin_percent?: number | null
         }
         Update: {
           availability_status?: Database["public"]["Enums"]["variant_availability"]
@@ -2520,6 +2530,11 @@ export type Database = {
           source_variant_id?: string | null
           unavailable_reason?: string | null
           updated_at?: string
+          use_yuan_pricing?: boolean | null
+          yuan_exchange_rate?: number | null
+          yuan_extra_fixed_fee_mnt?: number | null
+          yuan_price?: number | null
+          yuan_profit_margin_percent?: number | null
         }
         Relationships: [
           {

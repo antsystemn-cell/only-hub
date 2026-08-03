@@ -27,6 +27,12 @@ export const upsertProductVariant = createServerFn({ method: "POST" })
         manualCustomerPriceMnt: z.number().nonnegative().nullable().optional(),
         isPurchasable: z.boolean().default(true),
         isVisible: z.boolean().default(true),
+        // Yuan pricing fields
+        useYuanPricing: z.boolean().default(false).optional(),
+        yuanPrice: z.number().nonnegative().nullable().optional(),
+        yuanExchangeRate: z.number().nonnegative().optional(),
+        yuanProfitMarginPercent: z.number().nonnegative().optional(),
+        yuanExtraFixedFeeMnt: z.number().nonnegative().optional(),
       })
       .parse(d),
   )
