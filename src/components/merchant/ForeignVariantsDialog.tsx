@@ -248,7 +248,24 @@ export function ForeignVariantsManager({
               <div className="mb-2 text-sm font-medium">Шинэ хувилбар</div>
               <VariantEditor row={draft} onChange={setDraft} sourceCurrency={sourceCurrency} />
               <div className="mt-3 flex gap-2">
-                <Button size="sm" onClick={() => save.mutate(draft)} disabled={save.isPending}>
+                <Button 
+                  size="sm" 
+                  onClick={() => {
+                    // Pre-calculate Yuan price into manual_customer_price_mnt if active
+                    let finalRow = { ...draft };
+                    if (draft.use_yuan_pricing && draft.yuan_price) {
+                      const rate = draft.yuan_exchange_rate ?? 535;
+                      const margin = draft.profit_margin_percent ?? 25;
+                      const extra = draft.extra_fixed_fee_mnt ?? 30000;
+                      const base = draft.yuan_price * rate;
+                      const withMargin = base * (1 + margin / 100);
+                      finalRow.manual_customer_price_mnt = Math.round((withMargin + extra) / 1000) * 1000;
+                      finalRow.manual_price_override = true;
+                    }
+                    save.mutate(finalRow);
+                  }} 
+                  disabled={save.isPending}
+                >
                   <Save className="mr-1 h-3.5 w-3.5" />
                   {save.isPending ? "Хадгалж байна…" : "Хадгалах"}
                 </Button>
@@ -331,7 +348,23 @@ function VariantRow({
       <VariantEditor row={row} onChange={setRow} sourceCurrency={sourceCurrency} />
 
       <div className="mt-3 flex flex-wrap gap-2">
-        <Button size="sm" onClick={() => onSave(row)} disabled={!dirty || pending}>
+        <Button 
+          size="sm" 
+          onClick={() => {
+            let finalRow = { ...row };
+            if (row.use_yuan_pricing && row.yuan_price) {
+              const rate = row.yuan_exchange_rate ?? 535;
+              const margin = row.profit_margin_percent ?? 25;
+              const extra = row.extra_fixed_fee_mnt ?? 30000;
+              const base = row.yuan_price * rate;
+              const withMargin = base * (1 + margin / 100);
+              finalRow.manual_customer_price_mnt = Math.round((withMargin + extra) / 1000) * 1000;
+              finalRow.manual_price_override = true;
+            }
+            onSave(finalRow);
+          }} 
+          disabled={!dirty || pending}
+        >
           <Save className="mr-1 h-3.5 w-3.5" /> Хадгалах
         </Button>
         {v.manual_price_override && (
