@@ -459,20 +459,26 @@ function VariantEditor({
       </div>
 
       <div className="flex flex-col gap-3 pt-2">
-        <label className="flex items-center gap-2 text-sm">
+        <div className="flex items-center gap-2">
           <Switch
+            id={`purchasable-${row.id || 'new'}`}
             checked={row.is_purchasable}
             onCheckedChange={(v) => onChange({ ...row, is_purchasable: v })}
           />
-          Захиалж болно
-        </label>
-        <label className="flex items-center gap-2 text-sm">
+          <Label htmlFor={`purchasable-${row.id || 'new'}`} className="text-sm font-normal cursor-pointer">
+            Захиалж болно
+          </Label>
+        </div>
+        <div className="flex items-center gap-2">
           <Switch
+            id={`visible-${row.id || 'new'}`}
             checked={row.is_visible}
             onCheckedChange={(v) => onChange({ ...row, is_visible: v })}
           />
-          Харагдана
-        </label>
+          <Label htmlFor={`visible-${row.id || 'new'}`} className="text-sm font-normal cursor-pointer">
+            Харагдана
+          </Label>
+        </div>
       </div>
     </div>
   );
