@@ -312,31 +312,45 @@ function VariantEditor({
           placeholder="0"
         />
       </div>
-      <div className="rounded-lg border border-dashed p-2">
+      <div className="rounded-lg border border-border p-3 space-y-3">
         <label className="flex items-center justify-between gap-2 text-sm">
-          <span className="font-medium">Гараар үнэ тохируулах</span>
+          <span className="font-medium">Үнийг Yuan-аар оруулах</span>
           <Switch
-            checked={row.manual_price_override}
-            onCheckedChange={(v) => onChange({ ...row, manual_price_override: v })}
+            checked={row.use_yuan_pricing ?? false}
+            onCheckedChange={(v) => onChange({ ...row, use_yuan_pricing: v })}
           />
         </label>
-        <Input
-          type="number"
-          disabled={!row.manual_price_override}
-          value={row.manual_customer_price_mnt ?? ""}
-          onChange={(e) =>
-            onChange({
-              ...row,
-              manual_customer_price_mnt: e.target.value === "" ? null : Number(e.target.value),
-            })
-          }
-          placeholder="Хэрэглэгчийн үнэ (MNT)"
-          className="mt-2"
-        />
-        <p className="mt-1 text-[11px] text-muted-foreground">
-          Асаавал энэ үнэ мөрдөгдөнө. Унтраавал эх линкээс дахин тооцоолно.
-        </p>
+        
+        {row.use_yuan_pricing && (
+          <div className="grid gap-2 pt-2 border-t border-border">
+            <div>
+              <Label className="text-[11px]">Yuan үнэ</Label>
+              <Input
+                type="number"
+                value={row.yuan_price ?? ""}
+                onChange={(e) => onChange({ ...row, yuan_price: e.target.value === "" ? null : Number(e.target.value) })}
+                placeholder="0.00"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <Label className="text-[11px]">Yuan ханш (₮)</Label>
+                <Input type="number" value={row.yuan_exchange_rate ?? 535} onChange={(e) => onChange({ ...row, yuan_exchange_rate: Number(e.target.value) })} />
+              </div>
+              <div>
+                <Label className="text-[11px]">+ Margin (%)</Label>
+                <Input type="number" value={row.profit_margin_percent ?? 25} onChange={(e) => onChange({ ...row, profit_margin_percent: Number(e.target.value) })} />
+              </div>
+            </div>
+            <div>
+              <Label className="text-[11px]">+ Нэмэлт дүн (₮)</Label>
+              <Input type="number" value={row.extra_fixed_fee_mnt ?? 30000} onChange={(e) => onChange({ ...row, extra_fixed_fee_mnt: Number(e.target.value) })} />
+            </div>
+          </div>
+        )}
       </div>
+
+      <div className="rounded-lg border border-dashed p-2">
 
       <label className="flex items-center gap-2 text-sm">
         <Switch
