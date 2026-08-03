@@ -14,6 +14,12 @@ type VariantUpsertInput = {
   manualCustomerPriceMnt?: number | null;
   isPurchasable: boolean;
   isVisible: boolean;
+  // Yuan pricing fields
+  useYuanPricing?: boolean;
+  yuanPrice?: number | null;
+  yuanExchangeRate?: number;
+  yuanProfitMarginPercent?: number;
+  yuanExtraFixedFeeMnt?: number;
 };
 
 async function assertProductAccess(context: AuthContext, productId: string) {
