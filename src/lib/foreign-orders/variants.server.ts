@@ -130,6 +130,11 @@ export async function upsertProductVariantService(context: AuthContext, data: Va
     manual_price_at: data.manualPriceOverride ? nowIso : null,
     manual_price_by: data.manualPriceOverride ? context.userId : null,
     last_price_sync_at: nowIso,
+    use_yuan_pricing: data.useYuanPricing ?? false,
+    yuan_price: data.yuanPrice ?? null,
+    yuan_exchange_rate: data.yuanExchangeRate ?? null,
+    yuan_profit_margin_percent: data.yuanProfitMarginPercent ?? null,
+    yuan_extra_fixed_fee_mnt: data.yuanExtraFixedFeeMnt ?? null,
   };
 
   if (data.variantId) {

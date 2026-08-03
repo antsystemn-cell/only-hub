@@ -140,6 +140,11 @@ export function ForeignVariantsManager({
           manualCustomerPriceMnt: isManual ? finalManualMnt ?? null : null,
           isPurchasable: r.is_purchasable,
           isVisible: r.is_visible,
+          useYuanPricing: r.use_yuan_pricing,
+          yuanPrice: r.yuan_price,
+          yuanExchangeRate: r.yuan_exchange_rate,
+          yuanProfitMarginPercent: r.profit_margin_percent,
+          yuanExtraFixedFeeMnt: r.extra_fixed_fee_mnt,
         },
       });
     },
@@ -311,11 +316,11 @@ function VariantRow({
     manual_customer_price_mnt: v.manual_customer_price_mnt ?? v.rounded_customer_price_mnt ?? null,
     is_purchasable: !!v.is_purchasable,
     is_visible: !!v.is_visible,
-    use_yuan_pricing: false,
-    yuan_price: null,
-    yuan_exchange_rate: 535,
-    profit_margin_percent: 25,
-    extra_fixed_fee_mnt: 30000,
+    use_yuan_pricing: !!v.use_yuan_pricing,
+    yuan_price: v.yuan_price ?? null,
+    yuan_exchange_rate: v.yuan_exchange_rate ?? 535,
+    profit_margin_percent: v.yuan_profit_margin_percent ?? 25,
+    extra_fixed_fee_mnt: v.yuan_extra_fixed_fee_mnt ?? 30000,
   });
 
   const dirty =
@@ -326,7 +331,11 @@ function VariantRow({
     (row.manual_price_override && !row.use_yuan_pricing && row.manual_customer_price_mnt !== (v.manual_customer_price_mnt ?? null)) ||
     row.is_purchasable !== !!v.is_purchasable ||
     row.is_visible !== !!v.is_visible ||
-    row.use_yuan_pricing;
+    row.use_yuan_pricing !== !!v.use_yuan_pricing ||
+    row.yuan_price !== (v.yuan_price ?? null) ||
+    row.yuan_exchange_rate !== (v.yuan_exchange_rate ?? 535) ||
+    row.profit_margin_percent !== (v.yuan_profit_margin_percent ?? 25) ||
+    row.extra_fixed_fee_mnt !== (v.yuan_extra_fixed_fee_mnt ?? 30000);
 
   return (
     <div className="rounded-xl border border-border p-3">
