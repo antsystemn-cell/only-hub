@@ -27,7 +27,7 @@ export const previewForeignImport = createServerFn({ method: "POST" })
       const product = await provider.getProduct({
         url: data.url,
         productId: link.productId!,
-        merchantId: data.merchantId,
+
       });
 
       return {
