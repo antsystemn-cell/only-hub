@@ -37,12 +37,14 @@ const SRC = FOREIGN_SOURCES.TAOBAO;
 
 const MOBILE_HEADERS: Record<string, string> = {
   "User-Agent":
-    "Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Mobile/15E148 Safari/604.1",
-  Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-  "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8",
+    "Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Mobile/15E148 Safari/604.1",
+  Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+  "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8,mn;q=0.7",
   Referer: "https://h5.m.taobao.com/",
   "Cache-Control": "no-cache",
+  "Upgrade-Insecure-Requests": "1",
 };
+
 
 const DESKTOP_HEADERS: Record<string, string> = {
   "User-Agent":
@@ -729,22 +731,29 @@ export const taobaoProvider: ExternalCatalogProvider = {
     // Fallback: try Taobao's cached mobile detail JSON API when the mobile
     // HTML shell did not embed a config blob.
     if (!config) {
-      const apiRes = await tryFetch(
+      const endpoints = [
         `https://hws.m.taobao.com/cache/wdetail/5.0/?id=${productId}`,
-        MOBILE_HEADERS,
-      );
-      if (apiRes && apiRes.status < 400) {
-        // Endpoint returns either raw JSON or JSONP-wrapped JSON.
-        const jsonText = apiRes.body.replace(/^[^{]*/, "").replace(/[^}]*$/, "");
-        try {
-          const parsed = JSON.parse(jsonText);
-          config = parsed?.data ? { data: parsed.data } : parsed;
-          extractionMethod = "EMBEDDED_JSON";
-        } catch {
-          /* keep null */
+        `https://hws.m.taobao.com/cache/mtop.wdetail.getItemFullDesc/4.1/?item_id=${productId}`,
+      ];
+      for (const endpoint of endpoints) {
+        const apiRes = await tryFetch(endpoint, MOBILE_HEADERS);
+        if (apiRes && apiRes.status < 400) {
+          const jsonText = apiRes.body.replace(/^[^{]*/, "").replace(/[^}]*$/, "");
+          try {
+            const parsed = JSON.parse(jsonText);
+            const data = parsed?.data?.itemInfoModel || parsed?.data;
+            if (data) {
+              config = { data };
+              extractionMethod = "EMBEDDED_JSON";
+              break;
+            }
+          } catch {
+            /* keep null */
+          }
         }
       }
     }
+
 
     // Fallback: the actual Taobao mobile app uses MTop JSON endpoints. These
     // often carry the full image / SKU / price matrix even when the public HTML
