@@ -732,12 +732,15 @@ export const taobaoProvider: ExternalCatalogProvider = {
     }
 
     // Meta baseline
-    if (!genericIntlHtml) {
-      base.title = extractMeta(html, "og:title") || extractTitleTag(html);
-      base.description = extractMeta(html, "og:description") || extractMeta(html, "description");
+    base.title = extractMeta(html, "og:title") || extractTitleTag(html);
+    if (!base.title || /淘宝|天猫|taobao|tmall|登录|验证/i.test(base.title)) {
+      base.title = extractMeta(html, "title") || extractMeta(html, "twitter:title") || null;
     }
+    
+    base.description = extractMeta(html, "og:description") || extractMeta(html, "description");
     const ogImage = normalizeImage(extractMeta(html, "og:image"));
     if (ogImage) base.coverImage = ogImage;
+
 
     // Structured JSON, if we can find it.
     let config = extractPageConfig(html);
