@@ -162,14 +162,15 @@ function collectImages(html: string, config: any): string[] {
   }
 
   // Grab any <img> inside the DOM that points to Taobao's CDN.
-  const imgRe = /<img[^>]+src=["']([^"']+)["']/gi;
+  const imgRe = /<(?:img|source|div)[^>]+(?:src|data-src|data-original|original|lazyload)=["']([^"']+)["']/gi;
   let m: RegExpExecArray | null;
   let n = 0;
-  while ((m = imgRe.exec(html)) !== null && n < 200) {
+  while ((m = imgRe.exec(html)) !== null && n < 300) {
     const u = normalizeImage(m[1]);
-    if (u && /(alicdn|taobaocdn)\.com/i.test(u)) push(u);
+    if (u && /(alicdn|taobaocdn|tbcdn)\.com/i.test(u)) push(u);
     n++;
   }
+
 
   return Array.from(found).slice(0, 25);
 }
