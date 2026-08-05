@@ -822,10 +822,11 @@ export const taobaoProvider: ExternalCatalogProvider = {
     // Decide overall status.
     const hasCore = (!!base.title && base.title.length > 5) && (base.gallery.length > 0 || !!base.coverImage);
     
-    if (!base.title || base.title.length < 3) {
+    if (!base.title || base.title.length < 3 || /淘宝|天猫|taobao|tmall|登录|验证|天貓淘寶海外|花更少|買到寶/i.test(base.title)) {
       const sourceDef = FOREIGN_SOURCES[SRC.key];
       base.title = `${sourceDef?.name || "Taobao"} бараа (${productId})`;
     }
+
 
 
     if (hasCore && base.variants.length > 0) base.status = "SUCCESS";
