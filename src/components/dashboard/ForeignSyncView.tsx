@@ -17,7 +17,7 @@ export function ForeignSyncView() {
   const { primaryMerchantId } = useAuth();
   const merchantId = primaryMerchantId ?? null;
   const qc = useQueryClient();
-  const [sourceTab, setSourceTab] = useState<"POIZON_KR" | "TAOBAO">("POIZON_KR");
+  const [sourceTab, setSourceTab] = useState<"POIZON_KR" | "TAOBAO" | "TMALL">("POIZON_KR");
 
   const productsQuery = useQuery({
     queryKey: ["foreign-sync-products", merchantId],
@@ -38,8 +38,11 @@ export function ForeignSyncView() {
   });
   const allProducts = productsQuery.data ?? [];
   const countPoizon = allProducts.filter((p: any) => p.foreign_source === "POIZON_KR").length;
-  const countTaobao = allProducts.filter((p: any) => p.foreign_source === "TAOBAO").length;
-  const filteredProducts = allProducts.filter((p: any) => p.foreign_source === sourceTab);
+  const countTaobao = allProducts.filter((p: any) => p.foreign_source === "TAOBAO" || p.foreign_source === "TMALL").length;
+  const filteredProducts = allProducts.filter((p: any) =>
+    sourceTab === "TAOBAO" ? (p.foreign_source === "TAOBAO" || p.foreign_source === "TMALL") : p.foreign_source === sourceTab
+  );
+
 
   const listJobs = useServerFn(listForeignSyncJobs);
   const jobsQuery = useQuery({
@@ -86,8 +89,9 @@ export function ForeignSyncView() {
               onClick={() => setSourceTab("TAOBAO")}
               className={`rounded-full border px-3 py-1 text-xs ${sourceTab === "TAOBAO" ? "border-orange-500 bg-orange-50 text-orange-700" : "border-border bg-background text-muted-foreground hover:bg-muted"}`}
             >
-              🇨🇳 Taobao <span className="ml-1 opacity-70">{countTaobao}</span>
+              🇨🇳 Taobao / Tmall <span className="ml-1 opacity-70">{countTaobao}</span>
             </button>
+
           </div>
         </div>
         <div className="overflow-x-auto">
@@ -169,7 +173,7 @@ export function ForeignSyncView() {
               {filteredProducts.length === 0 && (
                 <tr>
                   <td colSpan={6} className="py-6 text-center text-muted-foreground">
-                    {sourceTab === "POIZON_KR" ? "Poizon Korea" : "Taobao"} бараа алга.
+                    {sourceTab === "POIZON_KR" ? "Poizon Korea" : "Taobao / Tmall"} бараа алга.
                   </td>
                 </tr>
               )}

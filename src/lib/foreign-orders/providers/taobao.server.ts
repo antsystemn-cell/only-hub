@@ -653,11 +653,12 @@ export const taobaoProvider: ExternalCatalogProvider = {
       return {
         ok: false,
         productId: null,
-        reason: "Taobao линкнээс барааны ID (id=…) олдсонгүй.",
+        reason: "Taobao эсвэл Tmall линкнээс барааны ID (id=…) олдсонгүй. Зөв линк оруулна уу.",
       };
     }
     return { ok: true, productId: pid };
   },
+
 
   async getProduct({ url, productId }) {
     const warnings: string[] = [];

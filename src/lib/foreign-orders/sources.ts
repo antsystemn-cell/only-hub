@@ -70,11 +70,24 @@ export const FOREIGN_SOURCES: Record<ForeignSource, ForeignSourceDef> = {
     name: "Tmall",
     country: "CN",
     currency: "CNY",
-    active: false,
+    active: true,
     defaultDeliveryMinDays: 10,
     defaultDeliveryMaxDays: 18,
     badgeLabel: "Tmall-с захиалгаар",
+    urlPattern: /^https?:\/\/([\w-]+\.)?tmall\.com\//i,
+    extractProductId: (url: string) => {
+      try {
+        const u = new URL(url);
+        const id = u.searchParams.get("id");
+        if (id && /^\d+$/.test(id)) return id;
+        const m = url.match(/[?&]id=(\d+)/);
+        return m ? m[1] : null;
+      } catch {
+        return null;
+      }
+    },
   },
+
   ALIBABA_1688: {
     key: "ALIBABA_1688",
     name: "1688 / Alibaba",

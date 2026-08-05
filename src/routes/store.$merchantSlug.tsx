@@ -1,12 +1,16 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { StoreView } from "@/components/store/StoreView";
+import { z } from "zod";
+
+const storeSearchSchema = z.object({
+  category: z.string().optional(),
+});
 
 export const Route = createFileRoute("/store/$merchantSlug")({
-  validateSearch: (search: Record<string, unknown>) => ({
-    category: typeof search.category === "string" ? search.category : undefined,
-  }),
+  validateSearch: (search) => storeSearchSchema.parse(search),
   component: StorePage,
 });
+
 
 function StorePage() {
   const { merchantSlug } = Route.useParams();
