@@ -672,7 +672,12 @@ async function tryFetch(
 export const taobaoProvider: ExternalCatalogProvider = {
   source: "TAOBAO",
   resolveLink(url: string) {
-    const pid = SRC.extractProductId?.(url) ?? null;
+    // Handle cases where the user pastes the whole shared text block
+    // e.g. "【淘宝】https://item.taobao.com/item.htm?id=... 「Name」"
+    const urlMatch = url.match(/https?:\/\/[^\s]+(?:\.taobao\.com|\.tmall\.com|\.1688\.com)[^\s]*/i);
+    const targetUrl = urlMatch ? urlMatch[0] : url;
+
+    const pid = SRC.extractProductId?.(targetUrl) ?? null;
     if (!pid) {
       return {
         ok: false,
@@ -682,6 +687,7 @@ export const taobaoProvider: ExternalCatalogProvider = {
     }
     return { ok: true, productId: pid };
   },
+
 
 
   async getProduct({ url, productId }) {
