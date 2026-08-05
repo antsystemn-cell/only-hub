@@ -1,5 +1,8 @@
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { z } from "zod";
+import type { Database } from "@/integrations/supabase/types";
+
+type ForeignSource = Database["public"]["Enums"]["foreign_source"];
 
 export async function findExistingForeignProductInternal(data: {
   merchantId: string;
@@ -11,7 +14,7 @@ export async function findExistingForeignProductInternal(data: {
     .from("products")
     .select("id, name, slug, image_url, is_active, created_at")
     .eq("merchant_id", data.merchantId)
-    .eq("foreign_source", data.source);
+    .eq("foreign_source", data.source as ForeignSource);
 
   if (data.sourceProductId) {
     query.eq("source_product_id", data.sourceProductId);
@@ -27,8 +30,6 @@ export async function findExistingForeignProductInternal(data: {
 }
 
 export async function createForeignProductInternal(data: any) {
-  // Minimal implementation to fix the build; logic usually involves
-  // inserting into products and product_variants tables with pricing logic.
   const { data: product, error: pError } = await supabaseAdmin
     .from("products")
     .insert({
@@ -41,9 +42,9 @@ export async function createForeignProductInternal(data: any) {
       gallery: data.gallery,
       source_url: data.sourceUrl,
       source_product_id: data.sourceProductId,
-      foreign_source: data.source,
+      foreign_source: data.source as ForeignSource,
       is_active: true,
-      price: 0, // Will be updated by variants/trigger
+      price: 0,
     })
     .select()
     .single();
@@ -59,9 +60,8 @@ export async function createForeignProductInternal(data: any) {
       source_price: v.sourcePrice,
       is_purchasable: v.isPurchasable,
       source_variant_id: v.sourceVariantId,
-      // Default to manual for now if imported
       manual_price_override: true,
-      price: v.sourcePrice, // Logic for CNY/KRW -> MNT usually goes here or in a trigger
+      price: v.sourcePrice,
     }));
 
     const { error: vError } = await supabaseAdmin
