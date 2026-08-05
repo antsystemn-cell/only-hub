@@ -63,7 +63,9 @@ export async function createForeignProductInternal(data: any) {
       source_variant_id: v.sourceVariantId,
       manual_price_override: true,
       manual_customer_price_mnt: v.sourcePrice,
+      availability_status: v.isPurchasable ? "AVAILABLE" : "UNAVAILABLE",
     }));
+
 
     const { error: vError } = await supabaseAdmin
       .from("product_variants")
