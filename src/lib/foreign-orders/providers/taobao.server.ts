@@ -103,12 +103,20 @@ function extractPageConfig(html: string): any | null {
     /g_page_config\s*=\s*(\{[\s\S]*?\});/,
     /window\.__INIT_DATA__\s*=\s*(\{[\s\S]*?\})\s*;/,
     /window\.__PRELOADED_STATE__\s*=\s*(\{[\s\S]*?\})\s*;/,
+    /g_config\s*=\s*(\{[\s\S]*?\});/,
+    /detailData\s*=\s*(\{[\s\S]*?\});/,
+    /var\s+meta\s*=\s*(\{[\s\S]*?\});/,
   ];
   for (const re of patterns) {
     const m = html.match(re);
     if (m?.[1]) {
       try {
-        return JSON.parse(m[1]);
+        // Handle potential unquoted keys or trailing commas which JSON.parse hates
+        let jsonStr = m[1].trim();
+        // Basic cleanup for non-strict JSON if needed (though Taobao is usually strict)
+        if (jsonStr.startsWith("{")) {
+          return JSON.parse(jsonStr);
+        }
       } catch {
         /* keep trying */
       }
@@ -116,6 +124,7 @@ function extractPageConfig(html: string): any | null {
   }
   return null;
 }
+
 
 function normalizeImage(url: string | null | undefined): string | null {
   if (!url) return null;
