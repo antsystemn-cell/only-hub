@@ -38,7 +38,7 @@ export default function ProductsPage() {
   const [foreignImporterSource, setForeignImporterSource] = useState<ForeignSource | null>(null);
   const [search, setSearch] = useState("");
   const [filterCat, setFilterCat] = useState<string>("all");
-  const [filterSource, setFilterSource] = useState<"all" | "POIZON_KR" | "TAOBAO">("all");
+  const [filterSource, setFilterSource] = useState<"all" | "POIZON_KR" | "TAOBAO" | "TMALL">("all");
   const [historyProduct, setHistoryProduct] = useState<{ id: string; name: string } | null>(null);
 
   const { data: products = [] } = useQuery({
@@ -106,7 +106,7 @@ export default function ProductsPage() {
     return matchSearch && matchCat && matchSource;
   });
   const countPoizon = products.filter((p: any) => p.foreign_source === "POIZON_KR").length;
-  const countTaobao = products.filter((p: any) => p.foreign_source === "TAOBAO").length;
+  const countTaobao = products.filter((p: any) => p.foreign_source === "TAOBAO" || p.foreign_source === "TMALL").length;
 
   return (
     <div className="space-y-6">
@@ -190,7 +190,7 @@ export default function ProductsPage() {
             onClick={() => setFilterSource("TAOBAO")}
             className={`rounded-full border px-3 py-1 text-xs ${filterSource === "TAOBAO" ? "border-orange-500 bg-orange-50 text-orange-700" : "border-border bg-background text-muted-foreground hover:bg-muted"}`}
           >
-            🇨🇳 Taobao <span className="ml-1 opacity-70">{countTaobao}</span>
+            🇨🇳 Taobao / Tmall <span className="ml-1 opacity-70">{countTaobao}</span>
           </button>
         </div>
         <div className="mb-4 flex flex-wrap gap-2">

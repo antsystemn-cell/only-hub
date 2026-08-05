@@ -395,9 +395,10 @@ export function ForeignProductImporter({ merchantId, source, onClose }: Props) {
             <Input
               className="h-9 text-sm"
               placeholder={
-                source === "TAOBAO"
-                  ? "https://item.taobao.com/item.htm?id=..."
+                source === "TAOBAO" || source === "TMALL"
+                  ? "https://item.taobao.com/item.htm?id=... эсвэл tmall.com"
                   : "https://kr.poizon.com/product/..."
+
               }
               value={url}
               onChange={(e) => setUrl(e.target.value)}
@@ -416,8 +417,9 @@ export function ForeignProductImporter({ merchantId, source, onClose }: Props) {
             </Button>
           </div>
           <p className="text-[11px] text-muted-foreground">
-            {source === "TAOBAO"
-              ? "Жишээ: https://item.taobao.com/item.htm?id=1234567890"
+            {source === "TAOBAO" || source === "TMALL"
+              ? "Жишээ: https://item.taobao.com/item.htm?id=1234567890 (эсвэл Tmall)"
+
               : "Жишээ: https://kr.poizon.com/product/new-balance-530-...-60886973"}
           </p>
           <div className="mt-2 flex items-start justify-between gap-3 rounded-md border border-border/60 bg-muted/30 px-3 py-2">
