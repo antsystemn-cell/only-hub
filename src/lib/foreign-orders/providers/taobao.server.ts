@@ -821,8 +821,10 @@ export const taobaoProvider: ExternalCatalogProvider = {
     const hasCore = (!!base.title && base.title.length > 5) && (base.gallery.length > 0 || !!base.coverImage);
     
     if (!base.title || base.title.length < 3) {
+      const sourceDef = FOREIGN_SOURCES[SRC.key];
       base.title = `${sourceDef?.name || "Taobao"} бараа (${productId})`;
     }
+
 
     if (hasCore && base.variants.length > 0) base.status = "SUCCESS";
     else if (hasCore) {
