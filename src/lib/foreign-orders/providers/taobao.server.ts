@@ -37,12 +37,14 @@ const SRC = FOREIGN_SOURCES.TAOBAO;
 
 const MOBILE_HEADERS: Record<string, string> = {
   "User-Agent":
-    "Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Mobile/15E148 Safari/604.1",
-  Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-  "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8",
+    "Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Mobile/15E148 Safari/604.1",
+  Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+  "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8,mn;q=0.7",
   Referer: "https://h5.m.taobao.com/",
   "Cache-Control": "no-cache",
+  "Upgrade-Insecure-Requests": "1",
 };
+
 
 const DESKTOP_HEADERS: Record<string, string> = {
   "User-Agent":
@@ -79,11 +81,25 @@ function extractMeta(html: string, key: string): string | null {
 
 function extractTitleTag(html: string): string | null {
   const m = html.match(/<title[^>]*>([^<]+)<\/title>/i);
-  if (!m) return null;
-  return decodeEntities(m[1])
+  let title = m ? decodeEntities(m[1]) : "";
+  
+  if (!title || /淘宝|天猫|taobao|tmall|登录|验证|天貓淘寶海外|花更少|買到寶/i.test(title) || title.length < 5) {
+    // Try to find a better title in H1 or meta tags
+    const h1 = html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i);
+    if (h1?.[1]) {
+      const cleanH1 = h1[1].replace(/<[^>]+>/g, " ").trim();
+      if (cleanH1.length > 5 && !/淘宝|天猫|taobao|tmall|登录|验证|天貓淘寶海外|花更少|買到寶/i.test(cleanH1)) title = cleanH1;
+    }
+  }
+
+  return title
     .replace(/[-_|]+\s*(淘宝|天猫|taobao|tmall|1688).*$/i, "")
+    .replace(/天貓淘寶海外|花更少|買到寶/g, "")
+    .replace(/^【[^】]+】/, "") // Remove common Chinese brackets like 【Hot Sale】
     .trim() || null;
 }
+
+
 
 function isGenericTaobaoIntlPage(html: string): boolean {
   const title = extractTitleTag(html) ?? "";
@@ -103,12 +119,20 @@ function extractPageConfig(html: string): any | null {
     /g_page_config\s*=\s*(\{[\s\S]*?\});/,
     /window\.__INIT_DATA__\s*=\s*(\{[\s\S]*?\})\s*;/,
     /window\.__PRELOADED_STATE__\s*=\s*(\{[\s\S]*?\})\s*;/,
+    /g_config\s*=\s*(\{[\s\S]*?\});/,
+    /detailData\s*=\s*(\{[\s\S]*?\});/,
+    /var\s+meta\s*=\s*(\{[\s\S]*?\});/,
   ];
   for (const re of patterns) {
     const m = html.match(re);
     if (m?.[1]) {
       try {
-        return JSON.parse(m[1]);
+        // Handle potential unquoted keys or trailing commas which JSON.parse hates
+        let jsonStr = m[1].trim();
+        // Basic cleanup for non-strict JSON if needed (though Taobao is usually strict)
+        if (jsonStr.startsWith("{")) {
+          return JSON.parse(jsonStr);
+        }
       } catch {
         /* keep trying */
       }
@@ -116,6 +140,7 @@ function extractPageConfig(html: string): any | null {
   }
   return null;
 }
+
 
 function normalizeImage(url: string | null | undefined): string | null {
   if (!url) return null;
@@ -153,14 +178,24 @@ function collectImages(html: string, config: any): string[] {
   }
 
   // Grab any <img> inside the DOM that points to Taobao's CDN.
-  const imgRe = /<img[^>]+src=["']([^"']+)["']/gi;
+  const imgRe = /<(?:img|source|div)[^>]+(?:src|data-src|data-original|original|lazyload)=["']([^"']+)["']/gi;
   let m: RegExpExecArray | null;
   let n = 0;
-  while ((m = imgRe.exec(html)) !== null && n < 200) {
+  while ((m = imgRe.exec(html)) !== null && n < 300) {
     const u = normalizeImage(m[1]);
-    if (u && /(alicdn|taobaocdn)\.com/i.test(u)) push(u);
+    if (u && /(alicdn|taobaocdn|tbcdn|tbcache|tmall)\.(com|net|cn)/i.test(u)) push(u);
     n++;
   }
+  
+  // Also scan for raw URLs in script tags or attributes
+  const rawUrlRe = /(?:\/\/|https?:)(?:img|gd\d+|ts\d+)\.(?:alicdn|taobaocdn|tbcdn)\.(?:com|net|cn)[^"'\s<>]+(?:jpe?g|png|webp)/gi;
+  while ((m = rawUrlRe.exec(html)) !== null && n < 500) {
+    const u = normalizeImage(m[0]);
+    if (u) push(u);
+    n++;
+  }
+
+
 
   return Array.from(found).slice(0, 25);
 }
@@ -648,7 +683,12 @@ async function tryFetch(
 export const taobaoProvider: ExternalCatalogProvider = {
   source: "TAOBAO",
   resolveLink(url: string) {
-    const pid = SRC.extractProductId?.(url) ?? null;
+    // Handle cases where the user pastes the whole shared text block
+    // e.g. "【淘宝】https://item.taobao.com/item.htm?id=... 「Name」"
+    const urlMatch = url.match(/https?:\/\/[^\s]+(?:\.taobao\.com|\.tmall\.com|\.1688\.com)[^\s]*/i);
+    const targetUrl = urlMatch ? urlMatch[0] : url;
+
+    const pid = SRC.extractProductId?.(targetUrl) ?? null;
     if (!pid) {
       return {
         ok: false,
@@ -658,6 +698,7 @@ export const taobaoProvider: ExternalCatalogProvider = {
     }
     return { ok: true, productId: pid };
   },
+
 
 
   async getProduct({ url, productId }) {
@@ -693,12 +734,15 @@ export const taobaoProvider: ExternalCatalogProvider = {
     }
 
     // Meta baseline
-    if (!genericIntlHtml) {
-      base.title = extractMeta(html, "og:title") || extractTitleTag(html);
-      base.description = extractMeta(html, "og:description") || extractMeta(html, "description");
+    base.title = extractMeta(html, "og:title") || extractTitleTag(html);
+    if (!base.title || /淘宝|天猫|taobao|tmall|登录|验证/i.test(base.title)) {
+      base.title = extractMeta(html, "title") || extractMeta(html, "twitter:title") || null;
     }
+    
+    base.description = extractMeta(html, "og:description") || extractMeta(html, "description");
     const ogImage = normalizeImage(extractMeta(html, "og:image"));
     if (ogImage) base.coverImage = ogImage;
+
 
     // Structured JSON, if we can find it.
     let config = extractPageConfig(html);
@@ -707,22 +751,29 @@ export const taobaoProvider: ExternalCatalogProvider = {
     // Fallback: try Taobao's cached mobile detail JSON API when the mobile
     // HTML shell did not embed a config blob.
     if (!config) {
-      const apiRes = await tryFetch(
+      const endpoints = [
         `https://hws.m.taobao.com/cache/wdetail/5.0/?id=${productId}`,
-        MOBILE_HEADERS,
-      );
-      if (apiRes && apiRes.status < 400) {
-        // Endpoint returns either raw JSON or JSONP-wrapped JSON.
-        const jsonText = apiRes.body.replace(/^[^{]*/, "").replace(/[^}]*$/, "");
-        try {
-          const parsed = JSON.parse(jsonText);
-          config = parsed?.data ? { data: parsed.data } : parsed;
-          extractionMethod = "EMBEDDED_JSON";
-        } catch {
-          /* keep null */
+        `https://hws.m.taobao.com/cache/mtop.wdetail.getItemFullDesc/4.1/?item_id=${productId}`,
+      ];
+      for (const endpoint of endpoints) {
+        const apiRes = await tryFetch(endpoint, MOBILE_HEADERS);
+        if (apiRes && apiRes.status < 400) {
+          const jsonText = apiRes.body.replace(/^[^{]*/, "").replace(/[^}]*$/, "");
+          try {
+            const parsed = JSON.parse(jsonText);
+            const data = parsed?.data?.itemInfoModel || parsed?.data;
+            if (data) {
+              config = { data };
+              extractionMethod = "EMBEDDED_JSON";
+              break;
+            }
+          } catch {
+            /* keep null */
+          }
         }
       }
     }
+
 
     // Fallback: the actual Taobao mobile app uses MTop JSON endpoints. These
     // often carry the full image / SKU / price matrix even when the public HTML
@@ -769,7 +820,15 @@ export const taobaoProvider: ExternalCatalogProvider = {
     }
 
     // Decide overall status.
-    const hasCore = !!base.title && (base.gallery.length > 0 || !!base.coverImage);
+    const hasCore = (!!base.title && base.title.length > 5) && (base.gallery.length > 0 || !!base.coverImage);
+    
+    if (!base.title || base.title.length < 3 || /淘宝|天猫|taobao|tmall|登录|验证|天貓淘寶海外|花更少|買到寶/i.test(base.title)) {
+      const sourceDef = FOREIGN_SOURCES[SRC.key];
+      base.title = `${sourceDef?.name || "Taobao"} бараа (${productId})`;
+    }
+
+
+
     if (hasCore && base.variants.length > 0) base.status = "SUCCESS";
     else if (hasCore) {
       base.status = "PARTIAL_IMPORT";
@@ -778,10 +837,13 @@ export const taobaoProvider: ExternalCatalogProvider = {
       );
     } else {
       base.status = "MANUAL_REVIEW_REQUIRED";
-      warnings.push(
-        "Taobao автомат татахад хязгаарлагдмал өгөгдөл ирсэн. Барааны нэр, зураг, үнийг гараар оруулна уу.",
-      );
+      if (blockedHtml) {
+        warnings.push("Taobao таны хандалтыг түр хязгаарласан байна (Bot protection). Мэдээллийг доор гараар гүйцээнэ үү.");
+      } else {
+        warnings.push("Taobao-оос мэдээлэл бүрэн татаж чадсангүй. Барааны нэр, зураг, үнийг гараар оруулна уу.");
+      }
     }
+
 
     base.extractionMethod = extractionMethod;
     base.diagnostics.foundImagesCount = base.gallery.length;
