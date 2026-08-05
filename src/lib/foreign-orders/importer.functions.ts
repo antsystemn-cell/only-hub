@@ -7,7 +7,7 @@ export const previewForeignImport = createServerFn({ method: "POST" })
     z
       .object({
         merchantId: z.string(),
-        source: z.enum(["POIZON_KR", "TAOBAO"]),
+        source: z.enum(["POIZON_KR", "TAOBAO", "TMALL"]),
         url: z.string().url(),
       })
       .parse(data),

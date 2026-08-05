@@ -134,7 +134,7 @@ export default function ProductsPage() {
       />
 
       {foreignImporterSource && (
-        foreignImporterSource === "POIZON_KR" || foreignImporterSource === "TAOBAO" ? (
+        foreignImporterSource === "POIZON_KR" || foreignImporterSource === "TAOBAO" || foreignImporterSource === "TMALL" ? (
           <ForeignProductImporter
             merchantId={merchantId}
             source={foreignImporterSource}
@@ -148,6 +148,7 @@ export default function ProductsPage() {
           />
         )
       )}
+
 
       <Tabs defaultValue="products" className="space-y-6">
         {canForeign && (
