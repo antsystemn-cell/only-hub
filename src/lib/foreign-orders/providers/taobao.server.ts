@@ -181,9 +181,18 @@ function collectImages(html: string, config: any): string[] {
   let n = 0;
   while ((m = imgRe.exec(html)) !== null && n < 300) {
     const u = normalizeImage(m[1]);
-    if (u && /(alicdn|taobaocdn|tbcdn)\.com/i.test(u)) push(u);
+    if (u && /(alicdn|taobaocdn|tbcdn|tbcache|tmall)\.(com|net|cn)/i.test(u)) push(u);
     n++;
   }
+  
+  // Also scan for raw URLs in script tags or attributes
+  const rawUrlRe = /(?:\/\/|https?:)(?:img|gd\d+|ts\d+)\.(?:alicdn|taobaocdn|tbcdn)\.(?:com|net|cn)[^"'\s<>]+(?:jpe?g|png|webp)/gi;
+  while ((m = rawUrlRe.exec(html)) !== null && n < 500) {
+    const u = normalizeImage(m[0]);
+    if (u) push(u);
+    n++;
+  }
+
 
 
   return Array.from(found).slice(0, 25);
