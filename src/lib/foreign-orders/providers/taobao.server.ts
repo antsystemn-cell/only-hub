@@ -818,7 +818,12 @@ export const taobaoProvider: ExternalCatalogProvider = {
     }
 
     // Decide overall status.
-    const hasCore = !!base.title && (base.gallery.length > 0 || !!base.coverImage);
+    const hasCore = (!!base.title && base.title.length > 5) && (base.gallery.length > 0 || !!base.coverImage);
+    
+    if (!base.title || base.title.length < 3) {
+      base.title = `${sourceDef?.name || "Taobao"} бараа (${productId})`;
+    }
+
     if (hasCore && base.variants.length > 0) base.status = "SUCCESS";
     else if (hasCore) {
       base.status = "PARTIAL_IMPORT";
@@ -827,10 +832,13 @@ export const taobaoProvider: ExternalCatalogProvider = {
       );
     } else {
       base.status = "MANUAL_REVIEW_REQUIRED";
-      warnings.push(
-        "Taobao автомат татахад хязгаарлагдмал өгөгдөл ирсэн. Барааны нэр, зураг, үнийг гараар оруулна уу.",
-      );
+      if (blockedHtml) {
+        warnings.push("Taobao таны хандалтыг түр хязгаарласан байна (Bot protection). Мэдээллийг доор гараар гүйцээнэ үү.");
+      } else {
+        warnings.push("Taobao-оос мэдээлэл бүрэн татаж чадсангүй. Барааны нэр, зураг, үнийг гараар оруулна уу.");
+      }
     }
+
 
     base.extractionMethod = extractionMethod;
     base.diagnostics.foundImagesCount = base.gallery.length;
