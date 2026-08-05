@@ -83,20 +83,22 @@ function extractTitleTag(html: string): string | null {
   const m = html.match(/<title[^>]*>([^<]+)<\/title>/i);
   let title = m ? decodeEntities(m[1]) : "";
   
-  if (!title || /淘宝|天猫|taobao|tmall|登录|验证/i.test(title) || title.length < 5) {
+  if (!title || /淘宝|天猫|taobao|tmall|登录|验证|天貓淘寶海外|花更少|買到寶/i.test(title) || title.length < 5) {
     // Try to find a better title in H1 or meta tags
     const h1 = html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i);
     if (h1?.[1]) {
       const cleanH1 = h1[1].replace(/<[^>]+>/g, " ").trim();
-      if (cleanH1.length > 5) title = cleanH1;
+      if (cleanH1.length > 5 && !/淘宝|天猫|taobao|tmall|登录|验证|天貓淘寶海外|花更少|買到寶/i.test(cleanH1)) title = cleanH1;
     }
   }
 
   return title
     .replace(/[-_|]+\s*(淘宝|天猫|taobao|tmall|1688).*$/i, "")
+    .replace(/天貓淘寶海外|花更少|買到寶/g, "")
     .replace(/^【[^】]+】/, "") // Remove common Chinese brackets like 【Hot Sale】
     .trim() || null;
 }
+
 
 
 function isGenericTaobaoIntlPage(html: string): boolean {
