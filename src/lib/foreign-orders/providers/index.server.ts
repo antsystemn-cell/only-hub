@@ -1,5 +1,5 @@
 import { taobaoProvider } from "./taobao.server";
-import { poizonKrProvider } from "./poizon-kr.server";
+import { poizonKrProvider } from "./poizon-korea.server";
 import type { ExternalCatalogProvider } from "./types";
 import type { Database } from "@/integrations/supabase/types";
 
