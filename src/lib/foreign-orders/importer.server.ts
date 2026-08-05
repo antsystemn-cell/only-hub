@@ -35,16 +35,17 @@ export async function createForeignProductInternal(data: any) {
     .insert({
       merchant_id: data.merchantId,
       name: data.title,
-      brand: data.brand,
       category: data.category,
       description: data.description,
       image_url: data.coverImage,
-      gallery: data.gallery,
+      gallery_images: data.gallery,
       source_url: data.sourceUrl,
       source_product_id: data.sourceProductId,
       foreign_source: data.source as ForeignSource,
       is_active: true,
       price: 0,
+      product_type: "FOREIGN_ORDER",
+      source_system: data.source,
     })
     .select()
     .single();
@@ -61,7 +62,7 @@ export async function createForeignProductInternal(data: any) {
       is_purchasable: v.isPurchasable,
       source_variant_id: v.sourceVariantId,
       manual_price_override: true,
-      price: v.sourcePrice,
+      manual_customer_price_mnt: v.sourcePrice,
     }));
 
     const { error: vError } = await supabaseAdmin
@@ -73,3 +74,4 @@ export async function createForeignProductInternal(data: any) {
 
   return product;
 }
+
